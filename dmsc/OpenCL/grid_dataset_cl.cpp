@@ -805,8 +805,8 @@ namespace grid
       {
         boost::thread_group group;
         for(int tid = 0 ; tid < g_num_threads; ++tid)
-//          group.create_thread(bind(__setup_cp_no_thd,msc,tid,g_num_threads,h_surv_cp_no.data()));
-          __setup_cp_no_thd(msc,tid,g_num_threads,h_surv_cp_no.data());
+          group.create_thread(bind(__setup_cp_no_thd,msc,tid,g_num_threads,h_surv_cp_no.data()));
+//          __setup_cp_no_thd(msc,tid,g_num_threads,h_surv_cp_no.data());
         group.join_all();
       }
 

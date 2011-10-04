@@ -19,6 +19,7 @@
 
 #include <grid_dataset.h>
 #include <grid_mscomplex.h>
+#include <grid_dataset_bfs.h>
 
 #ifdef BUILD_EXEC_OPENCL
 #include <grid_dataset_cl.h>
@@ -26,22 +27,8 @@
 
 using namespace std;
 
-#define MUTEX_CALL(__c) \
-  {static boost::mutex __mutex;\
-   boost::mutex::scoped_lock scoped_lock(__mutex);\
-   (__c);}
-
-
-
-
 namespace grid
 {
-  static uint ( dataset_t::*getcets[2] ) ( cellid_t,cellid_t * ) const =
-  {
-    &dataset_t::getCellFacets,
-    &dataset_t::getCellCofacets
-  };
-
   inline uint   dataset_t::getCellIncCells( cellid_t c,cellid_t * inc) const
   {
     for(uint i = 0; i < gc_grid_dim; ++i)
@@ -569,212 +556,6 @@ namespace grid
     ccells->clear();
   }
 
-  namespace dfs
-  {
-    using namespace grid;
-
-    typedef std::stack<cellid_t>                              stack_t;
-    typedef boost::function<bool (cellid_t,const stack_t &)>  can_visit_ftor_t;
-    typedef boost::function<void (cellid_t,const stack_t &)>  visit_ftor_t;
-    typedef boost::function<void (cellid_t,const stack_t &)>  cp_visit_ftor_t;
-
-    void do_dfs
-        (dataset_const_ptr_t ds,
-         cellid_t start_cell,
-         eGDIR dir,
-         can_visit_ftor_t can_visit_ftor,
-         visit_ftor_t visit_ftor,
-         cp_visit_ftor_t  cp_visit_ftor)
-    {
-      stack_t cell_stack;
-
-      cell_stack.push ( start_cell );
-
-      uint dim = ds->getCellDim(start_cell);
-
-      while ( !cell_stack.empty() )
-      {
-        cellid_t top_cell = cell_stack.top();
-
-        try
-        {
-          ASSERT(ds->m_rect.contains(top_cell));
-
-          visit_ftor(top_cell,cell_stack);
-
-          cell_stack.pop();
-
-          cellid_t      cets[20];
-
-          uint cet_ct = ( ds.get()->*getcets[dir] ) ( top_cell,cets );
-
-          for ( uint i = 0 ; i < cet_ct ; i++ )
-          {
-            try
-            {
-              if ( ds->isCellExterior ( cets[i] ) )
-                continue;
-
-              if ( ds->isCellCritical ( cets[i] ) )
-              {
-                cp_visit_ftor(cets[i],cell_stack);
-                continue;
-              }
-
-              cellid_t next_cell = ds->getCellPairId ( cets[i] );
-
-              ASSERT(ds->m_rect.contains(next_cell));
-
-              if(can_visit_ftor(next_cell,cell_stack) == false)
-                continue;
-
-              bool is_dim        = (dim  == ds->getCellDim ( next_cell ));
-              bool is_vnext      = ds->cmp_ftors[dir](next_cell,top_cell);
-
-              if (is_dim && is_vnext)
-              {
-                cell_stack.push ( next_cell );
-              }
-            }
-            catch(assertion_error e)
-            {
-              e.push(_FFL);
-              e.push(SVAR(cets[i]));
-              e.push(SVAR(ds->isCellPaired(cets[i])));
-              e.push(SVAR(ds->isCellCritical(cets[i])));
-              throw;
-            }
-          }
-        }
-        catch(assertion_error e)
-        {
-          e.push(_FFL);
-          e.push(SVAR(dim));
-          e.push(SVAR(top_cell));
-          e.push(SVAR(start_cell));
-
-          throw;
-        }
-      }
-    }
-
-    typedef std::stack<int> age_stack_t;
-    typedef boost::function<bool (cellid_t,const stack_t &,const stack_t &)>  path_can_visit_ftor_t;
-    typedef boost::function<void (cellid_t,const stack_t &,const stack_t &)>  path_visit_ftor_t;
-    typedef boost::function<void (cellid_t,const stack_t &,const stack_t &)>  path_cp_visit_ftor_t;
-
-    void visit_ftor_wrapper
-        (path_visit_ftor_t path_visit_ftor,
-         cellid_t c,
-         const stack_t &cell_stack,
-         stack_t *path_stack,
-         age_stack_t *age_stack)
-    {
-      ASSERT(cell_stack.top() == c);
-
-      while(age_stack->top() > cell_stack.size())
-      {
-        age_stack->pop();
-        path_stack->pop();
-      }
-
-      path_stack->push(c);
-      age_stack->push(cell_stack.size());
-
-      path_visit_ftor(c,cell_stack,*path_stack);
-    }
-
-    void do_path_dfs
-        (dataset_ptr_t ds,
-         cellid_t c,
-         eGDIR dir,
-         path_visit_ftor_t    path_visit_ftor,
-         path_cp_visit_ftor_t path_cp_visit_ftor,
-         path_can_visit_ftor_t path_can_visit_ftor)
-    {
-      stack_t     path_stack;
-      age_stack_t age_stack;
-
-      do_dfs
-          (ds,c,dir,
-           bind(path_can_visit_ftor,_1,_2,path_stack),
-           bind(visit_ftor_wrapper,path_visit_ftor,_1,_2,&path_stack,&age_stack),
-           bind(path_cp_visit_ftor,_1,_2,path_stack));
-    }
-
-    void pass_visit(cellid_t ,const stack_t &)
-    {
-      return;
-    }
-
-    bool pass_can_visit(cellid_t ,const stack_t &)
-    {
-      return true;
-    }
-
-    void connect_cps(dataset_ptr_t ds, mscomplex_ptr_t msc,cellid_t p,cellid_t q,const stack_t &)
-    {
-      if(ds->isCellPaired(p) && ds->getCellDim(ds->getCellPairId(p)) != ds->getCellDim(q))
-        return;
-
-      if(ds->isCellPaired(q) && ds->getCellDim(ds->getCellPairId(q)) != ds->getCellDim(p))
-        return;
-
-      MUTEX_CALL(msc->connect_cps(p,q));
-    }
-
-    void do_dfs_connect
-        (dataset_ptr_t ds,
-         mscomplex_ptr_t msc,
-         cellid_t c,
-         eGDIR dir)
-    {
-      try
-      {
-        do_dfs(ds,c,dir,pass_can_visit,pass_visit,bind(connect_cps,ds,msc,c,_1,_2));
-      }
-      catch(assertion_error e)
-      {
-        e.push(_FFL).push(SVAR(c))
-         .push(SVAR(ds->m_rect))
-         .push(SVAR(msc->m_rect));
-
-        throw;
-      }
-    }
-
-    bool visit_if_not_visited(dataset_ptr_t ds,cellid_t c,const stack_t &)
-    {
-      return (ds->isCellVisited(c) == false);
-    }
-
-    void mark_visit(dataset_ptr_t ds,cellid_t c,const stack_t &)
-    {
-      ds->visitCell(c);
-    }
-
-    void do_dfs_mark_visit(dataset_ptr_t ds,cellid_t c,eGDIR dir)
-    {
-      do_dfs(ds,c,dir,bind(visit_if_not_visited,ds,_1,_2),
-             bind(mark_visit,ds,_1,_2),pass_visit);
-    }
-
-    bool visit_if_pair_visited(dataset_ptr_t ds,cellid_t c,const stack_t &)
-    {
-      return (ds->isCellVisited(c) && ds->isCellVisited(ds->getCellPairId(c)));
-    }
-
-    void do_dfs_connect_thru_visted_pairs
-        (dataset_ptr_t ds,
-         mscomplex_ptr_t msc,
-         cellid_t c,
-         eGDIR dir)
-    {
-      do_dfs(ds,c,dir,bind(visit_if_pair_visited,ds,_1,_2),
-             pass_visit,bind(connect_cps,ds,msc,c,_1,_2));
-    }
-  }
-
   void  dataset_t::extrema_connect_thd
       (mscomplex_ptr_t msgraph, cp_producer_ptr_t prd)
   {
@@ -784,7 +565,7 @@ namespace grid
 
       eGDIR dir = (msgraph->index(i) == 3)?(GDIR_DES):(GDIR_ASC);
 
-      dfs::do_dfs_connect(shared_from_this(),msgraph,c,dir);
+      bfs::connect_cps(shared_from_this(),msgraph,c,dir);
     }
   }
 
@@ -797,7 +578,7 @@ namespace grid
       if(msgraph->index(i) != idx )
         continue;
 
-      dfs::do_dfs_mark_visit(shared_from_this(),msgraph->cellid(i),dir);
+      bfs::mark_visits(shared_from_this(),msgraph->cellid(i),dir);
     }
   }
 
@@ -808,7 +589,7 @@ namespace grid
     {
       cellid_t c = msgraph->cellid(i);
 
-      dfs::do_dfs_connect_thru_visted_pairs(shared_from_this(),msgraph,c,GDIR_DES);
+      bfs::connect_thru_visted_pairs(shared_from_this(),msgraph,c,GDIR_DES);
     }
   }
 
@@ -882,6 +663,9 @@ namespace grid
       saddle_group.create_thread(bind(&dataset_t::saddle_visit,this,msgraph,GDIR_DES));
       saddle_group.create_thread(bind(&dataset_t::saddle_visit,this,msgraph,GDIR_ASC));
 
+//      saddle_visit(msgraph,GDIR_DES);
+//      saddle_visit(msgraph,GDIR_ASC);
+
 #ifdef BUILD_EXEC_OPENCL
       w.owner_extrema(shared_from_this(),msgraph);
 #else
@@ -911,103 +695,6 @@ namespace grid
     }
   }
 
-  namespace dfs
-  {
-    typedef dataset_t::mfold_t mfold_t;
-    typedef std::map<cellid_t,int> frontier_t;
-    typedef boost::shared_ptr<frontier_t> frontier_ptr_t;
-
-    void do_frontier_traversal
-      (dataset_const_ptr_t ds,cellid_t start_cell,eGDIR dir)
-    {
-      uint dim = ds->getCellDim(start_cell);
-
-      frontier_ptr_t frontier1(new frontier_t);
-      frontier_ptr_t frontier2(new frontier_t);
-
-      (*frontier1)[start_cell] = 1;
-
-      for(int level = 0 ;;++level)
-      {
-        frontier_t &frontier     = ((level&1) == 0)?(*frontier1):(*frontier2);
-        frontier_t &new_frontier = ((level&1) == 1)?(*frontier1):(*frontier2);
-
-        if(frontier.size() == 0)
-          break;
-
-        for(frontier_t::iterator it = frontier.begin() ; it != frontier.end() ;++it)
-        {
-          cellid_t c  = it->first;
-          int      ct = it->second;
-
-          ASSERT(ds->m_rect.contains(c));
-
-          cellid_t      cets[20];
-
-          uint cet_ct = ( ds.get()->*getcets[dir] ) ( c,cets );
-
-          for ( uint i = 0 ; i < cet_ct ; i++ )
-          {
-            if ( ds->isCellExterior ( cets[i] ) )
-              continue;
-
-            if ( ds->isCellCritical ( cets[i] ) )
-              continue;
-
-            cellid_t next_cell = ds->getCellPairId ( cets[i] );
-
-            ASSERT(ds->m_rect.contains(next_cell));
-
-            bool is_dim        = (dim  == ds->getCellDim ( next_cell ));
-            bool is_vnext      = ds->cmp_ftors[dir](next_cell,c);
-
-            if (is_dim && is_vnext)
-            {
-              if(new_frontier.count(next_cell) == 0)
-                new_frontier[next_cell] = 0;
-
-              new_frontier[next_cell] += ct;
-            }
-          }
-        }// end for i in [0,frontier.size)
-
-        frontier.clear();
-      }// end while(frontier.size != 0 )
-    }
-
-    void add_to_mfold(mfold_t *mfold,cellid_t c,const stack_t &)
-    {
-      mfold->push_back(c);
-    }
-
-    void do_dfs_collect_manifolds
-        (dataset_const_ptr_t ds,
-         mfold_t *mfold,
-         cellid_t c,
-         eGDIR dir)
-    {
-      do_frontier_traversal(ds,c,dir);
-    }
-
-    void mark_owner_extrema(cellid_t c, const stack_t &,dataset_t::owner_array_t * own_arr,int i)
-    {
-      (*own_arr)(c/2) = i;
-    }
-
-    void do_dfs_mark_owner_extrema
-        (dataset_ptr_t ds,cellid_t c,int i)
-    {
-
-      ASSERT(get_cell_dim(c) == 0 || get_cell_dim(c) == 3);
-
-      eGDIR dir = (get_cell_dim(c) == 3)?(GDIR_DES):(GDIR_ASC);
-
-      dataset_t::owner_array_t *own_arr = (dir == GDIR_DES)?(&ds->m_owner_maxima):(&ds->m_owner_minima);
-
-      do_dfs(ds,c,dir,pass_can_visit,bind(mark_owner_extrema,_1,_2,own_arr,i),pass_visit);
-    }
-  }
-
   void  dataset_t::get_mfold
       (mfold_t *mfold, mscomplex_const_ptr_t msc, int i, int dir) const
   {
@@ -1016,7 +703,7 @@ namespace grid
       ASSERT(msc->is_paired(i) == false);
 
       if(m_rect.contains(msc->cellid(i)))
-        dfs::do_dfs_collect_manifolds
+        bfs::collect_manifolds
             (shared_from_this(),mfold,msc->cellid(i),(eGDIR)dir);
 
       for( conn_iter_t j  = msc->m_conn[dir][i].begin();
@@ -1025,7 +712,7 @@ namespace grid
         ASSERT(msc->is_paired(*j) == true);
         ASSERT(msc->index(i) == msc->index(msc->pair_idx(*j)));
 
-        dfs::do_dfs_collect_manifolds
+        bfs::collect_manifolds
             (shared_from_this(),mfold,msc->cellid(msc->pair_idx(*j)),(eGDIR)dir);
       }
     }
@@ -1043,7 +730,7 @@ namespace grid
   {
     for ( int i ; p->next(i);)
     {
-      dfs::do_dfs_mark_owner_extrema(shared_from_this(),msc->cellid(i),msc->surv_extrema(i));
+      bfs::mark_owner_extrema(shared_from_this(),msc->cellid(i),msc->surv_extrema(i));
     }
   }
 
@@ -1232,7 +919,7 @@ namespace grid
       int ex_num = num_cells2(m_rect);
       std::ofstream fs((bn+".min.raw").c_str());
       ensure(fs.is_open(),"unable to open file");
-      fs.write((char*)(void*)m_owner_maxima.data(),sizeof(int)*ex_num);
+      fs.write((char*)(void*)m_owner_minima.data(),sizeof(int)*ex_num);
       fs.close();
     }
 

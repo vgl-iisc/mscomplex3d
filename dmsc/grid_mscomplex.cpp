@@ -157,10 +157,10 @@ namespace grid
       if(is_paired(q))
         std::swap(p,q);
 
-      if(index(p) > index(q))
-        m_des_conn[p].insert(q);
-      else
-        m_asc_conn[p].insert(q);
+      conn_t &conn = (index(p) > index(q))?(m_des_conn[p]):(m_asc_conn[p]);
+
+      if(conn.count(q) == 0)
+        conn.insert(q);
     }
     catch(assertion_error e)
     {
@@ -239,7 +239,6 @@ namespace grid
       ex.PUSHVAR(m_asc_conn[q].count(p));
       throw;
     }
-
   }
 
   void mscomplex_t::uncancel_pair(int p, int q)
@@ -475,7 +474,7 @@ namespace grid
       throw;
     }
 
-    vector<int> cpi_to_mcpi(get_num_critpts());
+    int_list_t cpi_to_mcpi(get_num_critpts());
 
     for(int m = 0 ; m < 2; ++m)
     {
