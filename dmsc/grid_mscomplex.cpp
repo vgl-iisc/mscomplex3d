@@ -274,10 +274,13 @@ namespace grid
 
           int r = pair_idx(*i);
 
+          if(index(ed) != index(r))
+            continue;
+
           try
           {
             ASSERT(is_canceled(*i) ==false && is_canceled(r) ==false);
-            ASSERT(abs(index(*i) - index(r)) == 1 && index(ed) == index(r));
+            ASSERT(abs(index(*i) - index(r)) == 1);
             ASSERT(pair_idx( r) == *i && pair_idx(*i) ==  r);
           }
           catch (assertion_error ex)
@@ -286,6 +289,7 @@ namespace grid
             ex.push(SVAR(cp_info(ed)));
             throw;
           }
+
           try
           {
             for(j = m_conn[d][r].begin(); j!= m_conn[d][r].end() ; ++j )
@@ -716,11 +720,11 @@ namespace grid
 
       order_pr_by_cp_index(*this,p,q);
 
+      pair_cps(p,q);
+
       cancel_pair(p,q);
 
       num_cancellations++;
-
-      pair_cps(p,q);
 
       canc_pairs_list.push_back(pr);
 

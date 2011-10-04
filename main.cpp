@@ -87,11 +87,16 @@ int main(int ac , char **av)
     opencl::init();
 #endif
 
-  data_manager_ptr_t gdm(new data_manager_t(filename,size,levels,simp_tresh));
+  if(levels == cellid_t::zero)
+  {
+    compute_mscomplex_basic(filename,size,simp_tresh);
+  }
+  else
+  {
+    data_manager_ptr_t gdm(new data_manager_t(filename,size,levels,simp_tresh));
 
-  gdm->work();
-
-//  compute_mscomplex_basic(filename,size,simp_tresh);
+    gdm->work();
+  }
 
 #ifdef BUILD_EXEC_GUI
   if(gui)

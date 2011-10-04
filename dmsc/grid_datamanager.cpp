@@ -367,21 +367,31 @@ namespace grid
     dataset_ptr_t   dataset(new dataset_t(d,d,d));
     mscomplex_ptr_t msgraph(new mscomplex_t(d,d));
 
+    string basename(filename);
+
+    int ext_pos = basename.size() -4;
+
+    if(ext_pos >=0 && basename.substr(ext_pos,4) == ".raw")
+      basename = basename.substr(0,ext_pos);
+
     dataset->init(filename);
     cout<<"data read ---------------- "<<g_timer.getElapsedTimeInMilliSec()<<endl;
 
     dataset->computeMsGraph(msgraph);
     cout<<"msgraph done ------------- "<<g_timer.getElapsedTimeInMilliSec()<<endl;
 
+    if(simp_tresh >=0)
+    {
     msgraph->simplify_un_simplify(simp_tresh);
     cout<<"simplification done ------ "<<g_timer.getElapsedTimeInMilliSec()<<endl;
+    }
 
-    msgraph->write_graph("graph.txt");
+    msgraph->write_graph(basename+".graph.txt");
     cout<<"write msgraph done ------- "<<g_timer.getElapsedTimeInMilliSec()<<endl;
 
     msgraph->invert_for_collection();
-    dataset->saveManifolds(msgraph,"mfolds.bin");
-    cout<<"write msmfolds done ------- "<<g_timer.getElapsedTimeInMilliSec()<<endl;
+    dataset->saveManifolds(msgraph,basename);
+    cout<<"write msmfolds done ------ "<<g_timer.getElapsedTimeInMilliSec()<<endl;
 
     cout<<"------------------------------------"<<endl;
     cout<<"        Finished Processing         "<<endl;
