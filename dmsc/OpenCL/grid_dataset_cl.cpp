@@ -304,7 +304,7 @@ namespace grid
             bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE));
 
         s_scan_group_sums= cl::Kernel(program2, "scan_group_sums").
-            bind(s_queue,cl::NullRange,cl::NDRange(WI_SIZE),cl::NDRange(WI_SIZE));
+            bind(s_queue,cl::NullRange,cl::NDRange(WG_NUM),cl::NDRange(WG_NUM));
 
         s_scan_update_sums = cl::Kernel(program2, "scan_update_sums").
             bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE));
