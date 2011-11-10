@@ -27,6 +27,10 @@
 #include <boost/noncopyable.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/function.hpp>
+#include <boost/enable_shared_from_this.hpp>
+#include <boost/iterator/filter_iterator.hpp>
+
+#include <boost/bind.hpp>
 
 #include <grid.h>
 
@@ -46,7 +50,7 @@ namespace grid
   typedef std::vector<conn_t>                 conn_list_t;
 
 
-  class mscomplex_t
+  class mscomplex_t:public boost::enable_shared_from_this<mscomplex_t>
   {
   public:
 
@@ -110,6 +114,8 @@ namespace grid
 
     inline int surv_extrema(int i) const;
     inline bool is_extrema(int i) const;
+    inline bool is_saddle(int i) const;
+    inline bool is_unpaired_saddle(int i) const;
 
   public:
 
@@ -132,10 +138,21 @@ namespace grid
     void write_graph(std::ostream & os) const;
     void write_graph(const std::string & fn) const;
 
-
     inline std::string cp_info (int cp_no) const;
     inline std::string cp_conn (int cp_no) const;
 
+    class   iterator;
+    typedef boost::function<bool (int)> filter_t;
+    typedef boost::filter_iterator<filter_t,iterator> filter_iterator_t;
+
+    inline iterator begin() const;
+    inline iterator end() const;
+
+    inline filter_iterator_t fbegin(filter_t f) const;
+    inline filter_iterator_t fend(filter_t f) const;
+
+    inline filter_iterator_t begin_unpaired_saddle() const;
+    inline filter_iterator_t end_unpaired_saddle() const;
   };
 
   inline void order_pr_by_cp_index(mscomplex_t &msc,int &p,int &q)
@@ -181,6 +198,92 @@ namespace grid
     // }
 
   };
+
+  class mscomplex_t::iterator : public std::iterator<std::bidirectional_iterator_tag, int,int,int*,int>
+  {
+    mscomplex_const_ptr_t msc;
+    int                   val;
+  public:
+    iterator(mscomplex_const_ptr_t _msc,int _val=0) : msc(_msc),val(_val)
+    {
+    }
+
+    bool operator==(iterator const& rhs) const
+    {
+      return (val==rhs.val);
+    }
+
+    bool operator!=(iterator const& rhs) const
+    {
+      return !(*this==rhs);
+    }
+
+    iterator& operator++()
+    {
+      if(val!=msc->get_num_critpts())
+        ++val;
+      return *this;
+    }
+
+    iterator operator++(int)
+    {
+      iterator tmp (*this);
+      ++(*this);
+      return tmp;
+    }
+
+    iterator& operator--()
+    {
+      if(val!=-1)
+        --val;
+      return *this;
+    }
+
+    iterator operator--(int)
+    {
+      iterator tmp (*this);
+      --(*this);
+      return tmp;
+    }
+
+    int operator* () const
+    {
+      ASSERT(is_in_range(val,0,msc->get_num_critpts()));
+      return val;
+    }
+  };
+
+  inline mscomplex_t::iterator mscomplex_t::begin() const
+  {
+    return iterator(shared_from_this());
+  }
+
+  inline mscomplex_t::iterator mscomplex_t::end() const
+  {
+    return iterator(shared_from_this(),get_num_critpts());
+  }
+
+  inline mscomplex_t::filter_iterator_t mscomplex_t::fbegin(mscomplex_t::filter_t f) const
+  {
+    return boost::make_filter_iterator(f,begin(),end());
+  }
+
+  inline mscomplex_t::filter_iterator_t mscomplex_t::fend(mscomplex_t::filter_t f) const
+  {
+    return boost::make_filter_iterator(f,end(),end());
+  }
+
+  inline mscomplex_t::filter_iterator_t mscomplex_t::begin_unpaired_saddle() const
+  {
+    return fbegin(boost::bind
+                  (&mscomplex_t::is_unpaired_saddle,shared_from_this(),_1));
+  }
+
+  inline mscomplex_t::filter_iterator_t mscomplex_t::end_unpaired_saddle() const
+  {
+    return fend(boost::bind
+                (&mscomplex_t::is_unpaired_saddle,shared_from_this(),_1));
+  }
 
   inline int  mscomplex_t::get_num_critpts() const
   {
@@ -295,6 +398,16 @@ namespace grid
   inline bool mscomplex_t::is_extrema(int i) const
   {
     return (index(i) == 0 || index(i) == 3);
+  }
+
+  inline bool mscomplex_t::is_saddle(int i) const
+  {
+    return (index(i) == 1 || index(i) == 2);
+  }
+
+  inline bool mscomplex_t::is_unpaired_saddle(int i) const
+  {
+    return ((index(i) == 1 || index(i) == 2) && (is_paired(i)==false));
   }
 
   inline int mscomplex_t::surv_extrema(int i) const

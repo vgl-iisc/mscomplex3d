@@ -12,6 +12,7 @@
 #include <boost/thread/condition.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/static_assert.hpp>
+#include <boost/iterator/filter_iterator.hpp>
 
 #define static_assert BOOST_STATIC_ASSERT
 
@@ -737,6 +738,8 @@ namespace grid
   template<typename T>
   class producer_consumer_t:boost::noncopyable
   {
+
+  protected:
     queue<T>                      m_queue;
     boost::mutex                  m_mutex;
     boost::condition_variable_any m_cond;
@@ -766,126 +769,264 @@ namespace grid
     }
   };
 
+  template<typename Titer>
+  class mt_producer_t:boost::noncopyable
+  {
+  protected:
+    Titer          m_begin;
+    Titer          m_end;
+    boost::mutex   m_mutex;
+
+  public:
+
+    typedef Titer iterator;
+
+    class no_more_items:public std::exception
+    {
+    public:
+      no_more_items(){}
+      virtual ~no_more_items() throw(){}
+
+      virtual const char*
+      what() const throw()
+      {return "nothing more to produce";}
+    };
+
+    mt_producer_t(Titer begin,Titer end)
+    {
+      boost::mutex::scoped_lock scoped_lock(m_mutex);
+
+      m_begin = begin;
+      m_end   = end;
+    }
+
+    Titer next()
+    {
+      boost::mutex::scoped_lock scoped_lock(m_mutex);
+
+      if(m_begin == m_end)
+        throw no_more_items();
+
+      return m_begin++;
+    }
+  };
+
+}
+
+namespace std
+{
+template<typename _IIter>
+  typename iterator_traits<_IIter>::difference_type
+  count(_IIter b, _IIter e)
+  {
+    typename iterator_traits<_IIter>::difference_type val = 0;
+
+    for( ; b != e; ++b)
+      ++val;
+
+    return val;
+  }
+}
+
+namespace grid
+{
   namespace save_mfolds
   {
-    typedef dataset_t::mfold_t                                mfold_t;
-    typedef boost::shared_ptr<mfold_t>                        mfold_ptr_t;
-    typedef boost::tuples::tuple<int,mfold_ptr_t,mfold_ptr_t> cp_no_mfolds_t;
-    typedef producer_consumer_t<cp_no_mfolds_t>               mfolds_queue_t;
-    typedef boost::shared_ptr<mfolds_queue_t>                 mfolds_queue_ptr_t;
 
-    void process_mfold
-        (dataset_const_ptr_t  ds,
-         mscomplex_const_ptr_t msc,
-         cp_producer_ptr_t prd,
-         mfolds_queue_ptr_t mque)
+  typedef dataset_t::mfold_t                                mfold_t;
+  typedef boost::shared_ptr<mfold_t>                        mfold_ptr_t;
+
+  struct work_item_t
+  {
+    int            cp_no; // cp no in the msc
+    eGDIR          dir;   // which dir to track
+    mfold_ptr_t    mfold;
+
+
+    work_item_t(int _cp_no,eGDIR _dir)
+      :cp_no(_cp_no),dir(_dir),mfold(new mfold_t){}
+
+  };
+
+  typedef std::vector<work_item_t>             work_list_t;
+  typedef std::vector<mfold_t>                 mfold_list_t;
+  typedef std::map<int,int>                    int_to_int_t;
+  typedef mt_producer_t<work_list_t::iterator> wi_producer_t;
+
+  template <typename Titer>  void build_work_list
+    (mscomplex_const_ptr_t msc,work_list_t &work_list,Titer begin,Titer end)
+  {
+    std::set<int> tracked_cps[2];
+
+    for (; begin != end;)
     {
-      using namespace boost::tuples;
+      int i = *begin++;
 
-      for(int i; prd->next(i) ;)
+      for(int d = 0 ; d < 2; ++d)
       {
-        mfold_ptr_t des_mfold(new mfold_t);
-        mfold_ptr_t asc_mfold(new mfold_t);
+        if(msc->m_rect.contains(msc->cellid(i)))
+        {
+          work_list.push_back(work_item_t(i,(eGDIR)d));
+          tracked_cps[d].insert(i);
+        }
 
-        ds->get_mfold(des_mfold.get(),msc,i,GDIR_DES);
-        ds->get_mfold(asc_mfold.get(),msc,i,GDIR_ASC);
-
-        mque->put(make_tuple(i,des_mfold,asc_mfold));
+        for( conn_iter_t j  = msc->m_conn[d][i].begin();
+                         j != msc->m_conn[d][i].end();++j)
+        {
+          if(tracked_cps[d].count(msc->pair_idx(*j)) == 0)
+          {
+            tracked_cps[d].insert(msc->pair_idx(*j));
+            work_list.push_back(work_item_t(msc->pair_idx(*j),(eGDIR)d));
+          }
+        }
       }
     }
+  }
 
-    void write_mfold
-        (mfolds_queue_ptr_t mque,
-         std::ostream & os,
-         int_list_t & cp_order,
-         int_list_t & mfold_offsets,
-         int num_cps)
+
+  void do_work_on_list
+    (dataset_const_ptr_t ds,mscomplex_const_ptr_t msc,wi_producer_t &prd)
+  {
+    try
     {
-      using boost::tuples::get;
-
-      int offset = 0;
-
-      for(int i = 0 ; i < num_cps; ++i)
+      for(;;)
       {
-        cp_no_mfolds_t cp_no_mfold = mque->get();
-
-        int cp_no = get<0>(cp_no_mfold);
-
-        cp_order.push_back(cp_no);
-        mfold_ptr_t des_mfold = get<1>(cp_no_mfold);
-        mfold_ptr_t asc_mfold = get<2>(cp_no_mfold);
-
-        os.write((char*)(void*)des_mfold->data(),des_mfold->size()*sizeof(cellid_t));
-        os.write((char*)(void*)asc_mfold->data(),asc_mfold->size()*sizeof(cellid_t));
-
-        mfold_offsets.push_back(offset); offset += des_mfold->size();
-        mfold_offsets.push_back(offset); offset += asc_mfold->size();
+        work_item_t wi = *prd.next();
+        bfs::collect_manifolds(ds,wi.mfold.get(),msc->cellid(wi.cp_no),wi.dir);
       }
+    }
+    catch(wi_producer_t::no_more_items){} // not an error
+  }
 
-      mfold_offsets.push_back(offset);
+  mfold_ptr_t consolidate_mfold
+    (mscomplex_const_ptr_t msc,int i,eGDIR d,
+     work_list_t &wl,int_list_t cpno_to_wino[])
+  {
+    ASSERT(msc->is_saddle(i)&&(!msc->is_paired(i)));
+    ASSERT(cpno_to_wino[d][i] != -1);
+
+    work_item_t iwi = wl[cpno_to_wino[d][i]];
+
+    for( conn_iter_t j  = msc->m_conn[d][i].begin();
+                     j != msc->m_conn[d][i].end();++j)
+    {
+      ASSERT(msc->index(i) == msc->index(msc->pair_idx(*j)));
+      ASSERT(cpno_to_wino[d][msc->pair_idx(*j)] != -1);
+
+      work_item_t jwi = wl[cpno_to_wino[d][msc->pair_idx(*j)]];
+
+      iwi.mfold->insert(iwi.mfold->end(),jwi.mfold->begin(),jwi.mfold->end());
     }
 
-    int get_header_size(int num_cps)
+    return iwi.mfold;
+  }
+
+  int get_header_size(int num_cps)
+  {
+    return sizeof(rect_t)*3         + // rects
+           sizeof(int)              + // num_cps
+           sizeof(cellid_t)*num_cps + // cellids
+           sizeof(int)*(2*num_cps+1); // offsets
+  }
+
+
+  template<typename T>
+  void bin_write(std::ostream & os,const T & d)
+  {
+    os.write((const char*)(const void*)&d,sizeof(T));
+  }
+
+  template <typename Titer>
+  void write_header(dataset_const_ptr_t ds,
+                    mscomplex_const_ptr_t msc,
+                    const int_list_t & offsets,
+                    std::ostream & os,
+                    Titer begin,Titer end)
+  {
+    os.seekp(0,ios::beg);
+
+    bin_write(os,ds->m_rect);
+    bin_write(os,ds->m_ext_rect);
+    bin_write(os,ds->m_domain_rect);
+
+    bin_write(os,std::count(begin,end));
+
+    for(; begin != end;)
+      bin_write(os,msc->cellid(*begin++));
+
+    os.write((char*)(void*)offsets.data(),offsets.size()*sizeof(int));
+  }
+
+  void save_saddles(std::ostream & os,
+            dataset_const_ptr_t ds,
+            mscomplex_const_ptr_t msc)
+  {
+    // figure out which cps we need to track and put them in a work list
+    work_list_t  work_list;
+
+    mscomplex_t::filter_iterator_t cp_begin = msc->begin_unpaired_saddle();
+    mscomplex_t::filter_iterator_t cp_end   = msc->end_unpaired_saddle();
+    mscomplex_t::filter_iterator_t cp_it    = cp_begin;
+
+    int num_cps   = std::count(cp_begin,cp_end);
+
+    build_work_list(msc,work_list,cp_begin,cp_end);
+
+    // advance os by the required space for header
+
+    os.seekp(get_header_size(num_cps),ios::beg);
+
+    // launch a bunch of threads to work on the list
     {
-      return sizeof(rect_t)*3         + // rects
-             sizeof(int)              + // num_cps
-             sizeof(cellid_t)*num_cps + // cellids
-             sizeof(int)*(2*num_cps+1); // offsets
-    }
-
-    template<typename T>
-    void bin_write(std::ostream & os,const T & d)
-    {
-      os.write((const char*)(const void*)&d,sizeof(T));
-    }
-
-    void write_header(dataset_const_ptr_t ds,
-                      mscomplex_const_ptr_t msc,
-                      const int_list_t & cp_order,
-                      const int_list_t & offsets,
-                      std::ostream & os)
-    {
-      os.seekp(0,ios::beg);
-
-      bin_write(os,ds->m_rect);
-      bin_write(os,ds->m_ext_rect);
-      bin_write(os,ds->m_domain_rect);
-
-      bin_write(os,(int)cp_order.size());
-
-      for( int i = 0 ; i < cp_order.size(); ++i)
-        bin_write(os,msc->cellid(cp_order[i]));
-
-      os.write((char*)(void*)offsets.data(),offsets.size()*sizeof(int));
-    }
-
-
-    void save_saddles(std::ostream & os,
-              dataset_const_ptr_t ds,
-              mscomplex_const_ptr_t msc)
-    {
-      cp_producer_ptr_t prd
-          (new cp_producer_t(msc,cp_producer_t::unpaired_saddle_filter));
-
-      int num_cps = prd->count();
-
-      os.seekp(get_header_size(num_cps),ios::beg);
-
-      mfolds_queue_ptr_t mque(new mfolds_queue_t);
-
-      int_list_t cp_order,offsets;
-
       boost::thread_group group;
 
+      wi_producer_t prd(work_list.begin(),work_list.end());
+
       for(int tid = 0 ; tid < g_num_threads; ++tid)
-        group.create_thread(bind(process_mfold,ds,msc,prd,mque));
+        group.create_thread(bind(do_work_on_list,ds,msc,boost::ref(prd)));
 
-//      process_mfold(ds,msc,prd,mque);
-
-      write_mfold(mque,os,cp_order,offsets,num_cps);
-
-      write_header(ds,msc,cp_order,offsets,os);
+      group.join_all();
     }
+
+    // compile a map that maps cpno to workitem (-1 if invalid)
+
+    int_list_t cpno_to_wino[2];
+
+    cpno_to_wino[GDIR_DES].resize(msc->get_num_critpts(),-1);
+    cpno_to_wino[GDIR_ASC].resize(msc->get_num_critpts(),-1);
+
+    for(int i = 0 ; i < work_list.size(); ++i)
+    {
+      work_item_t wi = work_list[i];
+
+      cpno_to_wino[wi.dir][wi.cp_no] = i;
+    }
+
+    // consolidate the manifold and write to os
+
+    int_list_t offsets(num_cps*2+1);
+    offsets[0] = 0;
+    int pos = 0;
+
+    for(cp_it = cp_begin ; cp_it != cp_end; ++cp_it)
+    {
+      for(int d = 0 ; d < 2; ++d)
+      {
+        mfold_ptr_t mfold = consolidate_mfold(msc,*cp_it,(eGDIR)d,work_list,cpno_to_wino);
+
+        os.write((char*)(void*)mfold->data(),mfold->size()*sizeof(cellid_t));
+
+        offsets[++pos] = offsets[pos-1]+mfold->size();
+
+        mfold->clear();
+      }
+    }
+
+    // write the actual header
+
+    write_header(ds,msc,offsets,os,cp_begin,cp_end);
+  }
+
   }
 
   void  dataset_t::saveManifolds(mscomplex_ptr_t msc,const std::string &bn)
