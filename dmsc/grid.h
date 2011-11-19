@@ -53,6 +53,28 @@ namespace grid
 
   extern "C"
   Timer g_timer;
+
+  template <typename T>
+  inline std::ostream& log_range(T b,T e,std::ostream &os = std::cout,char sep = ' ')
+  {
+    for (;b!=e;++b) os<<*b<<sep;
+    return os;
+  }
+}
+
+namespace std
+{
+template<typename _IIter>
+  typename iterator_traits<_IIter>::difference_type
+  count(_IIter b, _IIter e)
+  {
+    typename iterator_traits<_IIter>::difference_type val = 0;
+
+    for( ; b != e; ++b)
+      ++val;
+
+    return val;
+  }
 }
 
 #define _FFL            (std::string("\n")+FILEFUNCLINE)

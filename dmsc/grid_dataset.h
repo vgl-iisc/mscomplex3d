@@ -104,11 +104,7 @@ namespace grid
 
     void  setupCPs(mscomplex_ptr_t msgraph,cellid_list_t * ccells,int offset);
 
-    void  saddle_visit(mscomplex_ptr_t msgraph,eGDIR dir);
-
     void  extrema_connect_thd(mscomplex_ptr_t msgraph,cp_producer_ptr_t p);
-
-    void  saddle_connect_thd(mscomplex_ptr_t msgraph,cp_producer_ptr_t p);
 
     void  get_mfold(mfold_t * mfold,mscomplex_const_ptr_t msc,int i,int dir) const;
 

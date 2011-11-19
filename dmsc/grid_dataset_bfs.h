@@ -71,7 +71,19 @@ inline void add_to_frontier(frontier_list_t &f, cellid_t c,frontier_list_t::iter
   f.push_back(c);
 }
 
+}
 
+
+template <> inline std::ostream& log_range
+  (bfs::frontier_map_t::iterator b,bfs::frontier_map_t::iterator e,
+   std::ostream &os,char sep)
+{
+  for (;b!=e;++b) os<<b->first<<sep;
+  return os;
+}
+
+namespace bfs
+{
 
 template <eGDIR dir> inline bool compare_cells(dataset_const_ptr_t ds,cellid_t p,cellid_t q);
 template <> inline bool compare_cells<GDIR_DES>(dataset_const_ptr_t ds,cellid_t p,cellid_t q)

@@ -570,28 +570,57 @@ namespace grid
     }
   }
 
-  void  dataset_t::saddle_visit(mscomplex_ptr_t msgraph,eGDIR dir)
+  inline bool is_twosaddle_des_needed(dataset_const_ptr_t ds, mscomplex_const_ptr_t msc,int i)
   {
-    int idx = (dir == GDIR_DES)?(2):(1);
+    cellid_t c = msc->cellid(i);
+    return (msc->index(i) == 2)&&((!ds->isCellPaired(c)) || (ds->getCellDim(ds->getCellPairId(c))==1));
+  }
 
-    for(int i = 0 ; i < msgraph->get_num_critpts();++i)
+  inline bool is_onesaddle_asc_needed(dataset_const_ptr_t ds, mscomplex_const_ptr_t msc,int i)
+  {
+    cellid_t c = msc->cellid(i);
+    return (msc->index(i) == 1)&&((!ds->isCellPaired(c)) || (ds->getCellDim(ds->getCellPairId(c))==2));
+  }
+
+  void  saddle_visit(dataset_ptr_t ds, mscomplex_ptr_t msc,eGDIR dir)
+  {
+    mscomplex_t::filter_t f =
+        (dir == GDIR_DES)?(bind(is_twosaddle_des_needed,ds,msc,_1))
+                         :(bind(is_onesaddle_asc_needed,ds,msc,_1));
+
+    mscomplex_t::fiterator_t b = msc->fbegin(f);
+    mscomplex_t::fiterator_t e = msc->fend(f);
+
+    cout<<count(b,e)<<endl;
+
+    for(;b!=e;)
     {
-      if(msgraph->index(i) != idx )
-        continue;
-
-      bfs::mark_visits(shared_from_this(),msgraph->cellid(i),dir);
+      bfs::mark_visits(ds,msc->cellid(*b++),dir);
     }
   }
 
-  void  dataset_t::saddle_connect_thd
-      (mscomplex_ptr_t msgraph, cp_producer_ptr_t prd)
+  void  saddle_connect_thd
+      ( dataset_ptr_t ds,
+        mscomplex_ptr_t msc,
+        mt_cp_producer_t &prd)
   {
-    for(int i ; prd->next(i);)
+    try
     {
-      cellid_t c = msgraph->cellid(i);
+      int i = 0;
 
-      bfs::connect_thru_visted_pairs(shared_from_this(),msgraph,c,GDIR_DES);
+      for(;;)
+      {
+        if( ++i == 104)
+          cout<<msc->cellid(i)<<endl;
+
+        bool log_stuff= (i == 104);
+
+        bfs::connect_thru_visted_pairs(ds,msc,msc->cellid(*prd.next()),GDIR_DES);
+
+
+      }
     }
+    catch(mt_cp_producer_t::no_more_items) {}
   }
 
   void  dataset_t::computeMsGraph(mscomplex_ptr_t msgraph)
@@ -661,11 +690,13 @@ namespace grid
     {
       boost::thread_group saddle_group;
 
-      saddle_group.create_thread(bind(&dataset_t::saddle_visit,this,msgraph,GDIR_DES));
-      saddle_group.create_thread(bind(&dataset_t::saddle_visit,this,msgraph,GDIR_ASC));
+//      saddle_group.create_thread(bind(&dataset_t::saddle_visit,this,msgraph,GDIR_DES));
+//      saddle_group.create_thread(bind(&dataset_t::saddle_visit,this,msgraph,GDIR_ASC));
 
-//      saddle_visit(msgraph,GDIR_DES);
-//      saddle_visit(msgraph,GDIR_ASC);
+      saddle_visit(shared_from_this(),msgraph,GDIR_DES);
+      saddle_visit(shared_from_this(),msgraph,GDIR_ASC);
+
+      cout<<"saddle visit done"<<endl;
 
 #ifdef BUILD_EXEC_OPENCL
       w.owner_extrema(shared_from_this(),msgraph);
@@ -687,12 +718,20 @@ namespace grid
     {
       boost::thread_group group;
 
-      cp_producer_ptr_t prd(new cp_producer_t(msgraph,cp_producer_t::twosaddle_filter));
+      mscomplex_t::filter_t f =bind(is_twosaddle_des_needed,shared_from_this(),msgraph,_1);
 
-      for(int tid = 0 ; tid < g_num_threads; ++tid)
-        group.create_thread(bind(&dataset_t::saddle_connect_thd,this,msgraph,prd));
+      mt_cp_producer_t prd(msgraph,f);
 
-      group.join_all();
+      cout<<prd.count()<<endl;
+
+//      for(int tid = 0 ; tid < g_num_threads; ++tid)
+//        group.create_thread(bind(saddle_connect_thd,shared_from_this(),msgraph,boost::ref(prd)));
+
+//      group.join_all();
+
+      saddle_connect_thd(shared_from_this(),msgraph,prd);
+
+      cout<<"saddle connect done"<<endl;
     }
   }
 
@@ -769,67 +808,6 @@ namespace grid
     }
   };
 
-  template<typename Titer>
-  class mt_producer_t:boost::noncopyable
-  {
-  protected:
-    Titer          m_begin;
-    Titer          m_end;
-    boost::mutex   m_mutex;
-
-  public:
-
-    typedef Titer iterator;
-
-    class no_more_items:public std::exception
-    {
-    public:
-      no_more_items(){}
-      virtual ~no_more_items() throw(){}
-
-      virtual const char*
-      what() const throw()
-      {return "nothing more to produce";}
-    };
-
-    mt_producer_t(Titer begin,Titer end)
-    {
-      boost::mutex::scoped_lock scoped_lock(m_mutex);
-
-      m_begin = begin;
-      m_end   = end;
-    }
-
-    Titer next()
-    {
-      boost::mutex::scoped_lock scoped_lock(m_mutex);
-
-      if(m_begin == m_end)
-        throw no_more_items();
-
-      return m_begin++;
-    }
-  };
-
-}
-
-namespace std
-{
-template<typename _IIter>
-  typename iterator_traits<_IIter>::difference_type
-  count(_IIter b, _IIter e)
-  {
-    typename iterator_traits<_IIter>::difference_type val = 0;
-
-    for( ; b != e; ++b)
-      ++val;
-
-    return val;
-  }
-}
-
-namespace grid
-{
   namespace save_mfolds
   {
 
@@ -964,9 +942,9 @@ namespace grid
     // figure out which cps we need to track and put them in a work list
     work_list_t  work_list;
 
-    mscomplex_t::filter_iterator_t cp_begin = msc->begin_unpaired_saddle();
-    mscomplex_t::filter_iterator_t cp_end   = msc->end_unpaired_saddle();
-    mscomplex_t::filter_iterator_t cp_it    = cp_begin;
+    mscomplex_t::fiterator_t cp_begin = msc->fbegin(&mscomplex_t::is_unpaired_saddle);
+    mscomplex_t::fiterator_t cp_end   = msc->fend(&mscomplex_t::is_unpaired_saddle);
+    mscomplex_t::fiterator_t cp_it    = cp_begin;
 
     int num_cps   = std::count(cp_begin,cp_end);
 

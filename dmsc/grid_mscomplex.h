@@ -29,6 +29,7 @@
 #include <boost/function.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/iterator/filter_iterator.hpp>
+#include <boost/iterator/counting_iterator.hpp>
 
 #include <boost/bind.hpp>
 
@@ -115,7 +116,21 @@ namespace grid
     inline int surv_extrema(int i) const;
     inline bool is_extrema(int i) const;
     inline bool is_saddle(int i) const;
-    inline bool is_unpaired_saddle(int i) const;
+
+    inline bool is_unpaired_saddle(int i) const
+    {
+      return (is_saddle(i) &&(is_paired(i) == false));
+    }
+
+    inline bool is_twosaddle_des_valid(int i) const
+    {
+      return (index(i) == 2 &&(!is_paired(i) || index(pair_idx(i) == 1) ));
+    }
+
+    inline bool is_onesaddle_asc_valid(int i) const
+    {
+      return (index(i) == 1 &&(!is_paired(i) || index(pair_idx(i) == 2) ));
+    }
 
   public:
 
@@ -141,18 +156,20 @@ namespace grid
     inline std::string cp_info (int cp_no) const;
     inline std::string cp_conn (int cp_no) const;
 
-    class   iterator;
+    typedef boost::counting_iterator<int> iterator_t;
     typedef boost::function<bool (int)> filter_t;
-    typedef boost::filter_iterator<filter_t,iterator> filter_iterator_t;
+    typedef bool (mscomplex_t::*memb_filter_t)(int) const;
+    typedef boost::filter_iterator<filter_t,iterator_t> fiterator_t;
 
-    inline iterator begin() const;
-    inline iterator end() const;
+    inline iterator_t begin() const;
+    inline iterator_t end() const;
 
-    inline filter_iterator_t fbegin(filter_t f) const;
-    inline filter_iterator_t fend(filter_t f) const;
+    inline fiterator_t fbegin(filter_t f) const;
+    inline fiterator_t fend(filter_t f) const;
 
-    inline filter_iterator_t begin_unpaired_saddle() const;
-    inline filter_iterator_t end_unpaired_saddle() const;
+    inline fiterator_t fbegin(memb_filter_t f) const;
+    inline fiterator_t fend(memb_filter_t f) const;
+
   };
 
   inline void order_pr_by_cp_index(mscomplex_t &msc,int &p,int &q)
@@ -160,6 +177,76 @@ namespace grid
     if(msc.index(p) < msc.index(q))
       std::swap(p,q);
   }
+
+  template<typename Titer>
+  class mt_producer_t:boost::noncopyable
+  {
+  protected:
+    Titer          m_begin;
+    Titer          m_end;
+    boost::mutex   m_mutex;
+
+    mt_producer_t(){};
+
+  public:
+
+    typedef Titer iterator;
+
+    class no_more_items:public std::exception
+    {
+    public:
+      no_more_items(){}
+      virtual ~no_more_items() throw(){}
+
+      virtual const char*
+      what() const throw()
+      {return "nothing more to produce";}
+    };
+
+    mt_producer_t(Titer begin,Titer end)
+    {
+      boost::mutex::scoped_lock scoped_lock(m_mutex);
+
+      m_begin = begin;
+      m_end   = end;
+    }
+
+    Titer next()
+    {
+      boost::mutex::scoped_lock scoped_lock(m_mutex);
+
+      if(m_begin == m_end)
+        throw no_more_items();
+
+      return m_begin++;
+    }
+  };
+
+  class mt_cp_producer_t:public mt_producer_t<mscomplex_t::fiterator_t>
+  {
+  public:
+    mt_cp_producer_t(mscomplex_const_ptr_t msc, mscomplex_t::memb_filter_t f)
+    {
+      boost::mutex::scoped_lock scoped_lock(m_mutex);
+
+      m_begin = msc->fbegin(f);
+      m_end   = msc->fend(f);
+    }
+
+    mt_cp_producer_t(mscomplex_const_ptr_t msc, mscomplex_t::filter_t f)
+    {
+      boost::mutex::scoped_lock scoped_lock(m_mutex);
+
+      m_begin = msc->fbegin(f);
+      m_end   = msc->fend(f);
+    }
+
+
+    inline int count()
+    {
+      return std::count(m_begin,m_end);
+    }
+  };
 
   class cp_producer_t: boost::noncopyable
   {
@@ -199,91 +286,36 @@ namespace grid
 
   };
 
-  class mscomplex_t::iterator : public std::iterator<std::bidirectional_iterator_tag, int,int,int*,int>
+  inline mscomplex_t::iterator_t mscomplex_t::begin() const
   {
-    mscomplex_const_ptr_t msc;
-    int                   val;
-  public:
-    iterator(mscomplex_const_ptr_t _msc,int _val=0) : msc(_msc),val(_val)
-    {
-    }
-
-    bool operator==(iterator const& rhs) const
-    {
-      return (val==rhs.val);
-    }
-
-    bool operator!=(iterator const& rhs) const
-    {
-      return !(*this==rhs);
-    }
-
-    iterator& operator++()
-    {
-      if(val!=msc->get_num_critpts())
-        ++val;
-      return *this;
-    }
-
-    iterator operator++(int)
-    {
-      iterator tmp (*this);
-      ++(*this);
-      return tmp;
-    }
-
-    iterator& operator--()
-    {
-      if(val!=-1)
-        --val;
-      return *this;
-    }
-
-    iterator operator--(int)
-    {
-      iterator tmp (*this);
-      --(*this);
-      return tmp;
-    }
-
-    int operator* () const
-    {
-      ASSERT(is_in_range(val,0,msc->get_num_critpts()));
-      return val;
-    }
-  };
-
-  inline mscomplex_t::iterator mscomplex_t::begin() const
-  {
-    return iterator(shared_from_this());
+    return iterator_t(0);
   }
 
-  inline mscomplex_t::iterator mscomplex_t::end() const
+  inline mscomplex_t::iterator_t mscomplex_t::end() const
   {
-    return iterator(shared_from_this(),get_num_critpts());
+    return iterator_t(get_num_critpts());
   }
 
-  inline mscomplex_t::filter_iterator_t mscomplex_t::fbegin(mscomplex_t::filter_t f) const
+  inline mscomplex_t::fiterator_t mscomplex_t::fbegin(mscomplex_t::filter_t f) const
   {
     return boost::make_filter_iterator(f,begin(),end());
   }
 
-  inline mscomplex_t::filter_iterator_t mscomplex_t::fend(mscomplex_t::filter_t f) const
+  inline mscomplex_t::fiterator_t mscomplex_t::fend(mscomplex_t::filter_t f) const
   {
     return boost::make_filter_iterator(f,end(),end());
   }
 
-  inline mscomplex_t::filter_iterator_t mscomplex_t::begin_unpaired_saddle() const
+  inline mscomplex_t::fiterator_t mscomplex_t::fbegin(mscomplex_t::memb_filter_t f) const
   {
-    return fbegin(boost::bind
-                  (&mscomplex_t::is_unpaired_saddle,shared_from_this(),_1));
+    return fbegin(boost::bind(f,this,_1));
   }
 
-  inline mscomplex_t::filter_iterator_t mscomplex_t::end_unpaired_saddle() const
+  inline mscomplex_t::fiterator_t mscomplex_t::fend(mscomplex_t::memb_filter_t f) const
   {
-    return fend(boost::bind
-                (&mscomplex_t::is_unpaired_saddle,shared_from_this(),_1));
+    return fend(boost::bind(f,this,_1));
   }
+
 
   inline int  mscomplex_t::get_num_critpts() const
   {
@@ -403,11 +435,6 @@ namespace grid
   inline bool mscomplex_t::is_saddle(int i) const
   {
     return (index(i) == 1 || index(i) == 2);
-  }
-
-  inline bool mscomplex_t::is_unpaired_saddle(int i) const
-  {
-    return ((index(i) == 1 || index(i) == 2) && (is_paired(i)==false));
   }
 
   inline int mscomplex_t::surv_extrema(int i) const
