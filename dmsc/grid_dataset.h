@@ -23,6 +23,7 @@
 #define __GRID_DATASET_H_INCLUDED_
 
 #include <vector>
+#include <queue>
 
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/multi_array.hpp>
@@ -68,15 +69,10 @@ namespace grid
     rect_t             m_domain_rect;
 
     varray_t           m_vert_fns;
-
     cellflag_array_t   m_cell_flags;
 
     owner_array_t      m_owner_maxima;
     owner_array_t      m_owner_minima;
-
-    boost::function<bool (cellid_t,cellid_t)> cmp_ftor;
-    boost::function<bool (cellid_t,cellid_t)> cmp_ftors[2];
-
 
   public:
 
@@ -104,11 +100,6 @@ namespace grid
 
     void  setupCPs(mscomplex_ptr_t msgraph,cellid_list_t * ccells,int offset);
 
-    void  extrema_connect_thd(mscomplex_ptr_t msgraph,cp_producer_ptr_t p);
-
-    void  get_mfold(mfold_t * mfold,mscomplex_const_ptr_t msc,int i,int dir) const;
-
-    void  mark_extrema_owner_thd(mscomplex_ptr_t msgraph,cp_producer_ptr_t p);
   // dataset interface
   public:
 
@@ -117,19 +108,6 @@ namespace grid
     cellid_t   getCellMaxFacetId ( cellid_t ) const;
 
     cellid_t   getCellSecondMaxFacetId ( cellid_t ) const;
-
-    inline bool   ptLt ( cellid_t c1,cellid_t c2) const
-    {
-      cell_fn_t f1 = m_vert_fns(c1/2);
-      cell_fn_t f2 = m_vert_fns(c2/2);
-
-      if (f1 != f2)
-        return f1 < f2;
-
-      return c1<c2;
-    }
-
-    bool   compareCells( cellid_t ,cellid_t ) const;
 
     uint   getCellPoints ( cellid_t ,cellid_t  * ) const;
 
@@ -218,28 +196,31 @@ namespace grid
     void log_max_facets();
 
     void extract_vdata_subarray(rect_t r,const std::string &filename);
+
+    class iterator;
+    inline iterator begin();
+    inline iterator end();
+
+    class iterator_dim;
+    inline iterator_dim begin(int d);
+    inline iterator_dim end(int d);
+
+    template <int dim>
+    inline bool compare_cells(const cellid_t & c1, const cellid_t &c2) const;
+
+    template<eGDIR dir>
+    inline uint get_cets(cellid_t c,cellid_t *cets) const;
+
+    template<eGDIR dir>
+    inline uint get_co_cets(cellid_t c,cellid_t *cets) const;
+
+    template <eGDIR dir>
+    inline rect_t get_extrema_rect() const;
+
+    template<eGDIR dir>
+    inline owner_array_t & owner_extrema() ;
+
   };
-
-  inline rect_t dataset_t::get_extrema_rect(eGDIR dir)
-  {
-    return (dir == GDIR_DES)?(rect_t(m_rect.lc()+1,m_rect.uc()-1)):(m_rect);
-  }
-
-  inline int get_cell_dim ( cellid_t c )
-  {
-    int dim = 0;
-
-    for (size_t i = 0 ; i < gc_grid_dim;++i)
-      dim += ( c[i]&0x01 );
-
-    return (dim);
-  }
-
-
-  inline int dataset_t::getCellDim ( cellid_t c ) const
-  {
-    return get_cell_dim(c);
-  }
 
   inline int c_to_i(const rect_t &r,cellid_t c)
   {
@@ -275,13 +256,178 @@ namespace grid
   }
 
   inline int num_cells(const rect_t &r)
-  {
-    return c_to_i(r,r.uc()) + 1;
-  }
+  {return c_to_i(r,r.uc()) + 1;}
 
   inline int num_cells2(const rect_t &r)
+  {return c_to_i2(r,r.uc()) + 1;}
+
+  inline rect_t shrink(const rect_t &r, const cellid_t& s = cellid_t::one)
+  {return rect_t(r.lc()+s,r.uc()-s);}
+
+
+  template <int dim>
+  inline bool dataset_t::compare_cells(const cellid_t & c1, const cellid_t &c2) const
   {
-    return c_to_i2(r,r.uc()) + 1;
+    cellid_t f1 = getCellMaxFacetId(c1);
+    cellid_t f2 = getCellMaxFacetId(c2);
+
+    if(f1 != f2)
+      return compare_cells<dim-1>(f1,f2);
+
+    f1 = getCellSecondMaxFacetId(c1);
+    f2 = getCellSecondMaxFacetId(c2);
+
+    int boundry_ct1 = m_domain_rect.boundryCount(f1);
+    int boundry_ct2 = m_domain_rect.boundryCount(f2);
+
+    if(boundry_ct1 != boundry_ct2)
+      return (boundry_ct1 <boundry_ct2);
+
+    return compare_cells<dim-1>(f1,f2);
+  }
+
+  template <>
+  inline bool dataset_t::compare_cells<0>(const cellid_t & c1, const cellid_t &c2) const
+  {
+    cell_fn_t f1 = m_vert_fns(c1/2);
+    cell_fn_t f2 = m_vert_fns(c2/2);
+
+    if (f1 != f2)
+      return f1 < f2;
+
+    return c1 < c2;
+  }
+
+
+  template<>
+  inline dataset_t::owner_array_t & dataset_t::owner_extrema<GDIR_DES>()
+  {return m_owner_maxima;}
+
+  template<>
+  inline dataset_t::owner_array_t & dataset_t::owner_extrema<GDIR_ASC>()
+  {return m_owner_minima;}
+
+  template <>
+  inline rect_t dataset_t::get_extrema_rect<GDIR_DES>() const
+  {return shrink(m_rect);}
+
+  template <>
+  inline rect_t dataset_t::get_extrema_rect<GDIR_ASC>() const
+  {return (m_rect);}
+
+  template<>
+  inline uint dataset_t::get_cets<GDIR_DES>(cellid_t c,cellid_t *cets) const
+  {return getCellFacets(c,cets);}
+
+  template<>
+  inline uint dataset_t::get_cets<GDIR_ASC>(cellid_t c,cellid_t *cets) const
+  {return getCellCofacets(c,cets);}
+
+  template<eGDIR dir>
+  inline uint dataset_t::get_co_cets(cellid_t c,cellid_t *cets) const
+  {return get_cets<(dir == GDIR_DES)?(GDIR_ASC):(GDIR_DES)>(c,cets);}
+
+  inline rect_t dataset_t::get_extrema_rect(eGDIR dir)
+  {return (dir == GDIR_DES)?(rect_t(m_rect.lc()+1,m_rect.uc()-1)):(m_rect);}
+
+  inline int get_cell_dim ( cellid_t c )
+  {return ( c[0]&0x01 ) + ( c[1]&0x01 ) + ( c[2]&0x01 );}
+
+  inline int dataset_t::getCellDim ( cellid_t c ) const
+  {return get_cell_dim(c);}
+
+  class dataset_t::iterator:public std::iterator
+      <std::bidirectional_iterator_tag,cellid_t,int,cellid_t,cellid_t>
+  {
+  public:
+    iterator(rect_t r,int i = 0):m_rect(r),m_i(i){};
+    rect_t m_rect;
+    int m_i;
+
+    inline iterator& operator++(){++m_i; return *this;}
+    inline iterator& operator--(){--m_i; return *this;}
+    inline reference operator*() const {return i_to_c(m_rect,m_i);}
+  };
+
+  class dataset_t::iterator_dim:public std::iterator
+      <std::forward_iterator_tag,cellid_t,int,cellid_t,cellid_t>
+  {
+  public:
+    iterator_dim(rect_t r,cellid_t d,int pn = 0):m_rect(r),m_dir(d),m_pn(pn),m_i(0)
+    {
+      m_cur_rect  = shrink(m_rect,m_dir);
+      m_num_cells = num_cells2(m_cur_rect);
+    };
+    rect_t   m_rect;
+    cellid_t m_dir;
+
+    int     m_num_cells;
+    rect_t  m_cur_rect;
+
+    int m_i;
+    int m_pn;
+
+    inline iterator_dim& operator++()
+    {
+      ++m_i;
+
+      if(m_i == m_num_cells)
+      {
+        std::next_permutation(m_dir.begin(),m_dir.end());
+
+        m_cur_rect  = shrink(m_rect,m_dir);
+        m_num_cells = num_cells2(m_cur_rect);
+
+        m_i = 0;
+        m_pn++;
+      }
+      return *this;
+    }
+
+    inline bool operator== (const iterator_dim &rhs) const
+    {return (m_i == rhs.m_i) && (m_pn == rhs.m_pn);}
+
+    inline bool operator!= (const iterator_dim &rhs) const
+    {return !(*this == rhs);}
+
+    inline reference operator*() const {return i_to_c2(m_cur_rect,m_i);}
+  };
+
+
+  inline dataset_t::iterator dataset_t::begin()
+  {return iterator(m_rect);}
+
+  inline dataset_t::iterator dataset_t::end()
+  {return iterator(m_rect,num_cells(m_rect));}
+
+  inline dataset_t::iterator_dim dataset_t::begin(int d)
+  {
+    switch(d)
+    {
+      case 0: return iterator_dim(m_rect,cellid_t(0,0,0),0);
+      case 1: return iterator_dim(m_rect,cellid_t(0,0,1),0);
+      case 2: return iterator_dim(m_rect,cellid_t(0,1,1),0);
+      case 3: return iterator_dim(m_rect,cellid_t(1,1,1),0);
+    }
+
+    ASSERT(false);
+
+    return iterator_dim(m_rect,cellid_t(-1,-1,-1),0);
+  }
+
+  inline dataset_t::iterator_dim dataset_t::end(int d)
+  {
+    switch(d)
+    {
+      case 0: return iterator_dim(m_rect,cellid_t(0,0,0),1);
+      case 1: return iterator_dim(m_rect,cellid_t(0,0,1),3);
+      case 2: return iterator_dim(m_rect,cellid_t(0,1,1),3);
+      case 3: return iterator_dim(m_rect,cellid_t(1,1,1),1);
+    }
+
+    ASSERT(false);
+
+    return iterator_dim(m_rect,cellid_t(-1,-1,-1),0);
   }
 
   inline void get_boundry_rects(const rect_t &r,const rect_t & e,rect_list_t &bnds)
@@ -303,12 +449,13 @@ namespace grid
     }
   }
 
-  inline void  get_adj_extrema(cellid_t c, cellid_t & e1,cellid_t & e2,eGDIR dir)
+  template <eGDIR dir>
+  inline void  get_adj_extrema(cellid_t c, cellid_t & e1,cellid_t & e2)
   {
-    ASSERT(dir != GDIR_DES || get_cell_dim(c) == 2 );
-    ASSERT(dir != GDIR_ASC || get_cell_dim(c) == 1 );
+    const int a = (dir == GDIR_ASC)?(1):(0);
 
-    int a = (dir == GDIR_DES)?(1):(0);
+    ASSERT(dir != GDIR_ASC || get_cell_dim(c) == 2 );
+    ASSERT(dir != GDIR_DES || get_cell_dim(c) == 1 );
 
     e1[0] = c[0] + ((c[0]+a)&1);
     e1[1] = c[1] + ((c[1]+a)&1);
@@ -317,6 +464,9 @@ namespace grid
     e2[0] = c[0] - ((c[0]+a)&1);
     e2[1] = c[1] - ((c[1]+a)&1);
     e2[2] = c[2] - ((c[2]+a)&1);
+
+    ASSERT(dir != GDIR_ASC || (get_cell_dim(e1) == 3  && get_cell_dim(e2) == 3));
+    ASSERT(dir != GDIR_DES || (get_cell_dim(e1) == 0  && get_cell_dim(e2) == 0));
   }
 
 }

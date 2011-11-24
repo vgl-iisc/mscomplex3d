@@ -574,7 +574,6 @@ namespace grid
       int * h_ex_own)
     {
       int num_ex = num_cells2(from_cell_pair(ex_rect));
-
       try
       {
         cl::Buffer own_buf1(s_context,CL_MEM_READ_WRITE,num_ex*sizeof(int));
@@ -614,108 +613,16 @@ namespace grid
 
     typedef dataset_t::owner_array_t owner_array_t;
 
-    inline int __get_owner_cp_no
-      ( dataset_const_ptr_t ds,
-        const owner_array_t& owner_array,
-        const cellid_t &c,
-        const rect_t ex_rect)
+    void worker::owner_extrema(dataset_ptr_t ds)
     {
-      int o = owner_array(c/2);
+      cell_pair_t rct      = to_cell_pair(ds->m_rect);
+      cell_pair_t ext      = to_cell_pair(ds->m_ext_rect);
+      cell_pair_t dom      = to_cell_pair(ds->m_domain_rect);
+      cell_pair_t max_rect = to_cell_pair(ds->get_extrema_rect<GDIR_DES>());
+      cell_pair_t min_rect = to_cell_pair(ds->get_extrema_rect<GDIR_ASC>());
 
-      if(!ds->isCellCritical(c))
-        o = owner_array(i_to_c2(ex_rect,o)/2);
-
-      return o;
-    }
-
-    void __compute_extrema_connections
-      (dataset_ptr_t ds,
-       mscomplex_ptr_t msc,
-       cl::Image3D& flag_img,
-       cl::Buffer& cp_cellid_buf,
-       eGDIR dir)
-    {
-      cell_pair_t rct        = to_cell_pair(ds->m_rect);
-      cell_pair_t ext        = to_cell_pair(ds->m_ext_rect);
-      cell_pair_t dom        = to_cell_pair(ds->m_domain_rect);
-      rect_t      ex_rect    = ds->get_extrema_rect(dir);
-      cell_pair_t ex_rect_cl = to_cell_pair(ex_rect);
-
-      int            ex_dim      = (dir == GDIR_DES)?(3):(0);
-      int            sad_dim     = (dir == GDIR_DES)?(2):(1);
-      owner_array_t &owner_array = (dir == GDIR_DES)?(ds->m_owner_maxima):(ds->m_owner_minima);
-      int            num_ex      = num_cells2(ex_rect);
-      int            num_cps     = msc->get_num_critpts();
-
-      try
-      {
-        cl::Buffer own_buf1(s_context,CL_MEM_READ_WRITE,num_ex*sizeof(int));
-        cl::Buffer own_buf2(s_context,CL_MEM_READ_WRITE,num_ex*sizeof(int));
-        cl::Buffer is_updated_buf(s_context,CL_MEM_READ_WRITE,sizeof(int));
-
-        s_init_propagate(rct,ext,dom,ex_rect_cl,flag_img,own_buf1);
-
-        int is_updated;
-
-        do
-        {
-          is_updated = 0;
-
-          s_queue.enqueueWriteBuffer(is_updated_buf,true,0,sizeof(int),&is_updated);
-          s_propagate(rct,ext,dom,ex_rect_cl,own_buf1,own_buf2,is_updated_buf);
-          s_queue.finish();
-
-          s_queue.enqueueReadBuffer(is_updated_buf,true,0,sizeof(int),&is_updated);
-          s_queue.finish();
-
-          std::swap(own_buf1,own_buf2);
-        }
-        while(is_updated == 1);
-
-        s_update_cp_cell_to_cp_no(rct,ext,dom,ex_rect_cl,cp_cellid_buf,num_cps,own_buf1);
-        s_queue.finish();
-        s_queue.enqueueReadBuffer(own_buf1,true,0,num_ex*sizeof(int),owner_array.data());
-        s_queue.finish();
-
-        for(int i = 0 ; i < num_cps;++i)
-        {
-          if(msc->index(i) != sad_dim )
-            continue;
-
-          cellid_t c = msc->cellid(i);
-
-          if(ds->isCellPaired(c) && ds->getCellDim(ds->getCellPairId(c)) != ex_dim )
-            continue;
-
-          cellid_t e1,e2;
-          get_adj_extrema(c,e1,e2,dir);
-
-          if(ds->m_rect.contains(e1))
-            msc->connect_cps(i,__get_owner_cp_no(ds,owner_array,e1,ex_rect));
-
-          if(ds->m_rect.contains(e2))
-            msc->connect_cps(i,__get_owner_cp_no(ds,owner_array,e2,ex_rect));
-
-        }
-
-        s_queue.enqueueReadBuffer(own_buf2,true,0,num_ex*sizeof(int),owner_array.data());
-        s_queue.finish();
-      }
-      catch(cl::Error err)
-      {
-        std::cerr<<_FFL<<std::endl;
-        std::cerr<< "ERROR: "<< err.what()<< "("<< err.err()<< ")"<< std::endl;
-        throw;
-      }
-    }
-
-    void worker::owner_extrema(dataset_ptr_t ds,mscomplex_ptr_t msc)
-    {
-      cl::Buffer cp_cellid_buf(s_context,CL_MEM_READ_WRITE|CL_MEM_COPY_HOST_PTR,
-                               msc->get_num_critpts()*sizeof(cellid_t),msc->m_cp_cellid.data());
-
-      __compute_extrema_connections(ds,msc,flag_img,cp_cellid_buf,GDIR_DES);
-      __compute_extrema_connections(ds,msc,flag_img,cp_cellid_buf,GDIR_ASC);
+      __owner_extrema(rct,ext,dom,max_rect,flag_img,ds->m_owner_maxima.data());
+      __owner_extrema(rct,ext,dom,min_rect,flag_img,ds->m_owner_minima.data());
     }
 
     void assign_gradient_and_owner_extrema(dataset_ptr_t ds)

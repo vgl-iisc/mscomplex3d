@@ -29,6 +29,9 @@ namespace grid
   typedef std::vector<bool>                               bool_list_t;
   typedef std::vector<rect_t>                             rect_list_t;
 
+  typedef boost::shared_ptr<int_list_t>                   int_list_ptr_t;
+  typedef boost::shared_ptr<cellid_list_t>                cellid_list_ptr_t;
+
   enum eGDIR
   {
     GDIR_DES,
@@ -47,9 +50,6 @@ namespace grid
   typedef boost::shared_ptr<const dataset_t>      dataset_const_ptr_t;
   typedef boost::shared_ptr<const mscomplex_t>    mscomplex_const_ptr_t;
   typedef boost::shared_ptr<const data_manager_t> data_manager_const_ptr_t;
-
-  class cp_producer_t;
-  typedef boost::shared_ptr<cp_producer_t>  cp_producer_ptr_t;
 
   extern "C"
   Timer g_timer;

@@ -30,6 +30,10 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/iterator/filter_iterator.hpp>
 #include <boost/iterator/counting_iterator.hpp>
+#include <boost/iterator/transform_iterator.hpp>
+#include <boost/functional.hpp>
+
+
 
 #include <boost/bind.hpp>
 
@@ -160,6 +164,9 @@ namespace grid
     typedef boost::function<bool (int)> filter_t;
     typedef bool (mscomplex_t::*memb_filter_t)(int) const;
     typedef boost::filter_iterator<filter_t,iterator_t> fiterator_t;
+    template <typename it_t>            class cp_id_iterator;
+    typedef cp_id_iterator<fiterator_t> cp_id_fiterator;
+
 
     inline iterator_t begin() const;
     inline iterator_t end() const;
@@ -170,6 +177,9 @@ namespace grid
     inline fiterator_t fbegin(memb_filter_t f) const;
     inline fiterator_t fend(memb_filter_t f) const;
 
+    inline cp_id_fiterator cp_id_fbegin(filter_t f) const;
+    inline cp_id_fiterator cp_id_fend(filter_t f) const;
+
   };
 
   inline void order_pr_by_cp_index(mscomplex_t &msc,int &p,int &q)
@@ -178,32 +188,67 @@ namespace grid
       std::swap(p,q);
   }
 
+  template <typename it_t>
+  class mscomplex_t::cp_id_iterator:public std::iterator
+      <std::bidirectional_iterator_tag,cellid_t,int,cellid_t,cellid_t>
+  {
+  public:
+    cp_id_iterator(){}
+
+    cp_id_iterator(mscomplex_const_ptr_t msc,it_t i):m_msc(msc),m_i(i){};
+    mscomplex_const_ptr_t m_msc;
+    it_t m_i;
+
+    inline cp_id_iterator& operator++(){++m_i; return *this;}
+    inline cp_id_iterator& operator--(){--m_i; return *this;}
+    inline reference operator*() const {return m_msc->cellid(*m_i);}
+
+    inline bool operator== (const cp_id_iterator &rhs) const
+    {return (m_i == rhs.m_i);}
+
+    inline bool operator!= (const cp_id_iterator &rhs) const
+    {return !(*this == rhs);}
+  };
+
+  inline mscomplex_t::iterator_t mscomplex_t::begin() const
+  {return iterator_t(0);}
+
+  inline mscomplex_t::iterator_t mscomplex_t::end() const
+  {return iterator_t(get_num_critpts());}
+
+  inline mscomplex_t::fiterator_t mscomplex_t::fbegin(mscomplex_t::filter_t f) const
+  {return boost::make_filter_iterator(f,begin(),end());}
+
+  inline mscomplex_t::fiterator_t mscomplex_t::fend(mscomplex_t::filter_t f) const
+  {return boost::make_filter_iterator(f,end(),end());}
+
+  inline mscomplex_t::fiterator_t mscomplex_t::fbegin(mscomplex_t::memb_filter_t f) const
+  {return fbegin(boost::bind(f,this,_1));}
+
+  inline mscomplex_t::fiterator_t mscomplex_t::fend(mscomplex_t::memb_filter_t f) const
+  {return fend(boost::bind(f,this,_1));}
+
+  inline mscomplex_t::cp_id_fiterator mscomplex_t::cp_id_fbegin(mscomplex_t::filter_t f) const
+  {return cp_id_fiterator(shared_from_this(),fbegin(f));}
+
+  inline mscomplex_t::cp_id_fiterator mscomplex_t::cp_id_fend(mscomplex_t::filter_t f) const
+  {return cp_id_fiterator(shared_from_this(),fend(f));}
+
   template<typename Titer>
-  class mt_producer_t:boost::noncopyable
+  class producer_t:boost::noncopyable
   {
   protected:
     Titer          m_begin;
     Titer          m_end;
     boost::mutex   m_mutex;
 
-    mt_producer_t(){};
+    producer_t(){};
 
   public:
 
     typedef Titer iterator;
 
-    class no_more_items:public std::exception
-    {
-    public:
-      no_more_items(){}
-      virtual ~no_more_items() throw(){}
-
-      virtual const char*
-      what() const throw()
-      {return "nothing more to produce";}
-    };
-
-    mt_producer_t(Titer begin,Titer end)
+    producer_t(Titer begin,Titer end)
     {
       boost::mutex::scoped_lock scoped_lock(m_mutex);
 
@@ -215,32 +260,31 @@ namespace grid
     {
       boost::mutex::scoped_lock scoped_lock(m_mutex);
 
-      if(m_begin == m_end)
-        throw no_more_items();
+      Titer ret = m_begin;
 
-      return m_begin++;
+      if(m_begin != m_end)
+        ++m_begin;
+
+      return ret;
+    }
+
+    inline bool is_valid(const Titer it)
+    {
+      return (it != m_end);
     }
   };
 
-  class mt_cp_producer_t:public mt_producer_t<mscomplex_t::fiterator_t>
+  class cp_id_producer_t:public producer_t<mscomplex_t::cp_id_fiterator>
   {
   public:
-    mt_cp_producer_t(mscomplex_const_ptr_t msc, mscomplex_t::memb_filter_t f)
+
+    cp_id_producer_t(mscomplex_const_ptr_t msc, mscomplex_t::filter_t f)
     {
       boost::mutex::scoped_lock scoped_lock(m_mutex);
 
-      m_begin = msc->fbegin(f);
-      m_end   = msc->fend(f);
+      m_begin = msc->cp_id_fbegin(f);
+      m_end   = msc->cp_id_fend(f);
     }
-
-    mt_cp_producer_t(mscomplex_const_ptr_t msc, mscomplex_t::filter_t f)
-    {
-      boost::mutex::scoped_lock scoped_lock(m_mutex);
-
-      m_begin = msc->fbegin(f);
-      m_end   = msc->fend(f);
-    }
-
 
     inline int count()
     {
@@ -248,73 +292,30 @@ namespace grid
     }
   };
 
-  class cp_producer_t: boost::noncopyable
+  class cp_producer_t:public producer_t<mscomplex_t::fiterator_t>
   {
   public:
-    typedef boost::function<bool (mscomplex_const_ptr_t,int)> cp_filter_t;
+    cp_producer_t(mscomplex_const_ptr_t msc, mscomplex_t::memb_filter_t f)
+    {
+      boost::mutex::scoped_lock scoped_lock(m_mutex);
 
-    boost::mutex           m_mutex;
-    int                    m_ni;
-    mscomplex_const_ptr_t  m_msc;
-    cp_filter_t            m_cp_filter;
+      m_begin = msc->fbegin(f);
+      m_end   = msc->fend(f);
+    }
 
-    cp_producer_t(mscomplex_const_ptr_t msc,cp_filter_t cf = pass_filter);
+    cp_producer_t(mscomplex_const_ptr_t msc, mscomplex_t::filter_t f)
+    {
+      boost::mutex::scoped_lock scoped_lock(m_mutex);
 
-    bool next(int & i);
-    int  count() const;
+      m_begin = msc->fbegin(f);
+      m_end   = msc->fend(f);
+    }
 
-    static bool pass_filter(mscomplex_const_ptr_t  msc, int i);
-    static bool extrema_filter(mscomplex_const_ptr_t  msc, int i);
-    static bool twosaddle_filter(mscomplex_const_ptr_t  msc, int i);
-    static bool saddle_filter(mscomplex_const_ptr_t  msc, int i);
-    static bool unpaired_cp_filter(mscomplex_const_ptr_t  msc, int i);
-    static bool unpaired_saddle_filter(mscomplex_const_ptr_t  msc, int i);
-
-    // Intention:
-    //    for multiple threads to pick distinct cp's to work with
-    //
-    //     Usage:
-    // ----main----thread----
-    // cp_producer_ptr_t p(new cp_producer_t(msc,cp_filter))
-    //
-    // ----worker--threads---
-    // for(int i ; p->next(i) ;)
-    // {
-    //   -- each thread works on a unique cp --
-    //
-    // }
-
+    inline int count()
+    {
+      return std::count(m_begin,m_end);
+    }
   };
-
-  inline mscomplex_t::iterator_t mscomplex_t::begin() const
-  {
-    return iterator_t(0);
-  }
-
-  inline mscomplex_t::iterator_t mscomplex_t::end() const
-  {
-    return iterator_t(get_num_critpts());
-  }
-
-  inline mscomplex_t::fiterator_t mscomplex_t::fbegin(mscomplex_t::filter_t f) const
-  {
-    return boost::make_filter_iterator(f,begin(),end());
-  }
-
-  inline mscomplex_t::fiterator_t mscomplex_t::fend(mscomplex_t::filter_t f) const
-  {
-    return boost::make_filter_iterator(f,end(),end());
-  }
-
-  inline mscomplex_t::fiterator_t mscomplex_t::fbegin(mscomplex_t::memb_filter_t f) const
-  {
-    return fbegin(boost::bind(f,this,_1));
-  }
-
-  inline mscomplex_t::fiterator_t mscomplex_t::fend(mscomplex_t::memb_filter_t f) const
-  {
-    return fend(boost::bind(f,this,_1));
-  }
 
 
   inline int  mscomplex_t::get_num_critpts() const

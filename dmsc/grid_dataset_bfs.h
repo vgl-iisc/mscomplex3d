@@ -1,278 +1,167 @@
 #include <grid_dataset.h>
 #include <map>
+#include <queue>
+#include <stack>
+
+#include <tr1/tuple>
+
+#include <boost/bind/bind.hpp>
 
 using namespace std;
-
-#define MUTEX_CALL(__c) \
-  {static boost::mutex __mutex;\
-   boost::mutex::scoped_lock scoped_lock(__mutex);\
-   (__c);}
 
 namespace grid
 {
 
-static uint ( dataset_t::*getcets[2] ) ( cellid_t,cellid_t * ) const =
+template<int dim,eGDIR dir,typename iter_t>
+inline int mark_reachable(iter_t cp_b,iter_t cp_e,dataset_t &ds)
 {
-  &dataset_t::getCellFacets,
-  &dataset_t::getCellCofacets
-};
+ cellid_t cets[40];
 
-namespace bfs
-{
+ cellid_list_t stk(cp_b,cp_e);
 
-template <typename frontier_iter_t>
-inline cellid_t read_frontier(frontier_iter_t it);
-template <typename frontier_t>
-inline void add_to_frontier(frontier_t &f, cellid_t c);
-template <typename frontier_t,typename frontier_iter_t>
-inline void add_to_frontier(frontier_t &f, cellid_t c,frontier_iter_t p);
+ while(stk.size() != 0 )
+ {
+   cellid_t c = stk.back(); stk.pop_back();
 
+   ASSERT(ds.getCellDim(c) == dim);
 
+   ds.visitCell(c);
 
-
-typedef map<cellid_t,int>   frontier_map_t;
-template <>
-inline cellid_t read_frontier(frontier_map_t::iterator it)
-{
-  return it->first;
-}
-template <>
-inline void add_to_frontier(frontier_map_t &f, cellid_t c)
-{
-  if(f.count(c) == 0)
-    f[c] = 1;
-}
-template <>
-inline void add_to_frontier(frontier_map_t &f, cellid_t c,frontier_map_t::iterator p)
-{
-  if(f.count(c) == 0)
-    f[c] = 0;
-
-  f[c] += p->second;
+   for(cellid_t * b = cets, *e = cets + ds.get_cets<dir>(c,cets);b!=e;++b)
+   {
+     if(!ds.isCellCritical(*b))
+     {
+       cellid_t p = ds.getCellPairId(*b);
+       if(ds.getCellDim(p) == dim && !ds.isCellVisited(p) )
+       {
+         stk.push_back(p);
+       }
+     }
+   }
+ }
 }
 
+typedef tr1::tuple<cellid_t,int> pq_item_t;
+typedef std::vector<pq_item_t>   pq_list_t;
 
-
-
-typedef cellid_list_t       frontier_list_t;
-template <>
-inline cellid_t read_frontier(frontier_list_t::iterator it)
+template <int dim>
+inline bool compare_pq_items(const dataset_t &ds,const pq_item_t &c1,const pq_item_t &c2)
 {
-  return *it;
-}
-template <>
-inline void add_to_frontier(frontier_list_t &f, cellid_t c)
-{
-  f.push_back(c);
-}
-template <>
-inline void add_to_frontier(frontier_list_t &f, cellid_t c,frontier_list_t::iterator p)
-{
-  f.push_back(c);
+  return ds.compare_cells<dim>(tr1::get<0>(c1),tr1::get<0>(c2));
 }
 
-}
-
-
-template <> inline std::ostream& log_range
-  (bfs::frontier_map_t::iterator b,bfs::frontier_map_t::iterator e,
-   std::ostream &os,char sep)
+template <int dim>
+inline cellid_list_ptr_t compute_inc_pairs
+(cellid_t s, const dataset_t &ds)
 {
-  for (;b!=e;++b) os<<b->first<<sep;
-  return os;
-}
+  const int pdim = dim - 1;
 
-namespace bfs
-{
+  BOOST_AUTO(cmp_dim,bind(compare_pq_items<dim>,boost::cref(ds),_1,_2));
+  BOOST_AUTO(cmp_pdim,bind(compare_pq_items<pdim>,boost::cref(ds),_1,_2));
 
-template <eGDIR dir> inline bool compare_cells(dataset_const_ptr_t ds,cellid_t p,cellid_t q);
-template <> inline bool compare_cells<GDIR_DES>(dataset_const_ptr_t ds,cellid_t p,cellid_t q)
-{
-  return ds->compareCells(p,q);
-}
-template <> inline bool compare_cells<GDIR_ASC>(dataset_const_ptr_t ds,cellid_t p,cellid_t q)
-{
-  return ds->compareCells(q,p);
-}
+  priority_queue<pq_item_t,pq_list_t,typeof(cmp_dim)>  pq(cmp_dim);
+  priority_queue<pq_item_t,pq_list_t,typeof(cmp_pdim)> inc_pq(cmp_pdim);
 
-template <typename frontier_t,typename visit_ftor_t,typename cp_visit_ftor_t,eGDIR dir>
-void do_bfs
-  ( dataset_const_ptr_t ds,
-    cellid_t start_cell,
-    visit_ftor_t visit_ftor,
-    cp_visit_ftor_t cp_visit_ftor)
-{
-  typedef boost::shared_ptr<frontier_t> frontier_ptr_t;
+  cellid_t f[40];
 
-  uint dim = ds->getCellDim(start_cell);
+  pq.push(tr1::make_tuple(s,1));
 
-  frontier_ptr_t frontier0(new frontier_t);
-  frontier_ptr_t frontier1(new frontier_t);
-
-  ASSERT(ds->m_rect.contains(start_cell));
-
-  add_to_frontier(*frontier0,start_cell);
-
-  for(int level = 0 ;;++level)
+  while(pq.size() != 0 )
   {
-    frontier_t &frontier     = ((level&1) == 0)?(*frontier0):(*frontier1);
-    frontier_t &new_frontier = ((level&1) == 1)?(*frontier0):(*frontier1);
+    cellid_t c = tr1::get<0>(pq.top());
 
-    if(frontier.size() == 0)
-      break;
+    ASSERT(ds.getCellDim(c) == dim);
 
-    for(typename frontier_t::iterator it = frontier.begin() ; it != frontier.end() ;++it)
+    int n = 0 ;
+
+    do {n += tr1::get<1>(pq.top()); pq.pop();}
+    while(pq.size() != 0 && tr1::get<0>(pq.top()) == c);
+
+
+    for(cellid_t *b = f,*e = f + ds.get_cets<GDIR_DES>(c,f);b != e; ++b)
     {
-      cellid_t c = read_frontier(it);
-
-      ASSERT(ds->m_rect.contains(c));
-
-      cellid_t      cets[20];
-
-      uint cet_ct = ( ds.get()->*getcets[dir] ) ( c,cets );
-
-      for ( uint i = 0 ; i < cet_ct ; i++ )
+      if(ds.isCellCritical(*b))
       {
-        if ( ds->isCellExterior ( cets[i] ) )
-          continue;
-
-        if ( ds->isCellCritical ( cets[i] ) )
+        if(ds.isCellVisited(*b))
         {
-          cp_visit_ftor(cets[i]);
-          continue;
-        }
-
-        cellid_t next_cell = ds->getCellPairId ( cets[i] );
-
-        ASSERT(ds->m_rect.contains(next_cell));
-
-        bool is_dim   = (dim  == ds->getCellDim ( next_cell ));
-        bool is_vnext = compare_cells<dir>(ds,next_cell,c);
-
-        if (is_dim && is_vnext && visit_ftor(next_cell))
-        {
-          add_to_frontier(new_frontier,next_cell,it);
+          ASSERT(ds.getCellDim(*b) == pdim);
+          inc_pq.push(tr1::make_tuple(*b,n));
         }
       }
-    }// end for i in [0,frontier.size)
+      else
+      {
+        cellid_t p = ds.getCellPairId(*b);
 
-    frontier.clear();
-  }// end while(frontier.size != 0 )
-}
-
-template <typename frontier_t,typename visit_ftor_t,typename cp_visit_ftor_t>
-inline void do_bfs(dataset_const_ptr_t ds,cellid_t start_cell,
-                   eGDIR dir,visit_ftor_t visit_ftor,
-                   cp_visit_ftor_t cp_visit_ftor)
-{
-  if(dir == GDIR_DES)
-  {
-    do_bfs<frontier_t,visit_ftor_t,cp_visit_ftor_t,GDIR_DES>
-    (ds,start_cell,visit_ftor,cp_visit_ftor);
+        if (p != c && ds.isCellVisited(*b) )
+        {
+          pq.push(tr1::make_tuple(p,n));
+        }
+      }
+    }
   }
-  else if (dir == GDIR_ASC)
+
+  cellid_list_ptr_t cp_inc_pairs(new cellid_list_t);
+
+  while(inc_pq.size() != 0 )
   {
-    do_bfs<frontier_t,visit_ftor_t,cp_visit_ftor_t,GDIR_ASC>
-    (ds,start_cell,visit_ftor,cp_visit_ftor);
+    cellid_t p = tr1::get<0>(inc_pq.top());
+
+    ASSERT(ds.getCellDim(p) == pdim);
+
+    int n = 0 ;
+
+    do {n += tr1::get<1>(inc_pq.top()); inc_pq.pop();}
+    while((inc_pq.size() != 0)  && (tr1::get<0>(inc_pq.top()) == p));
+
+    cp_inc_pairs->push_back(s);
+    cp_inc_pairs->push_back(p);
+
+    if(n > 1)
+    {
+      cp_inc_pairs->push_back(s);
+      cp_inc_pairs->push_back(p);
+    }
   }
-  else
+
+  return cp_inc_pairs;
+}
+
+
+template <int dim,eGDIR dir,typename Titer,typename cmp_t>
+inline void compute_mfold
+(Titer b, Titer e,
+ const dataset_t &ds,
+ cellid_list_t &mfold,
+ cmp_t cmp)
+{
+  priority_queue<cellid_t,cellid_list_t,cmp_t> pq(b,e,cmp);
+
+  cellid_t f[40];
+
+  cellid_t lc(-1,-1,-1);
+
+  while(pq.size() != 0 )
   {
-    ASSERT(false&&"what the hell man!!!");
+    cellid_t c = pq.top(); pq.pop();
+
+    ASSERT(ds.getCellDim(c) == dim);
+
+    if(lc == c) continue; lc = c;
+
+    mfold.push_back(c);
+
+    for(cellid_t *b = f,*e = f + ds.get_cets<dir>(c,f);b != e; ++b)
+    {
+      if(!ds.isCellCritical(*b))
+      {
+        cellid_t p = ds.getCellPairId(*b);
+
+        if (p != c && ds.getCellDim(p) == dim )
+          pq.push(p);
+      }
+    }
   }
 }
 
-inline bool pass_visit(cellid_t)
-{
-  return true;
 }
 
-// connecting cp's
-
-inline void make_connection(dataset_ptr_t ds, mscomplex_ptr_t msc,cellid_t p,cellid_t q)
-{
-  if(ds->isCellPaired(p) && ds->getCellDim(ds->getCellPairId(p)) != ds->getCellDim(q))
-    return;
-
-  if(ds->isCellPaired(q) && ds->getCellDim(ds->getCellPairId(q)) != ds->getCellDim(p))
-    return;
-
-  MUTEX_CALL(msc->connect_cps(p,q));
-}
-
-void connect_cps(dataset_ptr_t ds,mscomplex_ptr_t msc,cellid_t c,eGDIR dir)
-{
-  try
-  {
-    do_bfs<frontier_list_t>(ds,c,dir,pass_visit,bind(make_connection,ds,msc,c,_1));
-  }
-  catch(assertion_error e)
-  {
-    e.push(_FFL).push(SVAR(c)).push(SVAR(ds->m_rect)).push(SVAR(msc->m_rect));
-    throw;
-  }
-}
-
-// visiting cells
-inline bool visit_cell(dataset_ptr_t ds,cellid_t c)
-{
-  if (ds->isCellVisited(c))
-    return false;
-
-  ds->visitCell(c);
-  return true;
-}
-void mark_visits(dataset_ptr_t ds,cellid_t c,eGDIR dir)
-{
-  do_bfs<frontier_list_t>(ds,c,dir,bind(visit_cell,ds,_1),pass_visit);
-}
-
-// connecting cps thru visited pairs.
-
-inline bool visit_if_pair_visited(dataset_ptr_t ds,cellid_t c)
-{
-  return (ds->isCellVisited(c) && ds->isCellVisited(ds->getCellPairId(c)));
-}
-
-void connect_thru_visted_pairs(dataset_ptr_t ds,mscomplex_ptr_t msc,cellid_t c,eGDIR dir)
-{
-  do_bfs<frontier_list_t>
-      (ds,c,dir,bind(visit_if_pair_visited,ds,_1),bind(make_connection,ds,msc,c,_1));
-}
-
-// collection of manifolds
-
-typedef dataset_t::mfold_t mfold_t;
-
-inline bool add_to_mfold(mfold_t *mfold,cellid_t c)
-{
-  mfold->push_back(c);
-
-  return true;
-}
-
-void collect_manifolds(dataset_const_ptr_t ds,mfold_t *mfold,cellid_t c,eGDIR dir)
-{
-  do_bfs<frontier_map_t>(ds,c,dir,bind(add_to_mfold,mfold,_1),pass_visit);
-}
-
-// marking owner extrema
-
-inline bool write_owner_extrema(cellid_t c,dataset_t::owner_array_t * own_arr,int i)
-{
-  (*own_arr)(c/2) = i;
-  return true;
-}
-
-void mark_owner_extrema(dataset_ptr_t ds,cellid_t c,int i)
-{
-  ASSERT(get_cell_dim(c) == 0 || get_cell_dim(c) == 3);
-
-  eGDIR dir = (get_cell_dim(c) == 3)?(GDIR_DES):(GDIR_ASC);
-
-  dataset_t::owner_array_t *own_arr = (dir == GDIR_DES)?(&ds->m_owner_maxima):(&ds->m_owner_minima);
-
-  do_bfs<frontier_list_t>(ds,c,dir,bind(write_owner_extrema,_1,own_arr,i),pass_visit);
-}
-
-}// end namsspace bfs
-}// end namespace grid
