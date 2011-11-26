@@ -54,6 +54,7 @@ namespace grid
     cellid_t                     m_size;
     std::string                  m_filename;
     double                       m_simp_tresh;
+    cell_fn_t                    m_f_range;
     cellid_t                     m_levels;
 
     std::string                  m_basename;

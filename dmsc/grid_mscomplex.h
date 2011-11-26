@@ -138,11 +138,11 @@ namespace grid
 
   public:
 
-    void simplify(int_pair_list_t &,double simplification_treshold);
+    void simplify(int_pair_list_t &,double simplification_treshold,double f_range);
 
     void un_simplify(const int_pair_list_t &);
 
-    void simplify_un_simplify(double simplification_treshold );
+    void simplify_un_simplify(double simplification_treshold,double f_range );
 
     void invert_for_collection();
 
@@ -182,7 +182,7 @@ namespace grid
 
   };
 
-  inline void order_pr_by_cp_index(mscomplex_t &msc,int &p,int &q)
+  inline void order_pr_by_cp_index(const mscomplex_t &msc,int &p,int &q)
   {
     if(msc.index(p) < msc.index(q))
       std::swap(p,q);

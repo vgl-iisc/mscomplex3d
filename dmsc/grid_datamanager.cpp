@@ -125,6 +125,10 @@ namespace grid
       xy_files.push_back(p);
     }
 
+    cell_fn_t f_max = std::numeric_limits<cell_fn_t>::min();
+    cell_fn_t f_min = std::numeric_limits<cell_fn_t>::max();
+
+
     for( int z = 0; z < m_size[2]; ++z)
     {
       if (bnd_z >=0 && z == bnd_z - 1)
@@ -141,6 +145,9 @@ namespace grid
       }
 
       ifs.read((char*)(void*)pData.get(),xy_size*sizeof(cell_fn_t));
+
+      f_max = max(f_max,*max_element(pData.get(),pData.get()+xy_size));
+      f_min = min(f_max,*min_element(pData.get(),pData.get()+xy_size));
 
       for(int pc_i = pc_beg; pc_i != pc_end; ++pc_i)
       {
@@ -174,6 +181,8 @@ namespace grid
     xy_files.erase(xy_files.begin(),xy_files.begin()+xy_ct);
 
     ifs.close();
+
+    m_f_range = f_max-f_min;
   }
 
   void data_manager_t::compute_subdomain_msgraphs ()
@@ -382,7 +391,7 @@ namespace grid
 
     if(simp_tresh >=0)
     {
-    msgraph->simplify_un_simplify(simp_tresh);
+    msgraph->simplify_un_simplify(simp_tresh,-1);
     cout<<"simplification done ------ "<<g_timer.getElapsedTimeInMilliSec()<<endl;
     }
 

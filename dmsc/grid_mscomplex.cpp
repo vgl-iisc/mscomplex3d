@@ -5,6 +5,8 @@
 #include <limits>
 #include <cstdlib>
 
+#include <boost/typeof/typeof.hpp>
+
 #include <grid_mscomplex.h>
 
 using namespace std;
@@ -569,152 +571,165 @@ namespace grid
     m_asc_conn.clear();
   }
 
-  struct persistence_comparator_t
+  inline bool is_valid_canc_edge(const mscomplex_t &msc,int_pair_t e )
   {
-    mscomplex_t *m_msc;
+    order_pr_by_cp_index(msc,e[0],e[1]);
 
-    persistence_comparator_t(mscomplex_t *m):m_msc(m){}
-
-    bool operator()(const int_pair_t & p0, const int_pair_t &p1)
-    {
-      return cmp_lt(p1,p0);
-    }
-
-    bool cmp_lt(int_pair_t p0, int_pair_t p1)
-    {
-      order_pr_by_cp_index(*m_msc,p0[0],p0[1]);
-      order_pr_by_cp_index(*m_msc,p1[0],p1[1]);
-
-      cellid_t v00 = m_msc->vertid(p0[0]);
-      cellid_t v01 = m_msc->vertid(p0[1]);
-      cellid_t v10 = m_msc->vertid(p1[0]);
-      cellid_t v11 = m_msc->vertid(p1[1]);
-
-      cellid_t c00 = m_msc->cellid(p0[0]);
-      cellid_t c01 = m_msc->cellid(p0[1]);
-      cellid_t c10 = m_msc->cellid(p1[0]);
-      cellid_t c11 = m_msc->cellid(p1[1]);
-
-      if( (v00 == v01 ) != (v10 == v11))
-        return (v00 == v01 );
-
-      if( (v00 == v01 ) &&(v10 == v11))
-      {
-        if(v00 == v10)
-        {
-          if(c00 != c10)
-            return c00 < c10;
-          else
-            return c01 < c11;
-        }
-        else
-        {
-          return (v00 < v10);
-        }
-      }
-
-      cell_fn_t f00 = m_msc->fn(p0[0]);
-      cell_fn_t f01 = m_msc->fn(p0[1]);
-      cell_fn_t f10 = m_msc->fn(p1[0]);
-      cell_fn_t f11 = m_msc->fn(p1[1]);
-
-      cell_fn_t d1 = std::abs(f01-f00);
-      cell_fn_t d2 = std::abs(f11-f10);
-
-      if(d1 != d2)
-        return d1 < d2;
-
-      if(c00 != c10)
-        return c00 < c10;
-
-      return c01 < c11;
-    }
-  };
-
-  bool is_valid_canc_edge(mscomplex_t *msc,int_pair_t e )
-  {
-    order_pr_by_cp_index(*msc,e[0],e[1]);
-
-    if(msc->is_canceled(e[0])||msc->is_canceled(e[1]))
+    if(msc.is_canceled(e[0])||msc.is_canceled(e[1]))
       return false;
 
-    if(msc->m_rect.isOnBoundry(msc->cellid(e[0])) !=
-       msc->m_rect.isOnBoundry(msc->cellid(e[1])))
+    if(msc.m_rect.isOnBoundry(msc.cellid(e[0])) !=
+       msc.m_rect.isOnBoundry(msc.cellid(e[1])))
       return false;
 
-    ASSERT(msc->m_des_conn[e[0]].count(e[1]) == msc->m_asc_conn[e[1]].count(e[0]));
+    ASSERT(msc.m_des_conn[e[0]].count(e[1]) == msc.m_asc_conn[e[1]].count(e[0]));
 
-    if(msc->m_des_conn[e[0]].count(e[1]) != 1)
+    if(msc.m_des_conn[e[0]].count(e[1]) != 1)
       return false;
 
     return true;
   }
 
-  bool is_epsilon_persistent(mscomplex_t *msc,int_pair_t e )
+  inline bool is_epsilon_persistent(const mscomplex_t &msc,int_pair_t e )
   {
-    return (msc->vertid(e[0]) == msc->vertid(e[1]));
+    return (msc.vertid(e[0]) == msc.vertid(e[1]));
   }
 
-  void mscomplex_t::simplify(int_pair_list_t & canc_pairs_list,
-                               double simplification_treshold)
+  inline int get_num_new_edges(const mscomplex_t &msc, int_pair_t pr)
   {
-    typedef std::priority_queue
-        <int_pair_t,int_pair_list_t,persistence_comparator_t>
-        canc_pair_priq_t;
+    order_pr_by_cp_index(msc,pr[0],pr[1]);
 
-    persistence_comparator_t comp(this);
+    int pd = msc.m_conn[GDIR_DES][pr[0]].size();
+    int pa = msc.m_conn[GDIR_ASC][pr[0]].size();
 
-    canc_pair_priq_t  canc_pair_priq(comp);
+    int qd = msc.m_conn[GDIR_DES][pr[1]].size();
+    int qa = msc.m_conn[GDIR_ASC][pr[1]].size();
 
-    cell_fn_t max_val = std::numeric_limits<cell_fn_t>::min();
-    cell_fn_t min_val = std::numeric_limits<cell_fn_t>::max();
+    return (pd - 1)*(qa - 1) - (pd + qd + pa +qa -1);
+  }
 
-    for(uint i = 0 ;i < get_num_critpts();++i)
+  inline bool fast_persistence_lt(const mscomplex_t &msc, int_pair_t p0, int_pair_t p1)
+  {
+    bool eps_p0 = is_epsilon_persistent(msc,p0);
+    bool eps_p1 = is_epsilon_persistent(msc,p1);
+
+    if( eps_p0 != eps_p1)
+      return eps_p0;
+
+    return (get_num_new_edges(msc,p0) < get_num_new_edges(msc,p1));
+  }
+
+  inline cell_fn_t get_persistence(const mscomplex_t & msc,int_pair_t e)
+  {
+    return std::abs(msc.fn(e[0]) - msc.fn(e[1]));
+  }
+
+  inline bool persistence_lt(const mscomplex_t &msc, int_pair_t p0, int_pair_t p1)
+  {/*
+    bool eps_p0 = is_epsilon_persistent(msc,p0);
+    bool eps_p1 = is_epsilon_persistent(msc,p1);
+
+    if( eps_p0 != eps_p1)
+      return eps_p0;
+
+    cell_fn_t d0 = get_persistence(msc,p0);
+    cell_fn_t d1 = get_persistence(msc,p1);
+
+    if(d0 != d1)
+      return d0 < d1;
+
+    return p0 < p1;*/
+
+    order_pr_by_cp_index(msc,p0[0],p0[1]);
+    order_pr_by_cp_index(msc,p1[0],p1[1]);
+
+    cellid_t v00 = msc.vertid(p0[0]);
+    cellid_t v01 = msc.vertid(p0[1]);
+    cellid_t v10 = msc.vertid(p1[0]);
+    cellid_t v11 = msc.vertid(p1[1]);
+
+    cellid_t c00 = msc.cellid(p0[0]);
+    cellid_t c01 = msc.cellid(p0[1]);
+    cellid_t c10 = msc.cellid(p1[0]);
+    cellid_t c11 = msc.cellid(p1[1]);
+
+    if( (v00 == v01 ) != (v10 == v11))
+      return (v00 == v01 );
+
+    if( (v00 == v01 ) &&(v10 == v11))
     {
-      max_val = std::max(max_val,fn(i));
-      min_val = std::min(min_val,fn(i));
-
-      for(conn_iter_t j = m_des_conn[i].begin();j != m_des_conn[i].end() ;++j)
+      if(v00 == v10)
       {
-        if(is_valid_canc_edge(this,int_pair_t(i,*j)))
-          canc_pair_priq.push(int_pair_t(i,*j));
-      }
-    }
-
-    double max_persistence = max_val - min_val;
-
-    uint num_cancellations = 0;
-
-    uint num_cancellations_eps = 0;
-
-    while (canc_pair_priq.size() !=0)
-    {
-      int_pair_t pr = canc_pair_priq.top();
-
-      canc_pair_priq.pop();
-
-      double persistence = std::abs(fn(pr[0])-fn(pr[1]))/max_persistence;
-
-      if(is_valid_canc_edge(this,pr) == false)
-        continue;
-
-      if(is_epsilon_persistent(this,pr) == false)
-      {
-        if(persistence >= simplification_treshold)
-          break;
+        if(c00 != c10)
+          return c00 < c10;
+        else
+          return c01 < c11;
       }
       else
       {
-        num_cancellations_eps++;
+        return (v00 < v10);
       }
+    }
 
-//      std::cout
-//             <<   "no = "<<num_cancellations<<" "
-//             << "pers = "<<persistence<<" "
-//             <<"index = ("<<(int)m_cps[pr[0]]->index<<","<<(int)m_cps[pr[1]]->index<<") "
-//             << "edge = "<<pr<<" "
-//             << "edge = "<<edge_to_string(this,pr)<<" "
-//             <<std::endl;
+    cell_fn_t f00 = msc.fn(p0[0]);
+    cell_fn_t f01 = msc.fn(p0[1]);
+    cell_fn_t f10 = msc.fn(p1[0]);
+    cell_fn_t f11 = msc.fn(p1[1]);
+
+    cell_fn_t d1 = std::abs(f01-f00);
+    cell_fn_t d2 = std::abs(f11-f10);
+
+    if(d1 != d2)
+      return d1 < d2;
+
+    if(c00 != c10)
+      return c00 < c10;
+
+    return c01 < c11;
+  }
+
+  inline bool is_within_treshold(const mscomplex_t & msc,int_pair_t e,cell_fn_t t)
+  {
+    return (is_epsilon_persistent(msc,e) || get_persistence(msc,e) < t);
+  }
+
+  void mscomplex_t::simplify(int_pair_list_t & canc_pairs_list,
+                             double f_tresh, double f_range)
+  {
+    BOOST_AUTO(cmp,bind(fast_persistence_lt,boost::cref(*this),_2,_1));
+
+    priority_queue<int_pair_t,int_pair_list_t,typeof(cmp)> pq(cmp);
+
+    if(f_range <= 0)
+    {
+      f_range = *max_element(m_cp_fn.begin(),m_cp_fn.end()) -
+          *min_element(m_cp_fn.begin(),m_cp_fn.end());
+    }
+
+    f_tresh *= f_range;
+
+
+    for(uint i = 0 ;i < get_num_critpts();++i)
+    {
+      for(conn_iter_t j = m_des_conn[i].begin();j != m_des_conn[i].end() ;++j)
+      {
+        int_pair_t pr(i,*j);
+
+        if(is_valid_canc_edge(*this,pr) && is_within_treshold(*this,pr,f_tresh))
+          pq.push(pr);
+      }
+    }
+
+    uint num_cancellations = 0;
+
+    while (pq.size() !=0)
+    {
+      int_pair_t pr = pq.top();
+
+      pq.pop();
+
+      if(is_valid_canc_edge(*this,pr) == false)
+        continue;
 
       int p = pr[0],q = pr[1];
 
@@ -730,11 +745,14 @@ namespace grid
 
       for(conn_iter_t i = m_des_conn[p].begin();i != m_des_conn[p].end();++i)
         for(conn_iter_t j = m_asc_conn[q].begin();j != m_asc_conn[q].end();++j)
-            canc_pair_priq.push(int_pair_t(*i,*j));
+        {
+          int_pair_t pr(*i,*j);
 
+          if(is_valid_canc_edge(*this,pr) && is_within_treshold(*this,pr,f_tresh))
+            pq.push(pr);
+        }
     }
     cout<<"num_cancellations    ::"<<(num_cancellations)<<endl;
-    cout<<"num_cancellations_eps::"<<(num_cancellations_eps)<<endl;
   }
 
   void mscomplex_t::un_simplify(const int_pair_list_t &canc_pairs_list)
@@ -745,11 +763,11 @@ namespace grid
       uncancel_pair((*it)[0],(*it)[1]);
   }
 
-  void mscomplex_t::simplify_un_simplify(double simplification_treshold)
+  void mscomplex_t::simplify_un_simplify(double f_tresh,double f_range)
   {
     int_pair_list_t canc_pairs_list;
 
-    simplify(canc_pairs_list,simplification_treshold);
+    simplify(canc_pairs_list,f_tresh,f_range);
 
     un_simplify(canc_pairs_list);
   }
