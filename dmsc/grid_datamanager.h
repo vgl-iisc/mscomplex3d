@@ -27,16 +27,17 @@ namespace grid
 {
   struct octtree_piece_t
   {
-    dataset_ptr_t   m_dataset;
-    mscomplex_ptr_t m_msgraph;
-
     rect_t                         m_prct;
     rect_t                         m_ext_prct;
     int                            m_level;
 
+    rect_t                         m_rect;
+    rect_t                         m_ext_rect;
+    rect_t                         m_domain_rect;
+
     octtree_piece_t(rect_t p,rect_t d,int l);
 
-    std::string get_basename(const std::string& basename);
+    std::string bn(const std::string& basename);
 
   };
 

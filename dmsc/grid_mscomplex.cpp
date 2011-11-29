@@ -22,14 +22,11 @@ namespace grid
     return ss.str();
   }
 
-  mscomplex_t::mscomplex_t(rect_t r,rect_t e)
-    :m_rect(r),m_ext_rect(e),m_des_conn(m_conn[0]),m_asc_conn(m_conn[1])
-  {
-  }
+  mscomplex_t::mscomplex_t(rect_t r,rect_t e,rect_t d)
+    :m_rect(r),m_ext_rect(e),m_domain_rect(d),
+      m_des_conn(m_conn[0]),m_asc_conn(m_conn[1]){}
 
-  mscomplex_t::~mscomplex_t()
-  {
-    clear();
+  mscomplex_t::~mscomplex_t(){clear();
   }
 
   void mscomplex_t::set_critpt(int i,cellid_t c,char idx,cell_fn_t f,cellid_t v)
@@ -320,118 +317,6 @@ namespace grid
     }
   }
 
-  void mscomplex_t::merge_up
-      (const mscomplex_t& msc1,
-       const mscomplex_t& msc2,
-       const rect_t& bnd)
-  {
-    typedef conn_t::const_iterator cconn_it_t;
-
-    try
-    {
-      ASSERT(bnd.eff_dim() == gc_grid_dim-1);
-      ASSERT(m_ext_rect.intersection(bnd) == bnd);
-
-      const mscomplex_t *msc_arr[] = {&msc1,&msc2};
-
-      for (int m = 0 ; m < 2 ; ++m)
-      {
-        const mscomplex_t &msc = *msc_arr[m];
-
-        for(int j = 0; j < msc.get_num_critpts();++j)
-        {
-          try
-          {
-            if(msc.is_canceled(j))
-              continue;
-
-            ASSERT((bnd.contains(msc.cellid(j)) == false) || (msc_arr[m^1]->m_id_cp_map.count(msc.cellid(j)) == 1));
-            ASSERT((bnd.contains(msc.cellid(j)) == true)  || (msc_arr[m^1]->m_id_cp_map.count(msc.cellid(j)) == 0));
-
-            if((m == 1) && (bnd.contains(msc.cellid(j))))
-              continue;
-
-            add_critpt(msc.cellid(j),msc.index(j),msc.fn(j),msc.vertid(j));
-          }
-          catch(assertion_error e)
-          {
-            e.push(_FFL);
-            e.push(SVAR(msc.cp_info(j)));
-            e.push(SVAR(msc.m_rect));
-            e.push(SVAR(msc.m_ext_rect));
-            throw;
-          }
-        }
-      }
-
-      for (int m = 0 ; m < 2 ; ++m)
-      {
-        const mscomplex_t &msc = *msc_arr[m];
-
-        for(int i = 0; i < msc.get_num_critpts();++i)
-        {
-          if(msc.is_canceled(i))
-            continue;
-
-          bool is_cp_in_bnd = bnd.contains(msc.cellid(i));
-
-          for(cconn_it_t j = msc.m_des_conn[i].begin();j != msc.m_des_conn[i].end();++j)
-          {
-            if(msc.is_canceled(*j))
-              continue;
-
-            if((m == 1) && is_cp_in_bnd && bnd.contains(msc.cellid(*j)))
-              continue;
-
-            connect_cps(msc.cellid(i),msc.cellid(*j));
-          }
-
-          if(!msc.is_paired(i))
-            continue;
-
-          pair_cps(msc.cellid(i),msc.cellid(msc.pair_idx(i)));
-        }
-      }
-
-      rect_t ixn = m_rect.intersection(bnd);
-
-      for(cellid_t c = ixn.lower_corner() ; c[2] <= ixn[2][1]; ++c[2])
-      {
-        for(c[1] = ixn[1][0] ; c[1] <= ixn[1][1]; ++c[1])
-        {
-          for(c[0] = ixn[0][0] ; c[0] <= ixn[0][1]; ++c[0])
-          {
-            if (m_id_cp_map.count(c) == 0)
-              continue;
-
-            int p = m_id_cp_map[c];
-
-            if(!is_paired(p))
-              continue;
-
-            ASSERT(pair_idx(pair_idx(p)) == p);
-
-            int q = pair_idx(p);
-
-            if(bnd.contains(cellid(q)))
-              continue;
-
-            cancel_pair(p,q);
-          }
-        }
-      }
-    }
-    catch(assertion_error e)
-    {
-      e.push(_FFL);
-      e.push(SVAR(bnd));
-      e.push(SVAR2(m_rect,m_ext_rect));
-      e.push(SVAR2(msc1.m_rect,msc1.m_ext_rect));
-      e.push(SVAR2(msc2.m_rect,msc2.m_ext_rect));
-      throw;
-    }
-  }
-
   void mscomplex_t::merge_down
       (mscomplex_t& msc1,
        mscomplex_t& msc2,
@@ -571,15 +456,21 @@ namespace grid
     m_asc_conn.clear();
   }
 
-  inline bool is_valid_canc_edge(const mscomplex_t &msc,int_pair_t e )
+  inline bool is_valid_canc_edge(const mscomplex_t &msc,const std::vector<bool> &is_inc_ext, int_pair_t e )
   {
     order_pr_by_cp_index(msc,e[0],e[1]);
 
     if(msc.is_canceled(e[0])||msc.is_canceled(e[1]))
       return false;
 
-    if(msc.m_rect.isOnBoundry(msc.cellid(e[0])) !=
-       msc.m_rect.isOnBoundry(msc.cellid(e[1])))
+    if(msc.is_paired(e[0]) || msc.is_paired(e[1]))
+      return false;
+
+    if(is_inc_ext[e[0]] && is_inc_ext[e[1]])
+      return false;
+
+    if(msc.m_domain_rect.isOnBoundry(msc.cellid(e[0])) !=
+       msc.m_domain_rect.isOnBoundry(msc.cellid(e[1])))
       return false;
 
     ASSERT(msc.m_des_conn[e[0]].count(e[1]) == msc.m_asc_conn[e[1]].count(e[0]));
@@ -693,8 +584,26 @@ namespace grid
     return (is_epsilon_persistent(msc,e) || get_persistence(msc,e) < t);
   }
 
-  void mscomplex_t::simplify(int_pair_list_t & canc_pairs_list,
-                             double f_tresh, double f_range)
+  inline void make_is_inc_ext(const mscomplex_t &msc, vector<bool> &is_inc_on_ext)
+  {
+    is_inc_on_ext.resize(msc.get_num_critpts(),false);
+
+    for(uint i = 0 ;i < msc.get_num_critpts();++i)
+    {
+      if(!msc.is_paired(i) || msc.is_canceled(i)) continue;
+
+      conn_iter_t db = msc.m_des_conn[i].begin();
+      conn_iter_t de = msc.m_des_conn[i].end();
+
+      conn_iter_t ab = msc.m_asc_conn[i].begin();
+      conn_iter_t ae = msc.m_asc_conn[i].end();
+
+      for(;db!=de;++db) is_inc_on_ext[*db] = true;
+      for(;ab!=ae;++ab) is_inc_on_ext[*ab] = true;
+    }
+  }
+
+  void mscomplex_t::simplify(double f_tresh, double f_range)
   {
     BOOST_AUTO(cmp,bind(fast_persistence_lt,boost::cref(*this),_2,_1));
 
@@ -708,6 +617,9 @@ namespace grid
 
     f_tresh *= f_range;
 
+    vector<bool> is_inc_ext;
+
+    make_is_inc_ext(*this,is_inc_ext);
 
     for(uint i = 0 ;i < get_num_critpts();++i)
     {
@@ -715,7 +627,7 @@ namespace grid
       {
         int_pair_t pr(i,*j);
 
-        if(is_valid_canc_edge(*this,pr) && is_within_treshold(*this,pr,f_tresh))
+        if(is_valid_canc_edge(*this,is_inc_ext,pr) && is_within_treshold(*this,pr,f_tresh))
           pq.push(pr);
       }
     }
@@ -728,7 +640,7 @@ namespace grid
 
       pq.pop();
 
-      if(is_valid_canc_edge(*this,pr) == false)
+      if(is_valid_canc_edge(*this,is_inc_ext,pr) == false)
         continue;
 
       int p = pr[0],q = pr[1];
@@ -741,35 +653,28 @@ namespace grid
 
       num_cancellations++;
 
-      canc_pairs_list.push_back(pr);
+      m_canc_list.push_back(pr);
 
       for(conn_iter_t i = m_des_conn[p].begin();i != m_des_conn[p].end();++i)
         for(conn_iter_t j = m_asc_conn[q].begin();j != m_asc_conn[q].end();++j)
         {
           int_pair_t pr(*i,*j);
 
-          if(is_valid_canc_edge(*this,pr) && is_within_treshold(*this,pr,f_tresh))
+          if(is_valid_canc_edge(*this,is_inc_ext,pr) && is_within_treshold(*this,pr,f_tresh))
             pq.push(pr);
         }
     }
     cout<<"num_cancellations    ::"<<(num_cancellations)<<endl;
   }
 
-  void mscomplex_t::un_simplify(const int_pair_list_t &canc_pairs_list)
+  void mscomplex_t::un_simplify()
   {
     typedef int_pair_list_t::const_reverse_iterator revit_t;
 
-    for(revit_t it = canc_pairs_list.rbegin();it != canc_pairs_list.rend() ; ++it)
+    for(revit_t it = m_canc_list.rbegin();it != m_canc_list.rend() ; ++it)
       uncancel_pair((*it)[0],(*it)[1]);
-  }
 
-  void mscomplex_t::simplify_un_simplify(double f_tresh,double f_range)
-  {
-    int_pair_list_t canc_pairs_list;
-
-    simplify(canc_pairs_list,f_tresh,f_range);
-
-    un_simplify(canc_pairs_list);
+    m_canc_list.clear();
   }
 
   void mscomplex_t::invert_for_collection()
@@ -783,7 +688,6 @@ namespace grid
       m_asc_conn[i].clear();
       continue;
     }
-
 
     for(int i = 0 ; i < get_num_critpts(); ++i)
     {
@@ -847,8 +751,330 @@ namespace grid
 
       os<<endl;
     }
+  }
+
+  template<typename T>
+  inline void bin_write_vec(std::ostream &os, std::vector<T> &v)
+  {os.write((const char*)(const void*)v.data(),v.size()*sizeof(T));v.clear();}
+
+  template<typename T>
+  inline void bin_write(std::ostream &os, const T &v)
+  {os.write((const char*)(const void*)&v,sizeof(T));}
+
+  template<typename T>
+  inline void bin_read_vec(std::istream &is, std::vector<T> &v,int n)
+  {v.resize(n);is.read((char*)(void*)v.data(),n*sizeof(T));}
+
+  template<typename T>
+  inline void bin_read(std::istream &is, const T &v)
+  {is.read((char*)(void*)&v,sizeof(T));}
+
+  void mscomplex_t::stow(std::ostream &os)
+  {
+    int N = get_num_critpts();
+
+    bin_write(os,N);
+    bin_write(os,m_rect);
+    bin_write(os,m_ext_rect);
+    bin_write(os,m_domain_rect);
+
+    bin_write_vec(os,m_cp_cellid);
+    bin_write_vec(os,m_cp_vertid);
+    bin_write_vec(os,m_cp_pair_idx);
+    bin_write_vec(os,m_cp_index);
+    bin_write_vec(os,m_cp_is_cancelled);
+    bin_write_vec(os,m_cp_fn);
+
+    int_list_t nconn(2*N);
+    int_list_t adj;
+
+    for(int i = 0 ; i < N; ++i)
+    {
+      nconn[2*i]   = m_des_conn[i].size();
+      nconn[2*i+1] = m_asc_conn[i].size();
+
+      std::copy(m_des_conn[i].begin(),m_des_conn[i].end(),back_inserter(adj));
+      std::copy(m_asc_conn[i].begin(),m_asc_conn[i].end(),back_inserter(adj));
+    }
+
+    bin_write(os,(int)adj.size());
+    bin_write_vec(os,nconn);
+    bin_write_vec(os,adj);
+
+    m_id_cp_map.clear();
+    m_conn[0].clear();
+    m_conn[1].clear();
+  }
+
+  void mscomplex_t::load(std::istream &is)
+  {
+    clear();
+
+    int N,NC;
+    int_list_t nconn,adj;
+
+    bin_read(is,N);
+    bin_read(is,m_rect);
+    bin_read(is,m_ext_rect);
+    bin_read(is,m_domain_rect);
+
+    bin_read_vec(is,m_cp_cellid,N);
+    bin_read_vec(is,m_cp_vertid,N);
+    bin_read_vec(is,m_cp_pair_idx,N);
+    bin_read_vec(is,m_cp_index,N);
+    bin_read_vec(is,m_cp_is_cancelled,N);
+    bin_read_vec(is,m_cp_fn,N);
+
+    bin_read(is,NC);
+    bin_read_vec(is,nconn,2*N);
+    bin_read_vec(is,adj,NC);
+
+    int_list_t::iterator a,b,c = adj.begin();
+
+    m_des_conn.resize(N);
+    m_asc_conn.resize(N);
+
+    cout<<g_timer.getElapsedTimeInMilliSec()
+        <<"\t: read adj and off"<<endl;
+
+    for(int i = 0 ; i < N; ++i)
+    {
+      a = c;
+      b = a + (nconn[2*i]);
+      c = b + (nconn[2*i+1]);
+
+      m_des_conn[i].insert(a,b);
+      m_asc_conn[i].insert(b,c);
+    }
+
+    cout<<g_timer.getElapsedTimeInMilliSec()
+        <<"\t: setup conn"<<endl;
+
+    build_id_cp_map();
+
+    cout<<g_timer.getElapsedTimeInMilliSec()
+        <<"\t: built Id cp"<<endl;
 
   }
+
+  inline rect_t get_ixn(rect_t r1,rect_t r2,rect_t e1,rect_t e2)
+  {
+    rect_t ir = r1.intersection(r2);
+    rect_t ie = e1.intersection(e2);
+
+    ASSERT((r1.lc() == ir.lc() && r2.uc() == ir.uc()) ||
+           (r2.lc() == ir.lc() && r1.uc() == ir.uc()));
+
+    ASSERT((e1.lc() == ie.lc() && e2.uc() == ie.uc()) ||
+           (e2.lc() == ie.lc() && e1.uc() == ie.uc()));
+
+    cellid_t s = ir.span();
+
+    int d = (s[0] == 0)?(0):((s[1] == 0)?(1):(2));
+
+    ASSERT(s[d] == 0);
+
+    ie[d] = ir[d];
+
+    ASSERT(ir.eff_dim() == gc_grid_dim-1);
+    ASSERT(ie.eff_dim() == gc_grid_dim-1);
+
+    return ie;
+  }
+
+  inline int get_idx_maps(int_list_t & idx_map1,int_list_t & idx_map2,
+                           rect_t & ixn,int_marray_t & ixn_idx,
+                           cellid_list_t &cl1,cellid_list_t &cl2,
+                           bool_list_t &ic1,bool_list_t &ic2)
+  {
+    ixn_idx.resize(ixn.span()+1);
+    ixn_idx.reindex(ixn.lc());
+    memset(ixn_idx.data(),-1,num_cells(ixn)*sizeof(int));
+
+    int pos = 0,N1=cl1.size(),N2 = cl2.size();
+    idx_map1.resize(N1,-1);idx_map2.resize(N2,-1);
+
+    for(int i =0; i < N1; ++i)
+      if(!ic1[i])
+      {
+        if(ixn.contains(cl1[i]))
+          ixn_idx(cl1[i]) = pos;
+
+        idx_map1[i] = pos++;
+      }
+
+    for(int i =0; i < N2; ++i)
+      if(!ic2[i])
+      {
+        idx_map2[i] = (ixn.contains(cl2[i]))?(ixn_idx(cl2[i])):(pos++);
+      }
+
+    return pos;
+  }
+
+  inline void copy_cp_info(mscomplex_t &msc,int_list_t & idx_map,
+  cellid_list_t  &cl,cellid_list_t  &vl,int_list_t &pi,char_list_t &ci,cell_fn_list_t &fn)
+  {
+    int N = idx_map.size();
+
+    for(int i = 0 ; i < N; ++i)
+    {
+      int j = idx_map[i];
+
+      if(j >=0)
+      {
+        msc.m_cp_cellid[j]       = cl[i];
+        msc.m_cp_vertid[j]       = vl[i];
+        msc.m_cp_index[j]        = ci[i];
+        msc.m_cp_is_cancelled[j] = false;
+        msc.m_cp_fn[j]           = fn[i];
+
+        if(pi[i] != -1)
+          msc.m_cp_pair_idx[j] = idx_map[pi[i]];
+
+      }
+    }
+  }
+
+  inline void copy_adj_info(mscomplex_t & msc,int_list_t & idx_map,
+                            int_list_t nconn,int_list_t adj)
+  {
+    int N1 = nconn.size()/2;
+
+    int_list_t::iterator a,b,c = adj.begin();
+
+    for(int i = 0 ; i < N1; ++i)
+    {
+      a = c;
+      b = a + (nconn[2*i]);
+      c = b + (nconn[2*i+1]);
+
+      int j = idx_map[i];
+
+      if( j == -1)
+        continue;
+
+      for(;a != b; ++a)
+      {
+        ASSERT(is_in_range(idx_map[*a],0,msc.get_num_critpts()));
+        msc.m_des_conn[j].insert(idx_map[*a]);
+      }
+
+      for(;b != c; ++b)
+      {
+        ASSERT(is_in_range(idx_map[*b],0,msc.get_num_critpts()));
+        msc.m_asc_conn[j].insert(idx_map[*b]);
+      }
+    }
+  }
+
+  inline void copy_adj_info(mscomplex_t & msc,int_list_t & idx_map,
+  int_list_t nconn,int_list_t adj,rect_t &ixn,cellid_list_t & cl)
+  {
+    int N1 = nconn.size()/2;
+
+    int_list_t::iterator a,b,c = adj.begin();
+
+    for(int i = 0 ; i < N1; ++i)
+    {
+      a = c;
+      b = a + (nconn[2*i]);
+      c = b + (nconn[2*i+1]);
+
+      int j = idx_map[i];
+
+      if( j == -1)
+        continue;
+
+      bool in_ixn = ixn.contains(cl[i]);
+
+      for(;a != b; ++a)
+        if(!in_ixn || !ixn.contains(cl[*a]))
+        {
+          ASSERT(is_in_range(idx_map[*a],0,msc.get_num_critpts()));
+          msc.m_des_conn[j].insert(idx_map[*a]);
+        }
+
+      for(;b != c; ++b)
+        if(!in_ixn || !ixn.contains(cl[*b]))
+        {
+          ASSERT(is_in_range(idx_map[*b],0,msc.get_num_critpts()));
+          msc.m_asc_conn[j].insert(idx_map[*b]);
+        }
+    }
+  }
+
+  void mscomplex_t::load_merge(std::istream &is1,std::istream &is2)
+  {
+    int_list_t    idx_map1,idx_map2;
+    rect_t        ixn;
+    int_marray_t  ixn_idx;
+
+    {
+      int            N1,N2,NC1,NC2;
+      rect_t         r1,r2,e1,e2,d1,d2;
+      int_list_t     nconn1,nconn2,adj1,adj2;
+      cellid_list_t  cl1,cl2;
+      cellid_list_t  vl1,vl2;
+      int_list_t     pi1,pi2;
+      char_list_t    ci1,ci2;
+      bool_list_t    ic1,ic2;
+      cell_fn_list_t fn1,fn2;
+
+      bin_read(is1,N1);               bin_read(is2,N2);
+      bin_read(is1,r1);               bin_read(is2,r2);
+      bin_read(is1,e1);               bin_read(is2,e2);
+      bin_read(is1,d1);               bin_read(is2,d2);
+
+      ixn = get_ixn(r1,r2,e1,e2);
+
+      bin_read_vec(is1,cl1,N1);       bin_read_vec(is2,cl2,N2);
+      bin_read_vec(is1,vl1,N1);       bin_read_vec(is2,vl2,N2);
+      bin_read_vec(is1,pi1,N1);       bin_read_vec(is2,pi2,N2);
+      bin_read_vec(is1,ci1,N1);       bin_read_vec(is2,ci2,N2);
+      bin_read_vec(is1,ic1,N1);       bin_read_vec(is2,ic2,N2);
+      bin_read_vec(is1,fn1,N1);       bin_read_vec(is2,fn2,N2);
+
+      bin_read(is1,NC1);              bin_read(is2,NC2);
+      bin_read_vec(is1,nconn1,2*N1);  bin_read_vec(is2,nconn2,2*N2);
+      bin_read_vec(is1,adj1,NC1);     bin_read_vec(is2,adj2,NC2);
+
+      resize(get_idx_maps(idx_map1,idx_map2,ixn,ixn_idx,cl1,cl2,ic1,ic2));
+      copy_cp_info(*this,idx_map1,cl1,vl1,pi1,ci1,fn1);
+      copy_cp_info(*this,idx_map2,cl2,vl2,pi2,ci2,fn2);
+
+      copy_adj_info(*this,idx_map1,nconn1,adj1);
+      copy_adj_info(*this,idx_map2,nconn2,adj2,ixn,cl2);
+    }
+
+    int n_cp = 0;
+
+    for(cellid_t c = ixn.lc() ; c[2] <= ixn[2][1]; ++c[2])
+    {
+      for(c[1] = ixn[1][0] ; c[1] <= ixn[1][1]; ++c[1])
+      {
+        for(c[0] = ixn[0][0] ; c[0] <= ixn[0][1]; ++c[0])
+        {
+          int p = ixn_idx(c);
+
+          if(p < 0) continue;
+
+          int q = m_cp_pair_idx[p];
+
+          if(q < 0) continue;
+
+          ASSERT(pair_idx(pair_idx(p)) == p);
+
+          if(ixn.contains(cellid(q))) continue;
+
+          cancel_pair(p,q);
+
+          ++n_cp;
+        }
+      }
+    }
+  }
+
 
   void mscomplex_t::write_graph(const std::string &fn) const
   {

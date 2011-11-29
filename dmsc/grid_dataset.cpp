@@ -693,13 +693,13 @@ namespace grid
 
       boost::thread_group group;
 
-//      group.create_thread(bind(store_connections,boost::ref(*msc),boost::ref(que),prd.count()+2));
+      group.create_thread(bind(store_connections,boost::ref(*msc),boost::ref(que),prd.count()+2));
 
-//      for(int tid = 0 ; tid < g_num_threads; ++tid)
-//        group.create_thread(bind(compute_saddle_connections,boost::ref(*this),boost::ref(prd),boost::ref(que)));
+      for(int tid = 0 ; tid < g_num_threads; ++tid)
+        group.create_thread(bind(compute_saddle_connections,boost::ref(*this),boost::ref(prd),boost::ref(que)));
 
-      int n = prd.count();
-      compute_saddle_connections(*this,prd,que);
+//      int n = prd.count();
+//      compute_saddle_connections(*this,prd,que);
 
 #ifdef BUILD_EXEC_OPENCL
       w.owner_extrema(shared_from_this());
@@ -713,7 +713,7 @@ namespace grid
       extract_extrema_connections<1>
           (msc->cp_id_fbegin(f_1des),msc->cp_id_fend(f_1des),*this,que);
 
-      store_connections(*msc,que,n+2);
+//      store_connections(*msc,que,n+2);
 
       group.join_all();
     }
@@ -807,10 +807,12 @@ namespace grid
 
 
   template<typename T>
-  void bin_write(std::ostream & os,const T & d)
-  {
-    os.write((const char*)(const void*)&d,sizeof(T));
-  }
+  inline void bin_write(std::ostream & os,const T & d)
+  {os.write((const char*)(const void*)&d,sizeof(T));}
+
+  template<typename T>
+  inline void bin_read(std::istream &is, const T &v)
+  {is.read((char*)(void*)&v,sizeof(T));}
 
   void write_header(std::ostream & os, dataset_t &ds,int_list_t & offsets,cellid_list_t &cps)
   {
@@ -890,6 +892,50 @@ namespace grid
     group.join_all();
     fs.close();
   }
+
+  template<typename T>
+  inline void bin_write_marray(std::ostream & os,const T * p, const cellid_t & s)
+  {os.write((const char*)(const void*)&p,sizeof(T)*s[0]*s[1]*s[2]);}
+
+  template<typename T>
+  inline void bin_read_marray(std::istream & is,T * p, const cellid_t & s)
+  {is.read((char*)(void*)&p,sizeof(T)*s[0]*s[1]*s[2]);}
+
+
+  void dataset_t::stow(std::ostream &os)
+  {
+    bin_write(os,m_rect);
+    bin_write(os,m_ext_rect);
+    bin_write(os,m_domain_rect);
+
+    bin_write_marray(os,m_cell_flags.data(),m_ext_rect.span()+1);
+    bin_write_marray(os,m_vert_fns.data(),(m_ext_rect.span()/2)+1);
+    bin_write_marray(os,m_owner_maxima.data(),m_rect.span()/2);
+    bin_write_marray(os,m_owner_minima.data(),(m_rect.span()/2)+1);
+  }
+
+  void dataset_t::load(std::istream &is)
+  {
+    bin_read(is,m_rect);
+    bin_read(is,m_ext_rect);
+    bin_read(is,m_domain_rect);
+
+    m_cell_flags.resize(m_ext_rect.span()+1);
+    m_vert_fns.resize((m_ext_rect.span()/2)+1);
+    m_owner_maxima.resize(m_rect.span()/2);
+    m_owner_minima.resize((m_rect.span()/2)+1);
+
+    m_cell_flags.reindex(m_ext_rect.lc());
+    m_vert_fns.reindex(m_ext_rect.lc()/2);
+    m_owner_maxima.reindex(m_rect.lc()/2);
+    m_owner_minima.reindex(m_rect.lc()/2);
+
+    bin_read_marray(is,m_cell_flags.data(),m_ext_rect.span()+1);
+    bin_read_marray(is,m_vert_fns.data(),(m_ext_rect.span()/2)+1);
+    bin_read_marray(is,m_owner_maxima.data(),(m_rect.span()/2));
+    bin_read_marray(is,m_owner_minima.data(),(m_rect.span()/2)+1);
+  }
+
 
   void dataset_t::log_flags()
   {
@@ -1041,7 +1087,7 @@ namespace grid
     static_assert(gc_grid_dim == 3 && "defined for 3-manifolds only");
 
     rect_t ex_rect               = (dir == GDIR_DES)?(rect_t(m_rect.lc()+1,m_rect.uc()-1)):(m_rect);
-    owner_array_t &owner_extrema = (dir == GDIR_DES)?(m_owner_maxima):(m_owner_minima);
+    int_marray_t &owner_extrema  = (dir == GDIR_DES)?(m_owner_maxima):(m_owner_minima);
 
     int X = ex_rect[0].span()/2+1;
     int Y = ex_rect[1].span()/2+1;

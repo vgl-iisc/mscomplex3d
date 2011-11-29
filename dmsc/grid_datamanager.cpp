@@ -119,7 +119,7 @@ namespace grid
 
     for( int pc_i = pc_beg ; pc_i < pc_end;++pc_i)
     {
-      string filename = m_pieces[pc_i]->get_basename(m_basename)+".raw";
+      string filename = m_pieces[pc_i]->bn(m_basename)+".raw";
       ofstream_ptr_t p(new ofstream(filename.c_str(),ios::binary));
       ensure(p->is_open(),"unable to open piece file");
       xy_files.push_back(p);
@@ -137,7 +137,7 @@ namespace grid
 
         for( int pc_i = pc_beg+xy_ct ; pc_i < pc_end;++pc_i)
         {
-          string filename = m_pieces[pc_i]->get_basename(m_basename)+".raw";
+          string filename = m_pieces[pc_i]->bn(m_basename)+".raw";
           ofstream_ptr_t p(new ofstream(filename.c_str(),ios::binary));
           ensure(p->is_open(),"unable to open piece file");
           xy_files.push_back(p);
@@ -189,12 +189,6 @@ namespace grid
   {
     using namespace boost::lambda;
 
-    int pData_size = (divide_ri(m_size[2],two_power(m_levels[2]))+3)*
-                     (divide_ri(m_size[1],two_power(m_levels[1]))+3)*
-                     (divide_ri(m_size[0],two_power(m_levels[0]))+3);
-
-    cell_fn_ptr_t pData(new cell_fn_t[pData_size]);
-
     int pc_beg = two_power(m_level_ct)-1;
     int pc_end = pc_beg + two_power(m_level_ct);
 
@@ -202,8 +196,18 @@ namespace grid
     {
       piece_ptr_t dp = m_pieces[pc_i];
 
-      dp->m_dataset->init(dp->get_basename(m_basename)+".raw");
-      dp->m_dataset->computeMsGraph(dp->m_msgraph);
+      dataset_ptr_t   ds(new dataset_t(dp->m_rect,dp->m_ext_rect,dp->m_domain_rect));
+      mscomplex_ptr_t msc(new mscomplex_t(dp->m_rect,dp->m_ext_rect,dp->m_domain_rect));
+
+      ds->init(dp->bn(m_basename)+".raw");
+      ds->computeMsGraph(msc);
+
+//      msc->simplify(m_simp_tresh,m_f_range);
+
+      msc->stow(dp->bn(m_basename)+".msgraph.bin");
+      ds->stow(dp->bn(m_basename)+".dataset.bin");
+
+      cout<<g_timer.getElapsedTimeInMilliSec()<<"\t:processed piece"<<pc_i<<endl;
     }
   }
 
@@ -239,63 +243,72 @@ namespace grid
 
       for(int i = 0 ;i < n; ++i)
       {
-        mscomplex_ptr_t msc  = m_pieces[n+i-1]->m_msgraph;
-        mscomplex_ptr_t msc1 = m_pieces[(n+i)*2 -1]->m_msgraph;
-        mscomplex_ptr_t msc2 = m_pieces[(n+i)*2]->m_msgraph;
+        piece_ptr_t dp  = m_pieces[n+i-1];
+        piece_ptr_t dp1 = m_pieces[(n+i)*2 -1];
+        piece_ptr_t dp2 = m_pieces[(n+i)*2];
 
-        rect_t bnd = msc1->m_ext_rect.intersection(msc2->m_ext_rect);
-        rect_t ixn = msc1->m_rect.intersection(msc2->m_rect);
+        mscomplex_t msc(dp->m_rect,dp->m_ext_rect,dp->m_domain_rect);
 
-        int d = get_aaplane_normal_dir(ixn);
+        msc.load_merge(dp1->bn(m_basename)+".msgraph.bin",
+                       dp2->bn(m_basename)+".msgraph.bin");
 
-        bnd[d] = ixn[d];
+        int N = msc.get_num_critpts();
 
-        msc->merge_up(*msc1,*msc2,bnd);
+//        msc.simplify(m_simp_tresh,m_f_range);
+
+        msc.stow(dp->bn(m_basename)+".msgraph.bin");
+
+        cout<<g_timer.getElapsedTimeInMilliSec()
+            <<"\t:merged ("<<(n+i)*2-1<<","<<(n+i)*2<<") -->"<<n+i-1
+            <<"\t("<<N<<")"
+            <<endl;
       }
     }
+
+    exit(0);
   }
 
   void data_manager_t::merge_down_subdomain_msgraphs ()
   {
-    for(int lev = 0 ;lev < m_level_ct ;++lev)
-    {
-      int n = two_power(lev);
+//    for(int lev = 0 ;lev < m_level_ct ;++lev)
+//    {
+//      int n = two_power(lev);
 
-      for(int i = 0 ;i < n; ++i)
-      {
-        mscomplex_ptr_t msc  = m_pieces[n+i-1]->m_msgraph;
-        mscomplex_ptr_t msc1 = m_pieces[(n+i)*2 -1]->m_msgraph;
-        mscomplex_ptr_t msc2 = m_pieces[(n+i)*2]->m_msgraph;
+//      for(int i = 0 ;i < n; ++i)
+//      {
+//        mscomplex_ptr_t msc  = m_pieces[n+i-1]->m_msgraph;
+//        mscomplex_ptr_t msc1 = m_pieces[(n+i)*2 -1]->m_msgraph;
+//        mscomplex_ptr_t msc2 = m_pieces[(n+i)*2]->m_msgraph;
 
-        rect_t bnd = msc1->m_ext_rect.intersection(msc2->m_ext_rect);
-        rect_t ixn = msc1->m_rect.intersection(msc2->m_rect);
+//        rect_t bnd = msc1->m_ext_rect.intersection(msc2->m_ext_rect);
+//        rect_t ixn = msc1->m_rect.intersection(msc2->m_rect);
 
-        int d = get_aaplane_normal_dir(ixn);
+//        int d = get_aaplane_normal_dir(ixn);
 
-        bnd[d] = ixn[d];
+//        bnd[d] = ixn[d];
 
-        msc->merge_down(*msc1,*msc2,bnd);
-      }
-    }
+//        msc->merge_down(*msc1,*msc2,bnd);
+//      }
+//    }
   }
 
   void data_manager_t::save_graphs()
   {
-    for(int i = 0 ;i < m_pieces.size(); ++i)
-    {
-      piece_ptr_t dp = m_pieces[i];
-      dp->m_msgraph->write_graph(dp->get_basename(m_basename)+".graph.txt");
-    }
+//    for(int i = 0 ;i < m_pieces.size(); ++i)
+//    {
+//      piece_ptr_t dp = m_pieces[i];
+//      dp->m_msgraph->write_graph(dp->get_basename(m_basename)+".graph.txt");
+//    }
   }
 
   void data_manager_t::save_mfolds()
   {
-    for(int i = two_power(m_level_ct)-1 ;i < m_pieces.size(); ++i)
-    {
-      piece_ptr_t dp = m_pieces[i];
-      dp->m_msgraph->invert_for_collection();
-      dp->m_dataset->saveManifolds(dp->m_msgraph,dp->get_basename(m_basename));
-    }
+//    for(int i = two_power(m_level_ct)-1 ;i < m_pieces.size(); ++i)
+//    {
+//      piece_ptr_t dp = m_pieces[i];
+//      dp->m_msgraph->invert_for_collection();
+//      dp->m_dataset->saveManifolds(dp->m_msgraph,dp->get_basename(m_basename));
+//    }
   }
 
   void data_manager_t::destoryPieces()
@@ -374,7 +387,7 @@ namespace grid
 
     rect_t d(cellid_t::zero,(size-cellid_t::one)*2);
     dataset_ptr_t   dataset(new dataset_t(d,d,d));
-    mscomplex_ptr_t msgraph(new mscomplex_t(d,d));
+    mscomplex_ptr_t msgraph(new mscomplex_t(d,d,d));
 
     string basename(filename);
 
@@ -391,7 +404,8 @@ namespace grid
 
     if(simp_tresh >=0)
     {
-    msgraph->simplify_un_simplify(simp_tresh,-1);
+    msgraph->simplify(simp_tresh,-1);
+    msgraph->un_simplify();
     cout<<"simplification done ------ "<<g_timer.getElapsedTimeInMilliSec()<<endl;
     }
 
@@ -412,22 +426,14 @@ namespace grid
       m_prct(p),
       m_ext_prct(pd.intersection(rect_t(p.lc()-1,p.uc()+1)))
   {
-    rect_t r = rect_t( p.lc()*2,( p.uc()-1)*2);
-    rect_t d = rect_t(pd.lc()*2,(pd.uc()-1)*2);
+    m_rect        = rect_t( p.lc()*2,( p.uc()-1)*2);
+    m_domain_rect = rect_t(pd.lc()*2,(pd.uc()-1)*2);
+    m_ext_rect    = m_domain_rect.intersection(rect_t((p.lc()-1)*2,p.uc()*2));
 
-    rect_t e = d.intersection(rect_t((p.lc()-1)*2,p.uc()*2));
-
-    ASSERT(r.intersection(d) == r);
-
-    m_msgraph.reset(new mscomplex_t(r,e));
-
-    if(l == 0)
-    {
-      m_dataset.reset(new dataset_t(r,e,d));
-    }
+    ASSERT(m_rect.intersection(m_domain_rect) == m_rect);
   }
 
-  std::string octtree_piece_t::get_basename(const std::string& basename)
+  std::string octtree_piece_t::bn(const std::string& basename)
   {
     return basename+"."+utls::to_string(m_ext_prct);
   }

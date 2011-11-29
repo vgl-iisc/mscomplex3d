@@ -611,8 +611,6 @@ namespace grid
       }
     }
 
-    typedef dataset_t::owner_array_t owner_array_t;
-
     void worker::owner_extrema(dataset_ptr_t ds)
     {
       cell_pair_t rct      = to_cell_pair(ds->m_rect);

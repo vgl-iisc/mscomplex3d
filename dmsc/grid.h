@@ -5,6 +5,7 @@
 #include <timer.h>
 
 #include <boost/shared_ptr.hpp>
+#include <boost/multi_array.hpp>
 
 #include <aabb.h>
 
@@ -26,18 +27,15 @@ namespace grid
   typedef std::vector<int>                                int_list_t;
   typedef std::vector<char>                               char_list_t;
   typedef std::vector<cell_fn_t>                          cell_fn_list_t;
-  typedef std::vector<bool>                               bool_list_t;
+  typedef std::vector<char>                               bool_list_t;
   typedef std::vector<rect_t>                             rect_list_t;
 
   typedef boost::shared_ptr<int_list_t>                   int_list_ptr_t;
   typedef boost::shared_ptr<cellid_list_t>                cellid_list_ptr_t;
 
-  enum eGDIR
-  {
-    GDIR_DES,
-    GDIR_ASC,
-    GDIR_CT
-  };
+  typedef boost::multi_array<int,gc_grid_dim>             int_marray_t;
+
+  enum eGDIR  {GDIR_DES,GDIR_ASC,GDIR_CT};
 
   class dataset_t;
   class mscomplex_t;
@@ -50,6 +48,24 @@ namespace grid
   typedef boost::shared_ptr<const dataset_t>      dataset_const_ptr_t;
   typedef boost::shared_ptr<const mscomplex_t>    mscomplex_const_ptr_t;
   typedef boost::shared_ptr<const data_manager_t> data_manager_const_ptr_t;
+
+  inline int c_to_i(const rect_t &r,cellid_t c)
+  {
+    cellid_t s = r.span()+1;
+    c = (c - r.lc());
+    return (s[0]*s[1]*c[2] + s[0]*c[1] + c[0]);
+  }
+
+  inline cellid_t i_to_c(const rect_t &r,int i)
+  {
+    cellid_t s = r.span()+1;
+    cellid_t c = r.lc() + (cellid_t(i%s[0],(i%(s[0]*s[1]))/s[0],i/(s[0]*s[1])));
+    ASSERT(r.contains(c));
+    return c;
+  }
+
+  inline int num_cells(const rect_t &r)
+  {return c_to_i(r,r.uc()) + 1;}
 
   extern "C"
   Timer g_timer;

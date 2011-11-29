@@ -29,10 +29,10 @@ inline int mark_reachable(iter_t cp_b,iter_t cp_e,dataset_t &ds)
 
    for(cellid_t * b = cets, *e = cets + ds.get_cets<dir>(c,cets);b!=e;++b)
    {
-     if(!ds.isCellCritical(*b))
+     if(!ds.isCellCritical(*b) && ds.m_rect.contains(*b))
      {
        cellid_t p = ds.getCellPairId(*b);
-       if(ds.getCellDim(p) == dim && !ds.isCellVisited(p) )
+       if(ds.m_rect.contains(p) && ds.getCellDim(p) == dim && !ds.isCellVisited(p) )
        {
          stk.push_back(p);
        }

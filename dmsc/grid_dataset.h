@@ -26,16 +26,12 @@
 #include <queue>
 
 #include <boost/enable_shared_from_this.hpp>
-#include <boost/multi_array.hpp>
 #include <boost/function.hpp>
 
 #include <grid.h>
 
 namespace grid
 {
-
-  class mscomplex_t;
-
   class dataset_t:public boost::enable_shared_from_this<dataset_t>
   {
 
@@ -58,7 +54,6 @@ namespace grid
     typedef boost::multi_array<cellid_t,gc_grid_dim>        cellid_array_t;
     typedef boost::multi_array<cell_flag_t,gc_grid_dim>     cellflag_array_t;
     typedef boost::multi_array<cell_fn_t,gc_grid_dim>       varray_t;
-    typedef boost::multi_array<int,gc_grid_dim>             owner_array_t;
     typedef cellid_list_t                                   mfold_t;
 
 
@@ -71,8 +66,8 @@ namespace grid
     varray_t           m_vert_fns;
     cellflag_array_t   m_cell_flags;
 
-    owner_array_t      m_owner_maxima;
-    owner_array_t      m_owner_minima;
+    int_marray_t       m_owner_maxima;
+    int_marray_t       m_owner_minima;
 
   public:
 
@@ -218,24 +213,17 @@ namespace grid
     inline rect_t get_extrema_rect() const;
 
     template<eGDIR dir>
-    inline owner_array_t & owner_extrema() ;
+    inline int_marray_t & owner_extrema() ;
+
+    void stow(std::ostream &os);
+    void load(std::istream &is);
+
+    inline void stow(const std::string &f)
+    {std::fstream fs(f.c_str(),std::ios::out|std::ios::binary);stow(fs);}
+    inline void load(const std::string &f)
+    {std::fstream fs(f.c_str(),std::ios::in|std::ios::binary);load(fs);}
 
   };
-
-  inline int c_to_i(const rect_t &r,cellid_t c)
-  {
-    cellid_t s = r.span()+1;
-    c = (c - r.lc());
-    return (s[0]*s[1]*c[2] + s[0]*c[1] + c[0]);
-  }
-
-  inline cellid_t i_to_c(const rect_t &r,int i)
-  {
-    cellid_t s = r.span()+1;
-    cellid_t c = r.lc() + (cellid_t(i%s[0],(i%(s[0]*s[1]))/s[0],i/(s[0]*s[1])));
-    ASSERT(r.contains(c));
-    return c;
-  }
 
   inline int c_to_i2(const rect_t &r,cellid_t c)
   {
@@ -254,9 +242,6 @@ namespace grid
 
     return r.lc() + cellid_t(2*(i%X),2*((i%(X*Y))/X),2*(i/(X*Y)));
   }
-
-  inline int num_cells(const rect_t &r)
-  {return c_to_i(r,r.uc()) + 1;}
 
   inline int num_cells2(const rect_t &r)
   {return c_to_i2(r,r.uc()) + 1;}
@@ -300,11 +285,11 @@ namespace grid
 
 
   template<>
-  inline dataset_t::owner_array_t & dataset_t::owner_extrema<GDIR_DES>()
+  inline int_marray_t & dataset_t::owner_extrema<GDIR_DES>()
   {return m_owner_maxima;}
 
   template<>
-  inline dataset_t::owner_array_t & dataset_t::owner_extrema<GDIR_ASC>()
+  inline int_marray_t & dataset_t::owner_extrema<GDIR_ASC>()
   {return m_owner_minima;}
 
   template <>

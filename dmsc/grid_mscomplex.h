@@ -66,6 +66,8 @@ namespace grid
     bool_list_t     m_cp_is_cancelled;
     cell_fn_list_t  m_cp_fn;
 
+    int_pair_list_t m_canc_list;
+
     id_cp_map_t   m_id_cp_map;
 
     conn_list_t   m_conn[GDIR_CT];
@@ -74,10 +76,11 @@ namespace grid
 
     rect_t        m_rect;
     rect_t        m_ext_rect;
+    rect_t        m_domain_rect;
 
   public:
 
-    mscomplex_t(rect_t r,rect_t e);
+    mscomplex_t(rect_t r,rect_t e,rect_t d);
     ~mscomplex_t();
 
     inline int  get_num_critpts() const;
@@ -122,27 +125,12 @@ namespace grid
     inline bool is_saddle(int i) const;
 
     inline bool is_unpaired_saddle(int i) const
-    {
-      return (is_saddle(i) &&(is_paired(i) == false));
-    }
-
-    inline bool is_twosaddle_des_valid(int i) const
-    {
-      return (index(i) == 2 &&(!is_paired(i) || index(pair_idx(i) == 1) ));
-    }
-
-    inline bool is_onesaddle_asc_valid(int i) const
-    {
-      return (index(i) == 1 &&(!is_paired(i) || index(pair_idx(i) == 2) ));
-    }
+    {return (is_saddle(i) &&(is_paired(i) == false));}
 
   public:
 
-    void simplify(int_pair_list_t &,double simplification_treshold,double f_range);
-
-    void un_simplify(const int_pair_list_t &);
-
-    void simplify_un_simplify(double simplification_treshold,double f_range );
+    void simplify(double simplification_treshold,double f_range);
+    void un_simplify();
 
     void invert_for_collection();
 
@@ -156,6 +144,22 @@ namespace grid
 
     void write_graph(std::ostream & os) const;
     void write_graph(const std::string & fn) const;
+
+    void stow(std::ostream &os);
+    void load(std::istream &is);
+
+    inline void stow(const std::string &f)
+    {std::fstream fs(f.c_str(),std::ios::out|std::ios::binary);stow(fs);}
+    void load(const std::string &f)
+    {std::fstream fs(f.c_str(),std::ios::in|std::ios::binary);load(fs);}
+
+    void load_merge(std::istream &is1,std::istream &is2);
+
+    inline void load_merge(const std::string &f1,const std::string &f2)
+    {std::fstream fs1(f1.c_str(),std::ios::in|std::ios::binary);
+     std::fstream fs2(f2.c_str(),std::ios::in|std::ios::binary);
+     load_merge(fs1,fs2);}
+
 
     inline std::string cp_info (int cp_no) const;
     inline std::string cp_conn (int cp_no) const;
@@ -183,10 +187,7 @@ namespace grid
   };
 
   inline void order_pr_by_cp_index(const mscomplex_t &msc,int &p,int &q)
-  {
-    if(msc.index(p) < msc.index(q))
-      std::swap(p,q);
-  }
+  {if(msc.index(p) < msc.index(q))std::swap(p,q);}
 
   template <typename it_t>
   class mscomplex_t::cp_id_iterator:public std::iterator
