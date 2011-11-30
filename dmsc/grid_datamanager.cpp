@@ -202,7 +202,7 @@ namespace grid
       ds->init(dp->bn(m_basename)+".raw");
       ds->computeMsGraph(msc);
 
-//      msc->simplify(m_simp_tresh,m_f_range);
+      msc->simplify(m_simp_tresh,m_f_range);
 
       msc->stow(dp->bn(m_basename)+".msgraph.bin");
       ds->stow(dp->bn(m_basename)+".dataset.bin");
@@ -254,7 +254,7 @@ namespace grid
 
         int N = msc.get_num_critpts();
 
-//        msc.simplify(m_simp_tresh,m_f_range);
+        msc.simplify(m_simp_tresh,m_f_range);
 
         msc.stow(dp->bn(m_basename)+".msgraph.bin");
 

@@ -590,7 +590,11 @@ namespace grid
 
     for(uint i = 0 ;i < msc.get_num_critpts();++i)
     {
-      if(!msc.is_paired(i) || msc.is_canceled(i)) continue;
+      if(msc.is_canceled(i)) continue;
+
+      cellid_t c = msc.cellid(i);
+
+      if( !msc.is_paired(i) && msc.m_rect.boundryCount(c) == msc.m_ext_rect.boundryCount(c)) continue;
 
       conn_iter_t db = msc.m_des_conn[i].begin();
       conn_iter_t de = msc.m_des_conn[i].end();
@@ -599,8 +603,25 @@ namespace grid
       conn_iter_t ae = msc.m_asc_conn[i].end();
 
       for(;db!=de;++db) is_inc_on_ext[*db] = true;
-      for(;ab!=ae;++ab) is_inc_on_ext[*ab] = true;
+      for(;ab!=ae;++ab)
+      {
+        is_inc_on_ext[*ab] = true;
+      }
     }
+  }
+
+  inline void update_is_inc_ext(const mscomplex_t &msc, vector<bool> &is_inc_on_ext,int_pair_t pr)
+  {
+    int p = pr[0],q = pr[1];
+
+    cellid_t c_p = msc.cellid(p);
+    cellid_t c_q = msc.cellid(q);
+
+    if(msc.is_paired(p) || msc.m_rect.boundryCount(c_p) != msc.m_ext_rect.boundryCount(c_p))
+      is_inc_on_ext[q] = true;
+
+    if(msc.is_paired(q) || msc.m_rect.boundryCount(c_q) != msc.m_ext_rect.boundryCount(c_q))
+      is_inc_on_ext[p] = true;
   }
 
   void mscomplex_t::simplify(double f_tresh, double f_range)
@@ -658,10 +679,13 @@ namespace grid
       for(conn_iter_t i = m_des_conn[p].begin();i != m_des_conn[p].end();++i)
         for(conn_iter_t j = m_asc_conn[q].begin();j != m_asc_conn[q].end();++j)
         {
-          int_pair_t pr(*i,*j);
+          int_pair_t npr(*i,*j);
 
-          if(is_valid_canc_edge(*this,is_inc_ext,pr) && is_within_treshold(*this,pr,f_tresh))
-            pq.push(pr);
+          update_is_inc_ext(*this,is_inc_ext,npr);
+
+          if(is_valid_canc_edge(*this,is_inc_ext,npr) && is_within_treshold(*this,npr,f_tresh))
+            pq.push(npr);
+
         }
     }
     cout<<"num_cancellations    ::"<<(num_cancellations)<<endl;
@@ -857,7 +881,18 @@ namespace grid
 
   }
 
-  inline rect_t get_ixn(rect_t r1,rect_t r2,rect_t e1,rect_t e2)
+  inline cellid_t get_nulldirs(rect_t r)
+  {
+    cellid_t spn = r.span();
+
+    spn[0] = (spn[0] != 0)?(0):(1);
+    spn[1] = (spn[1] != 0)?(0):(1);
+    spn[2] = (spn[2] != 0)?(0):(1);
+
+    return spn;
+  }
+
+  inline void get_ixn(rect_t &ixn,cellid_t &od1,cellid_t &od2, rect_t r1,rect_t r2,rect_t e1,rect_t e2)
   {
     rect_t ir = r1.intersection(r2);
     rect_t ie = e1.intersection(e2);
@@ -868,24 +903,23 @@ namespace grid
     ASSERT((e1.lc() == ie.lc() && e2.uc() == ie.uc()) ||
            (e2.lc() == ie.lc() && e1.uc() == ie.uc()));
 
-    cellid_t s = ir.span();
+    cellid_t s = get_nulldirs(ir);
 
-    int d = (s[0] == 0)?(0):((s[1] == 0)?(1):(2));
+    ixn = rect_t(ie.lc()+2*s,ie.uc()-2*s);
 
-    ASSERT(s[d] == 0);
-
-    ie[d] = ir[d];
-
+    ASSERT(euclid_norm2(s) == 1);
     ASSERT(ir.eff_dim() == gc_grid_dim-1);
-    ASSERT(ie.eff_dim() == gc_grid_dim-1);
+    ASSERT(ixn.eff_dim() == gc_grid_dim-1);
 
-    return ie;
+    od1 = (r1.contains(ir.lc()-s))?(s):(s*-1);
+    od2 = (r2.contains(ir.lc()-s))?(s):(s*-1);
   }
 
   inline int get_idx_maps(int_list_t & idx_map1,int_list_t & idx_map2,
                            rect_t & ixn,int_marray_t & ixn_idx,
                            cellid_list_t &cl1,cellid_list_t &cl2,
-                           bool_list_t &ic1,bool_list_t &ic2)
+                           bool_list_t &ic1,bool_list_t &ic2,
+                           cellid_t od1,cellid_t od2)
   {
     ixn_idx.resize(ixn.span()+1);
     ixn_idx.reindex(ixn.lc());
@@ -895,7 +929,7 @@ namespace grid
     idx_map1.resize(N1,-1);idx_map2.resize(N2,-1);
 
     for(int i =0; i < N1; ++i)
-      if(!ic1[i])
+      if(!ic1[i] && !ixn.contains(cl1[i]-od1))
       {
         if(ixn.contains(cl1[i]))
           ixn_idx(cl1[i]) = pos;
@@ -904,7 +938,7 @@ namespace grid
       }
 
     for(int i =0; i < N2; ++i)
-      if(!ic2[i])
+      if(!ic2[i] && !ixn.contains(cl2[i]-od2))
       {
         idx_map2[i] = (ixn.contains(cl2[i]))?(ixn_idx(cl2[i])):(pos++);
       }
@@ -929,7 +963,7 @@ namespace grid
         msc.m_cp_is_cancelled[j] = false;
         msc.m_cp_fn[j]           = fn[i];
 
-        if(pi[i] != -1)
+        if(pi[i] != -1 && idx_map[pi[i]] != -1)
           msc.m_cp_pair_idx[j] = idx_map[pi[i]];
 
       }
@@ -1004,10 +1038,35 @@ namespace grid
     }
   }
 
+  inline bool check_all_cps_in(const mscomplex_t &msc,cellid_list_t cl,bool_list_t ic,
+                               int_list_t pi,rect_t r1,rect_t r2)
+  {
+    std::multiset<cellid_t> cset(msc.m_cp_cellid.begin(),msc.m_cp_cellid.end());
+
+    for( int i = 0 ; i < cl.size(); ++i)
+    {
+      int expect_cct = (ic[i])?(0):(1);
+      int actual_cct = cset.count(cl[i]);
+
+      try{ASSERT(expect_cct == actual_cct);}
+      catch(assertion_error e)
+      {
+        e.PUSHVAR(expect_cct).PUSHVAR(actual_cct);
+        e.PUSHVAR(cl[i]).PUSHVAR((bool)ic[i]);
+        e.PUSHVAR(((pi[i] != -1)?(cl[pi[i]]):(cellid_t(-1,-1,-1))));
+        e.PUSHVAR(r1).PUSHVAR(r2).PUSHVAR(r1.intersection(r2));
+        throw;
+      }
+    }
+
+    return true;
+  }
+
   void mscomplex_t::load_merge(std::istream &is1,std::istream &is2)
   {
     int_list_t    idx_map1,idx_map2;
     rect_t        ixn;
+    cellid_t      od1,od2;
     int_marray_t  ixn_idx;
 
     {
@@ -1026,7 +1085,7 @@ namespace grid
       bin_read(is1,e1);               bin_read(is2,e2);
       bin_read(is1,d1);               bin_read(is2,d2);
 
-      ixn = get_ixn(r1,r2,e1,e2);
+      get_ixn(ixn,od1,od2,r1,r2,e1,e2);
 
       bin_read_vec(is1,cl1,N1);       bin_read_vec(is2,cl2,N2);
       bin_read_vec(is1,vl1,N1);       bin_read_vec(is2,vl2,N2);
@@ -1039,9 +1098,12 @@ namespace grid
       bin_read_vec(is1,nconn1,2*N1);  bin_read_vec(is2,nconn2,2*N2);
       bin_read_vec(is1,adj1,NC1);     bin_read_vec(is2,adj2,NC2);
 
-      resize(get_idx_maps(idx_map1,idx_map2,ixn,ixn_idx,cl1,cl2,ic1,ic2));
+      resize(get_idx_maps(idx_map1,idx_map2,ixn,ixn_idx,cl1,cl2,ic1,ic2,od1,od2));
       copy_cp_info(*this,idx_map1,cl1,vl1,pi1,ci1,fn1);
       copy_cp_info(*this,idx_map2,cl2,vl2,pi2,ci2,fn2);
+
+      ASSERT(check_all_cps_in(*this,cl1,ic1,pi1,r1,r2));
+      ASSERT(check_all_cps_in(*this,cl2,ic2,pi2,r2,r1));
 
       copy_adj_info(*this,idx_map1,nconn1,adj1);
       copy_adj_info(*this,idx_map2,nconn2,adj2,ixn,cl2);
@@ -1073,6 +1135,7 @@ namespace grid
         }
       }
     }
+    cout<<SVAR(n_cp)<<endl;
   }
 
 

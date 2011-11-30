@@ -512,14 +512,12 @@ namespace grid
   }
 
   template<int dim,eGDIR dir>
-  inline bool is_required_cp(const dataset_t &ds,const mscomplex_t& msc,int i)
+  inline bool is_required_cp(const mscomplex_t& msc,int i)
   {
     static const int pdim = (dir == GDIR_DES)? (dim - 1):(dim +1);
 
-    cellid_t c = msc.cellid(i);
-
-    return ds.getCellDim(c) == dim && ds.isCellCritical(c)
-        && (!ds.isCellPaired(c) || ds.getCellDim(ds.getCellPairId(c)) == pdim);
+    return msc.index(i) == dim && msc.m_rect.contains(msc.cellid(i))
+        && (!msc.is_paired(i) || msc.index(msc.pair_idx(i)) == pdim);
   }
 
   template<typename T>
@@ -678,11 +676,11 @@ namespace grid
 #endif
 
 
-    mscomplex_t::filter_t f_1asc = bind(is_required_cp<1,GDIR_ASC>,boost::cref(*this),boost::cref(*msc),_1);
-    mscomplex_t::filter_t f_2des = bind(is_required_cp<2,GDIR_DES>,boost::cref(*this),boost::cref(*msc),_1);
+    mscomplex_t::filter_t f_1asc = bind(is_required_cp<1,GDIR_ASC>,boost::cref(*msc),_1);
+    mscomplex_t::filter_t f_2des = bind(is_required_cp<2,GDIR_DES>,boost::cref(*msc),_1);
 
-    mscomplex_t::filter_t f_2asc = bind(is_required_cp<2,GDIR_ASC>,boost::cref(*this),boost::cref(*msc),_1);
-    mscomplex_t::filter_t f_1des = bind(is_required_cp<1,GDIR_DES>,boost::cref(*this),boost::cref(*msc),_1);
+    mscomplex_t::filter_t f_2asc = bind(is_required_cp<2,GDIR_ASC>,boost::cref(*msc),_1);
+    mscomplex_t::filter_t f_1des = bind(is_required_cp<1,GDIR_DES>,boost::cref(*msc),_1);
 
     mark_reachable<1,GDIR_ASC>(msc->cp_id_fbegin(f_1asc),msc->cp_id_fend(f_1asc),*this);
 

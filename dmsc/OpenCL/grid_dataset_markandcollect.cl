@@ -194,12 +194,7 @@ __kernel void count_boundry_cps
     if( (!is_same_cell(p+bnd_dir,c)) && (!is_same_cell(c+bnd_dir,p)))
       continue;
 
-    n_cp ++;
-
-    if(!contains(ds.r,p))
-      continue;
-
-    n_cp++;
+    n_cp +=2;
   }
 
   cp_count_buf[get_global_id(0)] = n_cp;
@@ -314,19 +309,15 @@ __kernel void save_boundry_cps
     cp_cellid_buf[3*n_cp + 1] = c.y;
     cp_cellid_buf[3*n_cp + 2] = c.z;
 
-
     cp_vertid_buf[3*n_cp + 0] = v.x;
     cp_vertid_buf[3*n_cp + 1] = v.y;
     cp_vertid_buf[3*n_cp + 2] = v.z;
 
     cp_index_buf[n_cp]        = cell_dim(c);
-    cp_pair_idx_buf[n_cp]     = (contains(ds.r,p))?(n_cp+1):(-1);
+    cp_pair_idx_buf[n_cp]     = n_cp+1;
     cp_func_buf[n_cp]         = func;
 
     n_cp++;
-
-    if(!contains(ds.r,p))
-      continue;
 
     cp_cellid_buf[3*n_cp + 0] = p.x;
     cp_cellid_buf[3*n_cp + 1] = p.y;
