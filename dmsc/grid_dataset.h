@@ -91,6 +91,8 @@ namespace grid
 
     void  pairCellsWithinEst_thd(int tid,cellid_list_t * ccells);
 
+    void  assign_pairs2();
+
     void  markBoundry_thd(int tid,rect_t bnd,cellid_list_t * ccells);
 
     void  setupCPs(mscomplex_ptr_t msgraph,cellid_list_t * ccells,int offset);

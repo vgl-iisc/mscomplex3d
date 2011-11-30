@@ -23,6 +23,8 @@ cl::KernelFunctor s_assign_max_facet_edge;
 cl::KernelFunctor s_assign_max_facet_face;
 cl::KernelFunctor s_assign_max_facet_cube;
 cl::KernelFunctor s_assign_pairs;
+cl::KernelFunctor s_assign_pairs2;
+cl::KernelFunctor s_assign_pairs3;
 
 cl::KernelFunctor s_mark_cps;
 cl::KernelFunctor s_mark_boundry_cps;
@@ -255,6 +257,13 @@ namespace grid
 
         s_assign_pairs = cl::Kernel(program1, "assign_pairs").
             bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE));
+
+        s_assign_pairs2 = cl::Kernel(program1, "assign_pairs2").
+            bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE/2));
+
+        s_assign_pairs3 = cl::Kernel(program1, "assign_pairs3").
+            bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE/2));
+
       }
       catch (cl::Error err)
       {
@@ -412,6 +421,22 @@ namespace grid
         s_queue.finish();
 
         s_assign_pairs
+            (func_img,flag_img,rct.lo,rct.hi,ext.lo,ext.hi,dom.lo,dom.hi,flag_buf);
+        s_queue.finish();
+
+        s_queue.enqueueCopyBufferToImage
+            (flag_buf,flag_img,0,to_size(0,0,0),flag_size);
+        s_queue.finish();
+
+        s_assign_pairs2
+            (func_img,flag_img,rct.lo,rct.hi,ext.lo,ext.hi,dom.lo,dom.hi,flag_buf);
+        s_queue.finish();
+
+        s_queue.enqueueCopyBufferToImage
+            (flag_buf,flag_img,0,to_size(0,0,0),flag_size);
+        s_queue.finish();
+
+        s_assign_pairs3
             (func_img,flag_img,rct.lo,rct.hi,ext.lo,ext.hi,dom.lo,dom.hi,flag_buf);
         s_queue.finish();
 

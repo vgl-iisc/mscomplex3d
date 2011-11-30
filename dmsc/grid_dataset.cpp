@@ -454,6 +454,185 @@ namespace grid
 //    }
   }
 
+  inline bool is_pairable2
+  ( const dataset_t &ds,
+    cellid_t p, cellid_t p_mf ,cellid_t q)
+  {
+    if(!ds.m_ext_rect.contains(q))
+      return false;
+
+    if(ds.m_domain_rect.isOnBoundry(p) != ds.m_domain_rect.isOnBoundry(q))
+      return false;
+
+    cellid_t q_mf    = ds.getCellMaxFacetId(q);
+    cellid_t q_mf_mf = ds.getCellMaxFacetId(q_mf);
+
+    return ((q_mf != p) && (q_mf_mf == p_mf));
+  }
+
+  cellid_t invalid_cell(-1,-1,-1);
+
+  inline bool set_pair_edge2(dataset_t& ds, cellid_t e,cellid_t d0,cellid_t d1)
+  {
+    if(!ds.m_rect.contains(e))
+      return false;
+
+    if(ds.isCellPaired(e))
+      return false;
+
+    cellid_t e_mf =  ds.getCellMaxFacetId(e);
+
+    cellid_t f0 = e - d0;
+    cellid_t f1 = e + d0;
+    cellid_t f2 = e - d1;
+    cellid_t f3 = e + d1;
+
+    cellid_t f = invalid_cell;
+
+    if (is_pairable2(ds,e,e_mf,f0))
+      f = f0;
+
+    if ((is_pairable2(ds,e,e_mf,f1)) &&
+        ((f == invalid_cell) || ds.compare_cells<2>(f1,f)))
+      f = f1;
+
+    if ((is_pairable2(ds,e,e_mf,f2)) &&
+        ((f == invalid_cell) || ds.compare_cells<2>(f2,f)))
+      f = f2;
+
+    if ((is_pairable2(ds,e,e_mf,f3)) &&
+        ((f == invalid_cell) || ds.compare_cells<2>(f3,f)))
+      f = f3;
+
+    if(f != invalid_cell && !ds.isCellPaired(f))
+    {
+      ds.pairCells(e,f);
+      return true;
+    }
+    return false;
+  }
+
+  inline bool set_pair_face2
+  ( dataset_t &ds,cellid_t f,cellid_t d)
+  {
+    if(!ds.m_rect.contains(f))
+      return false;
+
+    if(ds.isCellPaired(f))
+      return false;
+
+    cellid_t c0 = f - d;
+    cellid_t c1 = f + d;
+
+    cellid_t f_mf =  ds.getCellMaxFacetId(f);
+
+    cellid_t c = invalid_cell;
+
+    if (is_pairable2(ds,f,f_mf,c0))
+      c = c0;
+
+    if ((is_pairable2(ds,f,f_mf,c1)) &&
+        ((c == invalid_cell) || ds.compare_cells<3>(c1,c)))
+      c = c1;
+
+    if(!(c == invalid_cell) && !ds.isCellPaired(c))
+    {
+      ds.pairCells(f,c);
+      return true;
+    }
+    return false;
+  }
+
+
+  inline bool is_pairable3
+  ( const dataset_t &ds,
+    cellid_t p, cellid_t p_mf ,cellid_t p_mf_mf ,cellid_t q)
+  {
+    if(!ds.m_ext_rect.contains(q))
+      return false;
+
+    if(ds.m_domain_rect.isOnBoundry(p) != ds.m_domain_rect.isOnBoundry(q))
+      return false;
+
+    cellid_t q_mf       = ds.getCellMaxFacetId(q);
+    cellid_t q_mf_mf    = ds.getCellMaxFacetId(q_mf);
+    cellid_t q_mf_mf_mf = ds.getCellMaxFacetId(q_mf_mf);
+
+    return ((q_mf != p) && (q_mf_mf != p_mf) && (q_mf_mf_mf == p_mf_mf));
+  }
+
+  inline bool set_pair_face3
+  ( dataset_t &ds,cellid_t f,cellid_t d)
+  {
+    if(!ds.m_rect.contains(f))
+      return false;
+
+    if(ds.isCellPaired(f))
+      return false;
+
+    cellid_t c0 = f - d;
+    cellid_t c1 = f + d;
+
+    cellid_t f_mf    =  ds.getCellMaxFacetId(f);
+    cellid_t f_mf_mf =  ds.getCellMaxFacetId(f_mf);
+
+    cellid_t c = invalid_cell;
+
+    if (is_pairable3(ds,f,f_mf,f_mf_mf,c0))
+      c = c0;
+
+    if ((is_pairable3(ds,f,f_mf,f_mf_mf,c1)) &&
+        ((c == invalid_cell) || ds.compare_cells<3>(c1,c)))
+      c = c1;
+
+    if(!(c == invalid_cell) && !ds.isCellPaired(c))
+    {
+      ds.pairCells(f,c);
+      return true;
+    }
+    return false;
+  }
+
+  void  dataset_t::assign_pairs2()
+  {
+    cellid_t X = cellid_t(1,0,0);
+    cellid_t Y = cellid_t(0,1,0);
+    cellid_t Z = cellid_t(0,0,1);
+
+    cellid_t XY = cellid_t(1,1,0);
+    cellid_t YZ = cellid_t(0,1,1);
+    cellid_t ZX = cellid_t(1,0,1);
+
+    int n_p = 0;
+
+    for(iterator_dim b = begin(0),e = end(0); b!= e; ++b)
+    {
+      cellid_t v = *b;
+
+      if (set_pair_edge2(*this,v+X,Y,Z)) ++n_p;
+      if (set_pair_edge2(*this,v+Y,Z,X)) ++n_p;
+      if (set_pair_edge2(*this,v+Z,X,Y)) ++n_p;
+
+      if (set_pair_face2(*this,v+XY,Z)) ++n_p;
+      if (set_pair_face2(*this,v+YZ,X)) ++n_p;
+      if (set_pair_face2(*this,v+ZX,Y)) ++n_p;
+    }
+
+    cout<<SVAR(n_p)<<endl;
+    n_p = 0;
+
+    for(iterator_dim b = begin(0),e = end(0); b!= e; ++b)
+    {
+      cellid_t v = *b;
+
+      if (set_pair_face3(*this,v+XY,Z)) ++n_p;
+      if (set_pair_face3(*this,v+YZ,X)) ++n_p;
+      if (set_pair_face3(*this,v+ZX,Y)) ++n_p;
+    }
+
+    cout<<SVAR(n_p)<<endl;
+  }
+
   void  dataset_t::markBoundry_thd(int tid, rect_t bnd, cellid_list_t *ccells)
   {
     int N = num_cells(bnd);

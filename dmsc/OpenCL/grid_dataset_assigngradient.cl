@@ -439,3 +439,238 @@ __kernel void assign_pairs
     set_pair_face(func_img,flag_img,ds,v+ZXdir,Ydir,flag_buf);
   }
 }
+
+inline bool is_pairable2
+( __read_only image3d_t  func_img,
+  __read_only image3d_t  flag_img,
+  const dataset_t ds,
+  cell_t p, cell_t p_mf ,cell_t q)
+{
+  if(!contains(ds.e,q))
+    return false;
+
+  if(is_boundry(ds.d,p) != is_boundry(ds.d,q))
+    return false;
+
+  flag_t q_fg    = read_imageui(flag_img, flag_sampler, to_int4(q-ds.e.lc)).x;
+  cell_t q_mf    = flag_to_mxfct(q,q_fg);
+  flag_t q_mf_fg = read_imageui(flag_img, flag_sampler, to_int4(q_mf-ds.e.lc)).x;
+  cell_t q_mf_mf = flag_to_mxfct(q_mf,q_mf_fg);
+
+  return ((!is_same_cell(q_mf,p)) && is_same_cell(q_mf_mf,p_mf));
+}
+
+inline void set_pair_edge2
+( __read_only image3d_t  func_img,
+  __read_only image3d_t  flag_img,
+  const dataset_t ds,
+  const cell_t e,
+  const cell_t d0,
+  const cell_t d1,
+  __global flag_t * flag_buf
+  )
+{
+  if(!contains(ds.r,e))
+    return;
+
+  flag_t e_fg = read_imageui(flag_img, flag_sampler, to_int4(e-ds.e.lc)).x;
+
+  if(is_paired(e_fg))
+    return;
+
+  cell_t e_mf =  flag_to_mxfct(e,e_fg);
+
+  cell_t f0 = e - d0;
+  cell_t f1 = e + d0;
+  cell_t f2 = e - d1;
+  cell_t f3 = e + d1;
+
+  cell_t f = invalid_cell;
+
+  if (is_pairable2(func_img,flag_img,ds,e,e_mf,f0))
+    f = f0;
+
+  if ((is_pairable2(func_img,flag_img,ds,e,e_mf,f1)) &&
+      (is_same_cell(f,invalid_cell) || compare_faces(func_img,flag_img,ds,f1,f)))
+    f = f1;
+
+  if ((is_pairable2(func_img,flag_img,ds,e,e_mf,f2)) &&
+      (is_same_cell(f,invalid_cell) || compare_faces(func_img,flag_img,ds,f2,f)))
+    f = f2;
+
+  if ((is_pairable2(func_img,flag_img,ds,e,e_mf,f3)) &&
+      (is_same_cell(f,invalid_cell) || compare_faces(func_img,flag_img,ds,f3,f)))
+    f = f3;
+
+  if(!is_same_cell(f,invalid_cell))
+  {
+    flag_t f_fg = read_imageui(flag_img, flag_sampler, to_int4(f-ds.e.lc)).x;
+
+    if(!is_paired(f_fg))
+      mark_pair(func_img,flag_img,ds,e,f,flag_buf);
+  }
+}
+
+inline void set_pair_face2
+( __read_only image3d_t  func_img,
+  __read_only image3d_t  flag_img,
+  const dataset_t ds,
+  const cell_t f,
+  const cell_t d,
+  __global flag_t * flag_buf)
+{
+  if(!contains(ds.r,f))
+    return;
+
+  flag_t f_fg = read_imageui(flag_img, flag_sampler, to_int4(f-ds.e.lc)).x;
+
+  if(is_paired(f_fg))
+    return;
+
+  cell_t f_mf =  flag_to_mxfct(f,f_fg);
+
+  cell_t c0 = f - d;
+  cell_t c1 = f + d;
+  cell_t c  = invalid_cell;
+
+
+  if (is_pairable2(func_img,flag_img,ds,f,f_mf,c0))
+    c = c0;
+
+  if ((is_pairable2(func_img,flag_img,ds,f,f_mf,c1)) &&
+      (is_same_cell(c,invalid_cell) || compare_cubes(func_img,flag_img,ds,c1,c)))
+    c = c1;
+
+  if(!is_same_cell(c,invalid_cell))
+  {
+    flag_t c_fg = read_imageui(flag_img, flag_sampler, to_int4(c-ds.e.lc)).x;
+
+    if(!is_paired(c_fg))
+      mark_pair(func_img,flag_img,ds,f,c,flag_buf);
+  }
+}
+
+
+__kernel void assign_pairs2
+(
+  __read_only image3d_t  func_img,
+  __read_only image3d_t  flag_img,
+  cell_t rct_lc,  cell_t rct_uc,
+  cell_t ext_lc,  cell_t ext_uc,
+  cell_t dom_lc,  cell_t dom_uc,
+  __global flag_t   * flag_buf
+)
+{
+  int tid      = get_global_id(0);
+  int num_thds = get_global_size(0);
+
+  dataset_t ds = make_dataset(rct_lc,rct_uc,ext_lc,ext_uc,dom_lc,dom_uc);
+
+  int N = num_cells2(ds.r);
+
+  for( int i = tid ; i < N ; i += num_thds)
+  {
+    cell_t v = i_to_c2(ds.r,i);
+
+    set_pair_edge2(func_img,flag_img,ds,v+Xdir,Ydir,Zdir,flag_buf);
+    set_pair_edge2(func_img,flag_img,ds,v+Ydir,Zdir,Xdir,flag_buf);
+    set_pair_edge2(func_img,flag_img,ds,v+Zdir,Xdir,Ydir,flag_buf);
+
+    set_pair_face2(func_img,flag_img,ds,v+XYdir,Zdir,flag_buf);
+    set_pair_face2(func_img,flag_img,ds,v+YZdir,Xdir,flag_buf);
+    set_pair_face2(func_img,flag_img,ds,v+ZXdir,Ydir,flag_buf);
+  }
+}
+
+inline bool is_pairable3
+( __read_only image3d_t  func_img,
+  __read_only image3d_t  flag_img,
+  const dataset_t ds,
+  cell_t p, cell_t p_mf,cell_t p_mf_mf,cell_t q)
+{
+  if(!contains(ds.e,q))
+    return false;
+
+  if(is_boundry(ds.d,p) != is_boundry(ds.d,q))
+    return false;
+
+  flag_t q_fg    = read_imageui(flag_img, flag_sampler, to_int4(q-ds.e.lc)).x;
+  cell_t q_mf    = flag_to_mxfct(q,q_fg);
+
+  flag_t q_mf_fg = read_imageui(flag_img, flag_sampler, to_int4(q_mf-ds.e.lc)).x;
+  cell_t q_mf_mf = flag_to_mxfct(q_mf,q_mf_fg);
+
+  flag_t q_mf_mf_fg = read_imageui(flag_img, flag_sampler, to_int4(q_mf_mf-ds.e.lc)).x;
+  cell_t q_mf_mf_mf = flag_to_mxfct(q_mf_mf,q_mf_mf_fg);
+
+
+  return (!is_same_cell(q_mf,p) && !is_same_cell(q_mf_mf,p_mf) && is_same_cell(q_mf_mf_mf,p_mf_mf));
+}
+
+inline void set_pair_face3
+( __read_only image3d_t  func_img,
+  __read_only image3d_t  flag_img,
+  const dataset_t ds,
+  const cell_t f,
+  const cell_t d,
+  __global flag_t * flag_buf)
+{
+  if(!contains(ds.r,f))
+    return;
+
+  flag_t f_fg = read_imageui(flag_img, flag_sampler, to_int4(f-ds.e.lc)).x;
+  cell_t f_mf =  flag_to_mxfct(f,f_fg);
+
+  if(is_paired(f_fg))
+    return;
+
+  flag_t f_mf_fg = read_imageui(flag_img, flag_sampler, to_int4(f_mf-ds.e.lc)).x;
+  cell_t f_mf_mf = flag_to_mxfct(f_mf,f_mf_fg);
+
+  cell_t c0 = f - d;
+  cell_t c1 = f + d;
+  cell_t c  = invalid_cell;
+
+  if (is_pairable3(func_img,flag_img,ds,f,f_mf,f_mf_mf,c0))
+    c = c0;
+
+  if ((is_pairable3(func_img,flag_img,ds,f,f_mf,f_mf_mf,c1)) &&
+      (is_same_cell(c,invalid_cell) || compare_cubes(func_img,flag_img,ds,c1,c)))
+    c = c1;
+
+  if(!is_same_cell(c,invalid_cell))
+  {
+    flag_t c_fg = read_imageui(flag_img, flag_sampler, to_int4(c-ds.e.lc)).x;
+
+    if(!is_paired(c_fg))
+      mark_pair(func_img,flag_img,ds,f,c,flag_buf);
+  }
+}
+
+__kernel void assign_pairs3
+(
+  __read_only image3d_t  func_img,
+  __read_only image3d_t  flag_img,
+  cell_t rct_lc,  cell_t rct_uc,
+  cell_t ext_lc,  cell_t ext_uc,
+  cell_t dom_lc,  cell_t dom_uc,
+  __global flag_t   * flag_buf
+)
+{
+  int tid      = get_global_id(0);
+  int num_thds = get_global_size(0);
+
+  dataset_t ds = make_dataset(rct_lc,rct_uc,ext_lc,ext_uc,dom_lc,dom_uc);
+
+  int N = num_cells2(ds.r);
+
+  for( int i = tid ; i < N ; i += num_thds)
+  {
+    cell_t v = i_to_c2(ds.r,i);
+
+    set_pair_face3(func_img,flag_img,ds,v+XYdir,Zdir,flag_buf);
+    set_pair_face3(func_img,flag_img,ds,v+YZdir,Xdir,flag_buf);
+    set_pair_face3(func_img,flag_img,ds,v+ZXdir,Ydir,flag_buf);
+  }
+}
+
