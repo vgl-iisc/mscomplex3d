@@ -65,6 +65,7 @@ namespace grid
 
     varray_t           m_vert_fns;
     cellflag_array_t   m_cell_flags;
+    cellflag_array_t   m_cell_order;
 
     int_marray_t       m_owner_maxima;
     int_marray_t       m_owner_minima;
@@ -146,7 +147,7 @@ namespace grid
 
     // misc functions
   public:
-    inline cellid_t get_cell_vert(cellid_t c)
+    inline cellid_t get_cell_vert(cellid_t c) const
     {
       cellid_t v = c;
 
@@ -195,12 +196,12 @@ namespace grid
     void extract_vdata_subarray(rect_t r,const std::string &filename);
 
     class iterator;
-    inline iterator begin();
-    inline iterator end();
+    inline iterator begin() const;
+    inline iterator end() const;
 
     class iterator_dim;
-    inline iterator_dim begin(int d);
-    inline iterator_dim end(int d);
+    inline iterator_dim begin(int d) const;
+    inline iterator_dim end(int d) const;
 
     template <int dim>
     inline bool compare_cells(const cellid_t & c1, const cellid_t &c2) const;
@@ -334,6 +335,13 @@ namespace grid
     inline iterator& operator++(){++m_i; return *this;}
     inline iterator& operator--(){--m_i; return *this;}
     inline reference operator*() const {return i_to_c(m_rect,m_i);}
+
+    inline bool operator== (const iterator &rhs) const
+    {return (m_i == rhs.m_i);}
+
+    inline bool operator!= (const iterator &rhs) const
+    {return !(*this == rhs);}
+
   };
 
   class dataset_t::iterator_dim:public std::iterator
@@ -381,13 +389,13 @@ namespace grid
   };
 
 
-  inline dataset_t::iterator dataset_t::begin()
+  inline dataset_t::iterator dataset_t::begin() const
   {return iterator(m_rect);}
 
-  inline dataset_t::iterator dataset_t::end()
+  inline dataset_t::iterator dataset_t::end() const
   {return iterator(m_rect,num_cells(m_rect));}
 
-  inline dataset_t::iterator_dim dataset_t::begin(int d)
+  inline dataset_t::iterator_dim dataset_t::begin(int d) const
   {
     switch(d)
     {
@@ -402,7 +410,7 @@ namespace grid
     return iterator_dim(m_rect,cellid_t(-1,-1,-1),0);
   }
 
-  inline dataset_t::iterator_dim dataset_t::end(int d)
+  inline dataset_t::iterator_dim dataset_t::end(int d) const
   {
     switch(d)
     {

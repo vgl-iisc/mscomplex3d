@@ -258,4 +258,6 @@ inline bool is_critical (const flag_t f)
 {
   return ((f&CELLFLAG_CRITICAL) != 0);
 }
+
+inline cell_t swiz(cell_t c) {return to_cell(c.y,c.z,c.x);}
 #endif

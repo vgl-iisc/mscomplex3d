@@ -51,7 +51,8 @@ namespace grid
       m_cell_flags(cellid_t::zero,boost::fortran_storage_order()),
       m_vert_fns(cellid_t::zero,boost::fortran_storage_order()),
       m_owner_maxima(cellid_t::zero,boost::fortran_storage_order()),
-      m_owner_minima(cellid_t::zero,boost::fortran_storage_order())
+      m_owner_minima(cellid_t::zero,boost::fortran_storage_order()),
+      m_cell_order(cellid_t::zero,boost::fortran_storage_order())
   {
     // TODO: assert that the given rect is of even size..
     //       since each vertex is in the even positions
@@ -71,11 +72,13 @@ namespace grid
     rect_point_t bl = m_ext_rect.lower_corner();
 
     m_cell_flags.resize(span);
+    m_cell_order.resize(span);
     m_vert_fns.resize(pt_span);
 
     uint num_cells = span[0]*span[1]*span[2];
     uint num_pts   = pt_span[0]*pt_span[1]*pt_span[2];
 
+    m_cell_flags.reindex(bl);
     m_cell_flags.reindex(bl);
     m_vert_fns.reindex(bl/2);
 
@@ -103,9 +106,8 @@ namespace grid
   void  dataset_t::clear()
   {
     m_cell_flags.resize(cellid_t::zero);
-
+    m_cell_order.resize(cellid_t::zero);
     m_vert_fns.resize(cellid_t::zero);
-
     m_owner_maxima.resize(cellid_t::zero);
     m_owner_minima.resize(cellid_t::zero);
   }
@@ -788,6 +790,46 @@ namespace grid
       for(int i = 0 ; i < inc_pairs.size(); i +=2)
       {
         msc.connect_cps(inc_pairs[i],inc_pairs[i+1]);
+      }
+    }
+  }
+
+  void check_order(const dataset_t & ds)
+  {
+    cellid_t f[40];
+
+    for(dataset_t::iterator b = ds.begin(),e = ds.end(); b !=e ; ++b)
+    {
+      cellid_t c= *b;
+
+      int n_gtr = 0;
+
+      for(cellid_t *f_b = f,*f_e = f+ ds.getCellFacets(c,f); f_b != f_e; ++f_b)
+      {
+        if(ds.get_cell_vert(c) == ds.get_cell_vert(*f_b) && ds.m_cell_order(c) < ds.m_cell_order(*f_b) )
+          n_gtr++;
+      }
+
+     ASSERT(n_gtr <= 1);
+
+      int n_lsr = 0;
+
+      for(cellid_t *f_b = f,*f_e = f+ ds.getCellCofacets(c,f); f_b != f_e; ++f_b)
+      {
+        if(ds.get_cell_vert(c) == ds.get_cell_vert(*f_b) && ds.m_cell_order(c) > ds.m_cell_order(*f_b) )
+          n_lsr++;
+      }
+
+      ASSERT(n_lsr <= 1);
+
+      if(ds.isCellPaired(c))
+      {
+        cellid_t p = ds.getCellPairId(c);
+
+        if(get_cell_dim(c) < get_cell_dim(p))
+        {
+          ASSERT(ds.m_cell_order(c) > ds.m_cell_order(p));
+        }
       }
     }
   }
