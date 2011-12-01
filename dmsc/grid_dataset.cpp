@@ -806,7 +806,7 @@ namespace grid
 
       for(cellid_t *f_b = f,*f_e = f+ ds.getCellFacets(c,f); f_b != f_e; ++f_b)
       {
-        if(ds.get_cell_vert(c) == ds.get_cell_vert(*f_b) && ds.m_cell_order(c) < ds.m_cell_order(*f_b) )
+        if(ds.compare_cells<-1>(c,*f_b))
           n_gtr++;
       }
 
@@ -816,7 +816,7 @@ namespace grid
 
       for(cellid_t *f_b = f,*f_e = f+ ds.getCellCofacets(c,f); f_b != f_e; ++f_b)
       {
-        if(ds.get_cell_vert(c) == ds.get_cell_vert(*f_b) && ds.m_cell_order(c) > ds.m_cell_order(*f_b) )
+        if(ds.compare_cells<-1>(*f_b,c))
           n_lsr++;
       }
 
@@ -895,7 +895,6 @@ namespace grid
       group.join_all();
     }
 #endif
-
 
     mscomplex_t::filter_t f_1asc = bind(is_required_cp<1,GDIR_ASC>,boost::cref(*msc),_1);
     mscomplex_t::filter_t f_2des = bind(is_required_cp<2,GDIR_DES>,boost::cref(*msc),_1);

@@ -204,6 +204,9 @@ namespace grid
     inline iterator_dim end(int d) const;
 
     template <int dim>
+    inline bool compare_cells_orig(const cellid_t & c1, const cellid_t &c2) const;
+
+    template <int dim>
     inline bool compare_cells(const cellid_t & c1, const cellid_t &c2) const;
 
     template<eGDIR dir>
@@ -254,7 +257,7 @@ namespace grid
 
 
   template <int dim>
-  inline bool dataset_t::compare_cells(const cellid_t & c1, const cellid_t &c2) const
+  inline bool dataset_t::compare_cells_orig(const cellid_t & c1, const cellid_t &c2) const
   {
     cellid_t f1 = getCellMaxFacetId(c1);
     cellid_t f2 = getCellMaxFacetId(c2);
@@ -275,7 +278,7 @@ namespace grid
   }
 
   template <>
-  inline bool dataset_t::compare_cells<0>(const cellid_t & c1, const cellid_t &c2) const
+  inline bool dataset_t::compare_cells_orig<0>(const cellid_t & c1, const cellid_t &c2) const
   {
     cell_fn_t f1 = m_vert_fns(c1/2);
     cell_fn_t f2 = m_vert_fns(c2/2);
@@ -286,6 +289,35 @@ namespace grid
     return c1 < c2;
   }
 
+  template <int dim>
+  inline bool dataset_t::compare_cells(const cellid_t & c1, const cellid_t &c2) const
+  {
+    cellid_t f1 = getCellMaxFacetId(c1);
+    cellid_t f2 = getCellMaxFacetId(c2);
+
+    if(f1 == f2)
+      return m_cell_order(c1) < m_cell_order(c2);
+
+    return compare_cells<dim-1>(f1,f2);
+  }
+
+  template <>
+  inline bool dataset_t::compare_cells<0>(const cellid_t & c1, const cellid_t &c2) const
+  {
+    return compare_cells_orig<0>(c1,c2);
+  }
+
+  template <>
+  inline bool dataset_t::compare_cells<-1>(const cellid_t & c1, const cellid_t &c2) const
+  {
+    cellid_t v1 = get_cell_vert(c1);
+    cellid_t v2 = get_cell_vert(c2);
+
+    if(v1 == v2)
+      return m_cell_order(c1) < m_cell_order(c2);
+
+    return compare_cells<0>(v1,v2);
+  }
 
   template<>
   inline int_marray_t & dataset_t::owner_extrema<GDIR_DES>()

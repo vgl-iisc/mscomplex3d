@@ -626,7 +626,7 @@ namespace grid
 
   void mscomplex_t::simplify(double f_tresh, double f_range)
   {
-    BOOST_AUTO(cmp,bind(fast_persistence_lt,boost::cref(*this),_2,_1));
+    BOOST_AUTO(cmp,bind(persistence_lt,boost::cref(*this),_2,_1));
 
     priority_queue<int_pair_t,int_pair_list_t,typeof(cmp)> pq(cmp);
 
