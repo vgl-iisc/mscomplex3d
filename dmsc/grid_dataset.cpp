@@ -48,11 +48,12 @@ namespace grid
       m_rect (r),
       m_ext_rect (e),
       m_domain_rect(d),
-      m_cell_flags(cellid_t::zero,boost::fortran_storage_order()),
       m_vert_fns(cellid_t::zero,boost::fortran_storage_order()),
+      m_cell_flags(cellid_t::zero,boost::fortran_storage_order()),
+      m_cell_order(cellid_t::zero,boost::fortran_storage_order()),
       m_owner_maxima(cellid_t::zero,boost::fortran_storage_order()),
-      m_owner_minima(cellid_t::zero,boost::fortran_storage_order()),
-      m_cell_order(cellid_t::zero,boost::fortran_storage_order())
+      m_owner_minima(cellid_t::zero,boost::fortran_storage_order())
+
   {
     // TODO: assert that the given rect is of even size..
     //       since each vertex is in the even positions
@@ -91,7 +92,7 @@ namespace grid
     ensure(ifs.fail()==false,"failed to read some data");
 
     ifs.seekg(0,ios::end);
-    ensure(ifs.tellg()==num_pts*sizeof(cell_fn_t),"file/piece size mismatch");
+    ensure(uint(ifs.tellg())==num_pts*sizeof(cell_fn_t),"file/piece size mismatch");
 
     ifs.close();
 
@@ -666,7 +667,7 @@ namespace grid
 
   void  dataset_t::setupCPs(mscomplex_ptr_t msgraph, cellid_list_t *ccells, int offset)
   {
-    for(int i = 0 ; i < ccells->size();++i)
+    for(int i = 0 ; i < (int)ccells->size();++i)
     {
       cellid_t c = ccells->at(i);
 
@@ -787,7 +788,7 @@ namespace grid
       cellid_list_ptr_t ptr =  que.get();
       cellid_list_t &inc_pairs=*ptr;
 
-      for(int i = 0 ; i < inc_pairs.size(); i +=2)
+      for(int i = 0 ; i < (int)inc_pairs.size(); i +=2)
       {
         msc.connect_cps(inc_pairs[i],inc_pairs[i+1]);
       }

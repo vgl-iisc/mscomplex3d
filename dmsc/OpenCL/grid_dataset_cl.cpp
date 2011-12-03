@@ -485,7 +485,7 @@ namespace grid
 
         get_boundry_rects(from_cell_pair(rct),from_cell_pair(ext),bnds);
 
-        for( int i = 0 ; i < bnds.size(); ++i)
+        for( uint i = 0 ; i < bnds.size(); ++i)
         {
           cell_pair_t bnd = to_cell_pair(bnds[i]);
           cell_t  bnd_dir = to_cell(bnds[i].get_normal());
@@ -526,7 +526,7 @@ namespace grid
 
         get_boundry_rects(from_cell_pair(rct),from_cell_pair(ext),bnds);
 
-        for( int i = 0 ; i < bnds.size(); ++i)
+        for( uint i = 0 ; i < bnds.size(); ++i)
         {
           cell_pair_t bnd = to_cell_pair(bnds[i]);
           cell_t  bnd_dir = to_cell(bnds[i].get_normal());
@@ -579,7 +579,7 @@ namespace grid
 
         get_boundry_rects(from_cell_pair(rct),from_cell_pair(ext),bnds);
 
-        for( int i = 0 ; i < bnds.size(); ++i)
+        for( uint i = 0 ; i < bnds.size(); ++i)
         {
           cell_pair_t bnd = to_cell_pair(bnds[i]);
           cell_t  bnd_dir = to_cell(bnds[i].get_normal());

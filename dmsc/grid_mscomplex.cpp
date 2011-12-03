@@ -50,7 +50,7 @@ namespace grid
     return (i);
   }
 
-  int  mscomplex_t::resize(int i)
+  void  mscomplex_t::resize(int i)
   {
     m_cp_cellid.resize(i,cellid_t(-1,-1,-1));
     m_cp_vertid.resize(i,cellid_t(-1,-1,-1));
@@ -280,7 +280,7 @@ namespace grid
           {
             ASSERT(is_canceled(*i) ==false && is_canceled(r) ==false);
             ASSERT(abs(index(*i) - index(r)) == 1);
-            ASSERT(pair_idx( r) == *i && pair_idx(*i) ==  r);
+            ASSERT(pair_idx(r) == int(*i) && pair_idx(*i) ==  r);
           }
           catch (assertion_error ex)
           {
@@ -462,7 +462,7 @@ namespace grid
   {
     is_inc_on_ext.resize(msc.get_num_critpts(),false);
 
-    for(uint i = 0 ;i < msc.get_num_critpts();++i)
+    for(int i = 0 ;i < msc.get_num_critpts();++i)
     {
       if(msc.is_canceled(i)) continue;
 
@@ -516,7 +516,7 @@ namespace grid
 
     make_is_inc_ext(*this,is_inc_ext);
 
-    for(uint i = 0 ;i < get_num_critpts();++i)
+    for(int i = 0 ;i < get_num_critpts();++i)
     {
       for(conn_iter_t j = m_des_conn[i].begin();j != m_des_conn[i].end() ;++j)
       {
@@ -577,7 +577,7 @@ namespace grid
 
   void mscomplex_t::invert_for_collection()
   {
-    for(uint i = 0 ; i < get_num_critpts(); ++i)
+    for(int i = 0 ; i < get_num_critpts(); ++i)
     {
       if(is_paired(i)== true)
         continue;
@@ -635,7 +635,7 @@ namespace grid
 
     os<<"# SL.No  numDes numAsc connList"<<std::endl;
 
-    for(uint i = 0 ; i < get_num_critpts();++i)
+    for(int i = 0 ; i < get_num_critpts();++i)
     {
       os<<(int)i<<" ";
       os<<(int)m_des_conn[i].size()<<" ";
@@ -946,7 +946,9 @@ namespace grid
   {
     std::multiset<cellid_t> cset(msc.m_cp_cellid.begin(),msc.m_cp_cellid.end());
 
-    for( int i = 0 ; i < cl.size(); ++i)
+    int N = cl.size();
+
+    for( int i = 0 ; i < N; ++i)
     {
       int expect_cct = (ic[i])?(0):(1);
       int actual_cct = cset.count(cl[i]);
@@ -978,7 +980,10 @@ namespace grid
 
     memset(ixn_idx.data(),-1,(ixn.pt_end()-ixn.pt_begin())*sizeof(int));
 
-    for( int i1 = 0 ; i1 < cl1.size(); ++i1)
+    int N1  = cl1.size();
+    int N2  = cl2.size();
+
+    for( int i1 = 0 ; i1 < N1; ++i1)
     {
       if(ic1[i1]) continue;
 
@@ -991,7 +996,7 @@ namespace grid
       }
     }
 
-    for( int i2 = 0 ; i2 < cl2.size(); ++i2)
+    for( int i2 = 0 ; i2 < N2; ++i2)
     {
       if(ic2[i2]) continue;
 
@@ -1027,7 +1032,7 @@ namespace grid
 
     }
 
-    for( int i1 = 0 ; i1 < cl1.size(); ++i1)
+    for( int i1 = 0 ; i1 < N1; ++i1)
     {
       if(ic1[i1]) continue;
 

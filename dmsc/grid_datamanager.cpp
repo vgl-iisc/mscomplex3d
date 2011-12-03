@@ -211,30 +211,6 @@ namespace grid
     }
   }
 
-  int get_aaplane_normal_dir(const rect_t & plane)
-  {
-    try
-    {
-
-      ASSERT(plane.eff_dim() ==gc_grid_dim-1);
-
-      for( int d = 0 ; d < gc_grid_dim;++d)
-      {
-        if(plane[d][0] == plane[d][1])
-          return d;
-      }
-
-      ASSERT(false);
-    }
-    catch(assertion_error e)
-    {
-      e.push(_FFL);
-      e.push(SVAR(plane));
-
-      throw;
-    }
-  }
-
   void data_manager_t::merge_up_subdomain_msgraphs ()
   {
     for(int lev = m_level_ct-1 ;lev >= 0 ;--lev)
@@ -358,11 +334,11 @@ namespace grid
         cellid_t     size,
         cellid_t     levels,
         double       simp_tresh):
-      m_filename(filename),
-      m_basename(basename(filename.c_str())),
-      m_size(size),
-      m_levels(levels),
-      m_simp_tresh(simp_tresh)
+    m_size(size),
+    m_filename(filename),
+    m_simp_tresh(simp_tresh),
+    m_levels(levels),
+    m_basename(basename(filename.c_str()))
   {
     m_level_ct   = m_levels[0] + m_levels[1] + m_levels[2];
 
@@ -422,9 +398,9 @@ namespace grid
   }
 
   octtree_piece_t::octtree_piece_t (rect_t p,rect_t pd,int l):
-      m_level(l),
       m_prct(p),
-      m_ext_prct(pd.intersection(rect_t(p.lc()-1,p.uc()+1)))
+      m_ext_prct(pd.intersection(rect_t(p.lc()-1,p.uc()+1))),
+      m_level(l)
   {
     m_rect        = rect_t( p.lc()*2,( p.uc()-1)*2);
     m_domain_rect = rect_t(pd.lc()*2,(pd.uc()-1)*2);

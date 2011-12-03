@@ -13,7 +13,7 @@ namespace grid
 {
 
 template<int dim,eGDIR dir,typename iter_t>
-inline int mark_reachable(iter_t cp_b,iter_t cp_e,dataset_t &ds)
+inline void mark_reachable(iter_t cp_b,iter_t cp_e,dataset_t &ds)
 {
  cellid_t cets[40];
 

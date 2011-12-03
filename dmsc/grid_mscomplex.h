@@ -59,6 +59,10 @@ namespace grid
   {
   public:
 
+    rect_t        m_rect;
+    rect_t        m_ext_rect;
+    rect_t        m_domain_rect;
+
     cellid_list_t   m_cp_cellid;
     cellid_list_t   m_cp_vertid;
     int_list_t      m_cp_pair_idx;
@@ -74,17 +78,13 @@ namespace grid
     conn_list_t  &m_des_conn;
     conn_list_t  &m_asc_conn;
 
-    rect_t        m_rect;
-    rect_t        m_ext_rect;
-    rect_t        m_domain_rect;
-
   public:
 
     mscomplex_t(rect_t r,rect_t e,rect_t d);
     ~mscomplex_t();
 
     inline int  get_num_critpts() const;
-    int  resize(int i);
+    void  resize(int i);
 
     int  add_critpt(cellid_t c,char i,cell_fn_t f,cellid_t vert_cell);
     void set_critpt(int i,cellid_t c,char idx,cell_fn_t f,cellid_t vert_cell);
@@ -326,7 +326,7 @@ namespace grid
 
   inline char& mscomplex_t::index(int i)
   {
-    try{ASSERT(is_in_range(i,0,m_cp_index.size()));}
+    try{ASSERT(is_in_range(i,0,(int)m_cp_index.size()));}
     catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
 
     return m_cp_index[i];
@@ -334,7 +334,7 @@ namespace grid
 
   inline const char& mscomplex_t::index(int i) const
   {
-    try{ASSERT(is_in_range(i,0,m_cp_index.size()));}
+    try{ASSERT(is_in_range(i,0,(int)m_cp_index.size()));}
     catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
 
     return m_cp_index[i];
@@ -342,7 +342,7 @@ namespace grid
 
   inline int& mscomplex_t::pair_idx(int i)
   {
-    try{ASSERT(is_in_range(i,0,m_cp_pair_idx.size()));}
+    try{ASSERT(is_in_range(i,0,(int)m_cp_pair_idx.size()));}
     catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
 
     return m_cp_pair_idx[i];
@@ -350,7 +350,7 @@ namespace grid
 
   inline const int& mscomplex_t::pair_idx(int i) const
   {
-    try{ASSERT(is_in_range(i,0,m_cp_pair_idx.size()));}
+    try{ASSERT(is_in_range(i,0,(int)m_cp_pair_idx.size()));}
     catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
 
     return m_cp_pair_idx[i];
@@ -358,7 +358,7 @@ namespace grid
 
   inline bool mscomplex_t::is_paired(int i) const
   {
-    try{ASSERT(is_in_range(i,0,m_cp_pair_idx.size()));}
+    try{ASSERT(is_in_range(i,0,(int)m_cp_pair_idx.size()));}
     catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
 
     return (m_cp_pair_idx[i] != -1);
@@ -366,7 +366,7 @@ namespace grid
 
   inline void mscomplex_t::set_is_canceled(int i,bool c)
   {
-    try{ASSERT(is_in_range(i,0,m_cp_is_cancelled.size()));}
+    try{ASSERT(is_in_range(i,0,(int)m_cp_is_cancelled.size()));}
     catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
 
     m_cp_is_cancelled[i] = c;
@@ -374,7 +374,7 @@ namespace grid
 
   inline bool mscomplex_t::is_canceled(int i) const
   {
-    try{ASSERT(is_in_range(i,0,m_cp_is_cancelled.size()));}
+    try{ASSERT(is_in_range(i,0,(int)m_cp_is_cancelled.size()));}
     catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
 
     return m_cp_is_cancelled[i];
@@ -382,7 +382,7 @@ namespace grid
 
   inline cellid_t& mscomplex_t::cellid(int i)
   {
-    try{ASSERT(is_in_range(i,0,m_cp_cellid.size()));}
+    try{ASSERT(is_in_range(i,0,(int)m_cp_cellid.size()));}
     catch(assertion_error e)
     {e.push(_FFL).push(SVAR(i)).push(SVAR(m_cp_cellid.size()));throw;}
 
@@ -391,7 +391,7 @@ namespace grid
 
   inline const cellid_t& mscomplex_t::cellid(int i) const
   {
-    try{ASSERT(is_in_range(i,0,m_cp_cellid.size()));}
+    try{ASSERT(is_in_range(i,0,(int)m_cp_cellid.size()));}
     catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
 
     return m_cp_cellid[i];
@@ -399,7 +399,7 @@ namespace grid
 
   inline cellid_t& mscomplex_t::vertid(int i)
   {
-    try{ASSERT(is_in_range(i,0,m_cp_vertid.size()));}
+    try{ASSERT(is_in_range(i,0,(int)m_cp_vertid.size()));}
     catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
 
     return m_cp_vertid[i];
@@ -407,7 +407,7 @@ namespace grid
 
   inline const cellid_t& mscomplex_t::vertid(int i) const
   {
-    try{ASSERT(is_in_range(i,0,m_cp_vertid.size()));}
+    try{ASSERT(is_in_range(i,0,(int)m_cp_vertid.size()));}
     catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
 
     return m_cp_vertid[i];
@@ -415,7 +415,7 @@ namespace grid
 
   inline cell_fn_t& mscomplex_t::fn(int i)
   {
-    try{ASSERT(is_in_range(i,0,m_cp_fn.size()));}
+    try{ASSERT(is_in_range(i,0,(int)m_cp_fn.size()));}
     catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
 
     return m_cp_fn[i];
@@ -423,7 +423,7 @@ namespace grid
 
   inline const cell_fn_t& mscomplex_t::fn(int i) const
   {
-    try{ASSERT(is_in_range(i,0,m_cp_fn.size()));}
+    try{ASSERT(is_in_range(i,0,(int)m_cp_fn.size()));}
     catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
 
     return m_cp_fn[i];

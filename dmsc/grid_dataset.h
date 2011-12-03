@@ -361,7 +361,7 @@ namespace grid
       <std::forward_iterator_tag,cellid_t,int,cellid_t,cellid_t>
   {
   public:
-    iterator_dim(rect_t r,cellid_t d,int pn = 0):m_rect(r),m_dir(d),m_pn(pn),m_i(0)
+    iterator_dim(rect_t r,cellid_t d,int pn = 0):m_rect(r),m_dir(d),m_i(0),m_pn(pn)
     {
       m_cur_rect  = shrink(m_rect,m_dir);
       m_num_cells = num_cells2(m_cur_rect);
