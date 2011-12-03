@@ -228,44 +228,43 @@ namespace grid
         msc.load_merge(dp1->bn(m_basename)+".msgraph.bin",
                        dp2->bn(m_basename)+".msgraph.bin");
 
-        int N = msc.get_num_critpts();
-
         msc.simplify(m_simp_tresh,m_f_range);
 
         msc.stow(dp->bn(m_basename)+".msgraph.bin");
 
         cout<<g_timer.getElapsedTimeInMilliSec()
             <<"\t:merged ("<<(n+i)*2-1<<","<<(n+i)*2<<") -->"<<n+i-1
-            <<"\t("<<N<<")"
             <<endl;
       }
     }
-
-    exit(0);
   }
 
   void data_manager_t::merge_down_subdomain_msgraphs ()
   {
-//    for(int lev = 0 ;lev < m_level_ct ;++lev)
-//    {
-//      int n = two_power(lev);
+    for(int lev = 0 ;lev < m_level_ct ;++lev)
+    {
+      int n = two_power(lev);
 
-//      for(int i = 0 ;i < n; ++i)
-//      {
-//        mscomplex_ptr_t msc  = m_pieces[n+i-1]->m_msgraph;
-//        mscomplex_ptr_t msc1 = m_pieces[(n+i)*2 -1]->m_msgraph;
-//        mscomplex_ptr_t msc2 = m_pieces[(n+i)*2]->m_msgraph;
+      for(int i = 0 ;i < n; ++i)
+      {
+        piece_ptr_t dp  = m_pieces[n+i-1];
+        piece_ptr_t dp1 = m_pieces[(n+i)*2 -1];
+        piece_ptr_t dp2 = m_pieces[(n+i)*2];
 
-//        rect_t bnd = msc1->m_ext_rect.intersection(msc2->m_ext_rect);
-//        rect_t ixn = msc1->m_rect.intersection(msc2->m_rect);
+        mscomplex_t msc(dp->m_rect,dp->m_ext_rect,dp->m_domain_rect);
 
-//        int d = get_aaplane_normal_dir(ixn);
+        msc.load(dp->bn(m_basename)+".msgraph.bin");
+        msc.un_simplify();
 
-//        bnd[d] = ixn[d];
+        msc.unmerge_save(dp1->bn(m_basename)+".msgraph.bin",
+                         dp2->bn(m_basename)+".msgraph.bin");
 
-//        msc->merge_down(*msc1,*msc2,bnd);
-//      }
-//    }
+        cout<<g_timer.getElapsedTimeInMilliSec()
+            <<"\t:unmerged "<<n+i-1<<" --> ("<<(n+i)*2-1<<","<<(n+i)*2<<")"
+            <<endl;
+      }
+    }
+    exit(0);
   }
 
   void data_manager_t::save_graphs()

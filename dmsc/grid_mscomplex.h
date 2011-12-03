@@ -160,6 +160,13 @@ namespace grid
      std::fstream fs2(f2.c_str(),std::ios::in|std::ios::binary);
      load_merge(fs1,fs2);}
 
+    void unmerge_save(std::iostream &is1,std::iostream &is2);
+
+    inline void unmerge_save(const std::string &f1,const std::string &f2)
+    {std::fstream fs1(f1.c_str(),std::ios::in|std::ios::out|std::ios::binary);
+     std::fstream fs2(f2.c_str(),std::ios::in|std::ios::out|std::ios::binary);
+     unmerge_save(fs1,fs2);}
+
 
     inline std::string cp_info (int cp_no) const;
     inline std::string cp_conn (int cp_no) const;
@@ -350,7 +357,8 @@ namespace grid
 
   inline const int& mscomplex_t::pair_idx(int i) const
   {
-    try{ASSERT(is_in_range(i,0,(int)m_cp_pair_idx.size()));}
+    try{ASSERT(is_in_range(i,0,(int)m_cp_pair_idx.size()));
+    ASSERT(is_in_range(m_cp_pair_idx[i],0,(int)m_cp_pair_idx.size()));}
     catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
 
     return m_cp_pair_idx[i];
