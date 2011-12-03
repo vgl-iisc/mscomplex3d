@@ -260,7 +260,7 @@ namespace grid
             bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE));
 
         s_assign_pairs = cl::Kernel(program1, "assign_pairs").
-            bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE));
+            bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE/2));
 
         s_assign_pairs2 = cl::Kernel(program1, "assign_pairs2").
             bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE/2));
@@ -455,13 +455,13 @@ namespace grid
             (flag_buf,flag_img,0,to_size(0,0,0),flag_size);
         s_queue.finish();
 
-        s_assign_pairs3
-            (func_img,flag_img,rct.lo,rct.hi,ext.lo,ext.hi,dom.lo,dom.hi,flag_buf);
-        s_queue.finish();
+//        s_assign_pairs3
+//            (func_img,flag_img,rct.lo,rct.hi,ext.lo,ext.hi,dom.lo,dom.hi,flag_buf);
+//        s_queue.finish();
 
-        s_queue.enqueueCopyBufferToImage
-            (flag_buf,flag_img,0,to_size(0,0,0),flag_size);
-        s_queue.finish();
+//        s_queue.enqueueCopyBufferToImage
+//            (flag_buf,flag_img,0,to_size(0,0,0),flag_size);
+//        s_queue.finish();
 
         s_assign_est_order_edge
             (func_img,flag_img,rct.lo,rct.hi,ext.lo,ext.hi,dom.lo,dom.hi,order_buf);

@@ -18,6 +18,7 @@ typedef struct
   rect_t r;
   rect_t e;
   rect_t d;
+  rect_t wr;
 } dataset_t;
 
 #define flag_to_uint4(f)          ((uint4){(f),(0),(0),(0)})
@@ -84,6 +85,14 @@ inline dataset_t make_dataset
   ds.e = make_rect(ext_lc,ext_uc);
   ds.d = make_rect(dom_lc,dom_uc);
 
+  ds.wr.lc.x = (ds.r.lc.x + ds.e.lc.x)/2;
+  ds.wr.lc.y = (ds.r.lc.y + ds.e.lc.y)/2;
+  ds.wr.lc.z = (ds.r.lc.z + ds.e.lc.z)/2;
+
+  ds.wr.uc.x = (ds.r.uc.x + ds.e.uc.x)/2;
+  ds.wr.uc.y = (ds.r.uc.y + ds.e.uc.y)/2;
+  ds.wr.uc.z = (ds.r.uc.z + ds.e.uc.z)/2;
+
   return ds;
 }
 
@@ -95,6 +104,15 @@ inline dataset_t make_dataset2
   ds.r = make_rect2(rct);
   ds.e = make_rect2(ext);
   ds.d = make_rect2(dom);
+
+  ds.wr.lc.x = (ds.r.lc.x + ds.e.lc.x)/2;
+  ds.wr.lc.y = (ds.r.lc.y + ds.e.lc.y)/2;
+  ds.wr.lc.z = (ds.r.lc.z + ds.e.lc.z)/2;
+
+  ds.wr.uc.x = (ds.r.uc.x + ds.e.uc.x)/2;
+  ds.wr.uc.y = (ds.r.uc.y + ds.e.uc.y)/2;
+  ds.wr.uc.z = (ds.r.uc.z + ds.e.uc.z)/2;
+
 
   return ds;
 }

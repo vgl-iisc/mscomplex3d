@@ -76,6 +76,10 @@ namespace grid
     for (;b!=e;++b) os<<*b<<sep;
     return os;
   }
+
+  inline int get_cell_dim ( cellid_t c )
+  {return ( c[0]&0x01 ) + ( c[1]&0x01 ) + ( c[2]&0x01 );}
+
 }
 
 namespace std

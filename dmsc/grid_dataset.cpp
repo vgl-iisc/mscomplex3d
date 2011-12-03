@@ -79,7 +79,7 @@ namespace grid
     uint num_pts   = pt_span[0]*pt_span[1]*pt_span[2];
 
     m_cell_flags.reindex(bl);
-    m_cell_flags.reindex(bl);
+    m_cell_order.reindex(bl);
     m_vert_fns.reindex(bl/2);
 
     std::fill_n(m_cell_flags.data(),num_cells,0);
@@ -246,11 +246,11 @@ namespace grid
 
     cellid_t i,l = (c+cellid_t::one)&(cellid_t::one);
 
-    for(i[2] = -(l[2]) ; i[2] <= (l[2]) ;i[2]+=1)
+    for(i[0] = -(l[0]) ; i[0] <= (l[0]) ;i[0]+=1)
     {
       for(i[1] = -(l[1]) ; i[1] <= (l[1]) ;i[1]+=1)
       {
-        for(i[0] = -(l[0]) ; i[0] <= (l[0]) ;i[0]+=1)
+        for(i[2] = -(l[2]) ; i[2] <= (l[2]) ;i[2]+=1)
         {
           cf[pos++] = c+i;
         }
@@ -810,7 +810,27 @@ namespace grid
           n_gtr++;
       }
 
-     ASSERT(n_gtr <= 1);
+      try{ASSERT(n_gtr <= 1);}catch(assertion_error e)
+      {
+        cout<<SVAR(c)<<endl;
+        cout<<SVAR(ds.get_cell_vert(c))<<endl;
+        for(cellid_t *f_b = f,*f_e = f+ ds.getCellEst(ds.get_cell_vert(c),f); f_b != f_e; ++f_b)
+        {
+          cout<<*f_b<<"\t"<<(int)ds.m_cell_order(*f_b);
+
+          if(ds.compare_cells<-1>(c,*f_b))
+            cout<<"*";
+
+          cout<<"\t"<<get_cell_dim(*f_b);
+
+          if(get_cell_dim(*f_b) != 0 )
+            cout<<"\t"<<ds.getCellMaxFacetId(*f_b);
+
+          cout<<endl;
+
+        }
+        throw;
+      }
 
       int n_lsr = 0;
 

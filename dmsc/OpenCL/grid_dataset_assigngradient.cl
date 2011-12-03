@@ -306,6 +306,9 @@ inline void set_pair_vert
   const cell_t v,
   __global flag_t * flag_buf)
 {
+  if(!contains(ds.wr,v))
+    return;
+
   cell_t e0 = v - Xdir;
   cell_t e1 = v + Xdir;
   cell_t e2 = v - Ydir;
@@ -351,7 +354,7 @@ inline void set_pair_edge
   const cell_t d1,
   __global flag_t * flag_buf)
 {
-  if(!contains(ds.r,e))
+  if(!contains(ds.wr,e))
     return;
 
   cell_t f0 = e - d0;
@@ -388,7 +391,7 @@ inline void set_pair_face
   const cell_t d,
   __global flag_t * flag_buf)
 {
-  if(!contains(ds.r,f))
+  if(!contains(ds.wr,f))
     return;
 
   cell_t c0 = f - d;
@@ -422,11 +425,11 @@ __kernel void assign_pairs
 
   dataset_t ds = make_dataset(rct_lc,rct_uc,ext_lc,ext_uc,dom_lc,dom_uc);
 
-  int N = num_cells2(ds.r);
+  int N = num_cells2(ds.e);
 
   for( int i = tid ; i < N; i += num_thds)
   {
-    cell_t v = i_to_c2(ds.r,i);
+    cell_t v = i_to_c2(ds.e,i);
 
     set_pair_vert(func_img,flag_img,ds,v,flag_buf);
 
@@ -470,7 +473,7 @@ inline void set_pair_edge2
   __global flag_t * flag_buf
   )
 {
-  if(!contains(ds.r,e))
+  if(!contains(ds.wr,e))
     return;
 
   flag_t e_fg = read_imageui(flag_img, flag_sampler, to_int4(e-ds.e.lc)).x;
@@ -519,7 +522,7 @@ inline void set_pair_face2
   const cell_t d,
   __global flag_t * flag_buf)
 {
-  if(!contains(ds.r,f))
+  if(!contains(ds.wr,f))
     return;
 
   flag_t f_fg = read_imageui(flag_img, flag_sampler, to_int4(f-ds.e.lc)).x;
@@ -566,11 +569,11 @@ __kernel void assign_pairs2
 
   dataset_t ds = make_dataset(rct_lc,rct_uc,ext_lc,ext_uc,dom_lc,dom_uc);
 
-  int N = num_cells2(ds.r);
+  int N = num_cells2(ds.e);
 
   for( int i = tid ; i < N ; i += num_thds)
   {
-    cell_t v = i_to_c2(ds.r,i);
+    cell_t v = i_to_c2(ds.e,i);
 
     set_pair_edge2(func_img,flag_img,ds,v+Xdir,Ydir,Zdir,flag_buf);
     set_pair_edge2(func_img,flag_img,ds,v+Ydir,Zdir,Xdir,flag_buf);
@@ -615,7 +618,7 @@ inline void set_pair_face3
   const cell_t d,
   __global flag_t * flag_buf)
 {
-  if(!contains(ds.r,f))
+  if(!contains(ds.wr,f))
     return;
 
   flag_t f_fg = read_imageui(flag_img, flag_sampler, to_int4(f-ds.e.lc)).x;
@@ -662,11 +665,11 @@ __kernel void assign_pairs3
 
   dataset_t ds = make_dataset(rct_lc,rct_uc,ext_lc,ext_uc,dom_lc,dom_uc);
 
-  int N = num_cells2(ds.r);
+  int N = num_cells2(ds.e);
 
   for( int i = tid ; i < N ; i += num_thds)
   {
-    cell_t v = i_to_c2(ds.r,i);
+    cell_t v = i_to_c2(ds.e,i);
 
     set_pair_face3(func_img,flag_img,ds,v+XYdir,Zdir,flag_buf);
     set_pair_face3(func_img,flag_img,ds,v+YZdir,Xdir,flag_buf);
@@ -774,11 +777,11 @@ __kernel void assign_est_order_edge
 
   dataset_t ds = make_dataset(rct_lc,rct_uc,ext_lc,ext_uc,dom_lc,dom_uc);
 
-  int N = num_cells2(ds.r);
+  int N = num_cells2(ds.e);
 
   for( int i = tid ; i < N ; i += num_thds)
   {
-    cell_t v = i_to_c2(ds.r,i);
+    cell_t v = i_to_c2(ds.e,i);
 
     order_buf[c_to_i(ds.e,v)] = 0;
 
@@ -801,11 +804,11 @@ __kernel void assign_est_order_face
 
   dataset_t ds = make_dataset(rct_lc,rct_uc,ext_lc,ext_uc,dom_lc,dom_uc);
 
-  int N = num_cells2(ds.r);
+  int N = num_cells2(ds.e);
 
   for( int i = tid ; i < N ; i += num_thds)
   {
-    cell_t v = i_to_c2(ds.r,i);
+    cell_t v = i_to_c2(ds.e,i);
 
     set_face_order(func_img,flag_img,order_buf,ds,v+XYdir);
     set_face_order(func_img,flag_img,order_buf,ds,v+YZdir);
@@ -849,11 +852,11 @@ __kernel void adjust_est_order_for_pairs
 
   dataset_t ds = make_dataset(rct_lc,rct_uc,ext_lc,ext_uc,dom_lc,dom_uc);
 
-  int N = num_cells(ds.r);
+  int N = num_cells(ds.e);
 
   for( int i = tid ; i < N ; i += num_thds)
   {
-    cell_t  c = i_to_c(ds.r,i);
+    cell_t  c = i_to_c(ds.e,i);
     flag_t fg = read_imageui(flag_img, flag_sampler, to_int4(c-ds.e.lc)).x;
 
     if(is_paired(fg))

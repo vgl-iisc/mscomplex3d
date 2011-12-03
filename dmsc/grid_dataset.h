@@ -195,7 +195,7 @@ namespace grid
 
     void extract_vdata_subarray(rect_t r,const std::string &filename);
 
-    class iterator;
+    typedef rect_t::pt_iterator iterator;
     inline iterator begin() const;
     inline iterator end() const;
 
@@ -280,6 +280,10 @@ namespace grid
   template <>
   inline bool dataset_t::compare_cells_orig<0>(const cellid_t & c1, const cellid_t &c2) const
   {
+
+    ASSERT(get_cell_dim(c1) == 0);
+    ASSERT(get_cell_dim(c2) == 0);
+
     cell_fn_t f1 = m_vert_fns(c1/2);
     cell_fn_t f2 = m_vert_fns(c2/2);
 
@@ -350,31 +354,8 @@ namespace grid
   inline rect_t dataset_t::get_extrema_rect(eGDIR dir)
   {return (dir == GDIR_DES)?(rect_t(m_rect.lc()+1,m_rect.uc()-1)):(m_rect);}
 
-  inline int get_cell_dim ( cellid_t c )
-  {return ( c[0]&0x01 ) + ( c[1]&0x01 ) + ( c[2]&0x01 );}
-
   inline int dataset_t::getCellDim ( cellid_t c ) const
   {return get_cell_dim(c);}
-
-  class dataset_t::iterator:public std::iterator
-      <std::bidirectional_iterator_tag,cellid_t,int,cellid_t,cellid_t>
-  {
-  public:
-    iterator(rect_t r,int i = 0):m_rect(r),m_i(i){};
-    rect_t m_rect;
-    int m_i;
-
-    inline iterator& operator++(){++m_i; return *this;}
-    inline iterator& operator--(){--m_i; return *this;}
-    inline reference operator*() const {return i_to_c(m_rect,m_i);}
-
-    inline bool operator== (const iterator &rhs) const
-    {return (m_i == rhs.m_i);}
-
-    inline bool operator!= (const iterator &rhs) const
-    {return !(*this == rhs);}
-
-  };
 
   class dataset_t::iterator_dim:public std::iterator
       <std::forward_iterator_tag,cellid_t,int,cellid_t,cellid_t>
@@ -422,10 +403,10 @@ namespace grid
 
 
   inline dataset_t::iterator dataset_t::begin() const
-  {return iterator(m_rect);}
+  {return m_rect.pt_begin();}
 
   inline dataset_t::iterator dataset_t::end() const
-  {return iterator(m_rect,num_cells(m_rect));}
+  {return m_rect.pt_end();}
 
   inline dataset_t::iterator_dim dataset_t::begin(int d) const
   {
