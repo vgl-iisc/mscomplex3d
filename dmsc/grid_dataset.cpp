@@ -48,6 +48,7 @@ namespace grid
       m_rect (r),
       m_ext_rect (e),
       m_domain_rect(d),
+      m_work_rect((r.lc()+e.lc())/2,(r.uc()+e.uc())/2),
       m_vert_fns(cellid_t::zero,boost::fortran_storage_order()),
       m_cell_flags(cellid_t::zero,boost::fortran_storage_order()),
       m_cell_order(cellid_t::zero,boost::fortran_storage_order()),
@@ -969,13 +970,19 @@ namespace grid
 
     cellid_list_t contrib_cps;
 
-    contrib_cps.push_back(msc.cellid(i));
+    if(ds.m_rect.contains(msc.cellid(i)))
+      contrib_cps.push_back(msc.cellid(i));
 
     conn_iter_t b = msc.m_conn[dir][i].begin(),e=msc.m_conn[dir][i].end();
 
     for(;b!=e; ++b)
     {
-      contrib_cps.push_back(msc.cellid(msc.pair_idx(*b)));
+      cellid_t c = msc.cellid(msc.pair_idx(*b));
+
+      if(ds.m_rect.contains(c))
+      {
+        contrib_cps.push_back(msc.cellid(msc.pair_idx(*b)));
+      }
     }
 
     compute_mfold<dim,dir>(contrib_cps.begin(),contrib_cps.end(),ds,*mfold,cmp);
@@ -1067,9 +1074,16 @@ namespace grid
     os.write((char*)(void*)offsets.data(),offsets.size()*sizeof(int));
   }
 
+  inline bool need_saddle_mfold(const mscomplex_t& msc,int i)
+  {
+    return msc.is_unpaired_saddle(i);
+  }
+
   void save_saddle_mfolds(std::ostream &os,dataset_t &ds,mscomplex_t &msc)
   {
-    cp_producer_t prd(msc.shared_from_this(),&mscomplex_t::is_unpaired_saddle);
+    mscomplex_t::filter_t fltr = bind(need_saddle_mfold,boost::cref(msc),_1);
+
+    cp_producer_t prd(msc.shared_from_this(),fltr);
 
     int num_cps = prd.count();
 
@@ -1080,6 +1094,7 @@ namespace grid
     for(int tid = 0 ; tid < g_num_threads; ++tid)
       group.create_thread(bind(compute_saddle_manifold,boost::ref(ds),
                                boost::ref(msc),boost::ref(prd),boost::ref(que)));
+//      compute_saddle_manifold(ds,msc,prd,que);
 
     os.seekp(get_header_size(num_cps),ios::beg);
 
@@ -1099,6 +1114,7 @@ namespace grid
     ensure(fs.is_open(),"unable to open file");
     boost::thread_group group;
     group.create_thread(bind(save_saddle_mfolds,boost::ref(fs),boost::ref(*this),boost::ref(*msc)));
+    save_saddle_mfolds(fs,*this,*msc);
 
 #ifdef BUILD_EXEC_OPENCL
     opencl::update_to_surv_extrema(shared_from_this(),msc);
@@ -1134,11 +1150,11 @@ namespace grid
 
   template<typename T>
   inline void bin_write_marray(std::ostream & os,const T * p, const cellid_t & s)
-  {os.write((const char*)(const void*)&p,sizeof(T)*s[0]*s[1]*s[2]);}
+  {os.write((const char*)(const void*)p,sizeof(T)*s[0]*s[1]*s[2]);}
 
   template<typename T>
   inline void bin_read_marray(std::istream & is,T * p, const cellid_t & s)
-  {is.read((char*)(void*)&p,sizeof(T)*s[0]*s[1]*s[2]);}
+  {is.read((char*)(void*)p,sizeof(T)*s[0]*s[1]*s[2]);}
 
 
   void dataset_t::stow(std::ostream &os)
@@ -1148,6 +1164,7 @@ namespace grid
     bin_write(os,m_domain_rect);
 
     bin_write_marray(os,m_cell_flags.data(),m_ext_rect.span()+1);
+    bin_write_marray(os,m_cell_order.data(),m_ext_rect.span()+1);
     bin_write_marray(os,m_vert_fns.data(),(m_ext_rect.span()/2)+1);
     bin_write_marray(os,m_owner_maxima.data(),m_rect.span()/2);
     bin_write_marray(os,m_owner_minima.data(),(m_rect.span()/2)+1);
@@ -1160,16 +1177,19 @@ namespace grid
     bin_read(is,m_domain_rect);
 
     m_cell_flags.resize(m_ext_rect.span()+1);
+    m_cell_order.resize(m_ext_rect.span()+1);
     m_vert_fns.resize((m_ext_rect.span()/2)+1);
     m_owner_maxima.resize(m_rect.span()/2);
     m_owner_minima.resize((m_rect.span()/2)+1);
 
     m_cell_flags.reindex(m_ext_rect.lc());
+    m_cell_order.reindex(m_ext_rect.lc());
     m_vert_fns.reindex(m_ext_rect.lc()/2);
     m_owner_maxima.reindex(m_rect.lc()/2);
     m_owner_minima.reindex(m_rect.lc()/2);
 
     bin_read_marray(is,m_cell_flags.data(),m_ext_rect.span()+1);
+    bin_read_marray(is,m_cell_order.data(),m_ext_rect.span()+1);
     bin_read_marray(is,m_vert_fns.data(),(m_ext_rect.span()/2)+1);
     bin_read_marray(is,m_owner_maxima.data(),(m_rect.span()/2));
     bin_read_marray(is,m_owner_minima.data(),(m_rect.span()/2)+1);

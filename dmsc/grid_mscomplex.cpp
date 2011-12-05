@@ -470,6 +470,8 @@ namespace grid
 
       if( !msc.is_paired(i) && msc.m_rect.boundryCount(c) == msc.m_ext_rect.boundryCount(c)) continue;
 
+      is_inc_on_ext[i] = true;
+
       conn_iter_t db = msc.m_des_conn[i].begin();
       conn_iter_t de = msc.m_des_conn[i].end();
 
@@ -477,10 +479,7 @@ namespace grid
       conn_iter_t ae = msc.m_asc_conn[i].end();
 
       for(;db!=de;++db) is_inc_on_ext[*db] = true;
-      for(;ab!=ae;++ab)
-      {
-        is_inc_on_ext[*ab] = true;
-      }
+      for(;ab!=ae;++ab) is_inc_on_ext[*ab] = true;
     }
   }
 
@@ -1100,13 +1099,15 @@ namespace grid
     copy_adj_info<false>(msc,idx_map2,nconn2,adj2,ixn,cl2);
   }
 
-  void mscomplex_t::load_merge(std::istream &is1,std::istream &is2)
+  int mscomplex_t::load_merge(std::istream &is1,std::istream &is2)
   {
     rect_t        ixn;
     int_marray_t  ixn_idx;
     cellid_t      ixn_dir;
 
     copy_from_streams(*this,is1,is2,ixn,ixn_idx,ixn_dir);
+
+    int num_c = 0;
 
     for(rect_t::pt_iterator b= ixn.pt_begin(),e=ixn.pt_end(); b != e; ++b)
     {
@@ -1125,7 +1126,10 @@ namespace grid
       if(dot_product(ixn_dir,cellid(p) - cellid(q)) == 0) continue;
 
       cancel_pair(p,q);
+
+      num_c ++;
     }
+    return num_c;
   }
 
   inline void fill_ixn_idx(int_marray_t &ixn_idx,rect_t ixn,const cellid_list_t &l)

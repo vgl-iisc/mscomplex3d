@@ -8,11 +8,12 @@
 #include <boost/multi_array.hpp>
 
 #include <aabb.h>
+#include <config.h>
 
 namespace grid
 {
   const uint gc_grid_dim = 3;
-  const int g_num_threads = 8;
+  const int g_num_threads = NUM_PARALLEL_TASKS;
 
   typedef int16_t                                         cell_coord_t;
   typedef u_int8_t                                        cell_flag_t;

@@ -8,6 +8,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 option(BUILD_EXEC "build standard exec" ON)
 
+set(NUM_PARALLEL_TASKS 4 CACHE STRING "number of tasks to do in parallel")
+
 if(BUILD_EXEC)
 
   find_package(Boost COMPONENTS program_options thread serialization REQUIRED)

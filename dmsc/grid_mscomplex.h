@@ -153,12 +153,12 @@ namespace grid
     void load(const std::string &f)
     {std::fstream fs(f.c_str(),std::ios::in|std::ios::binary);load(fs);}
 
-    void load_merge(std::istream &is1,std::istream &is2);
+    int load_merge(std::istream &is1,std::istream &is2);
 
-    inline void load_merge(const std::string &f1,const std::string &f2)
+    inline int load_merge(const std::string &f1,const std::string &f2)
     {std::fstream fs1(f1.c_str(),std::ios::in|std::ios::binary);
      std::fstream fs2(f2.c_str(),std::ios::in|std::ios::binary);
-     load_merge(fs1,fs2);}
+     return load_merge(fs1,fs2);}
 
     void unmerge_save(std::iostream &is1,std::iostream &is2);
 

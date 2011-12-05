@@ -24,6 +24,7 @@
 #include <boost/format.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/multi_array.hpp>
+#include <boost/thread/thread.hpp>
 
 #include <timer.h>
 #include <cpputils.h>
@@ -185,6 +186,14 @@ namespace grid
     m_f_range = f_max-f_min;
   }
 
+  void load_simplify_stow(mscomplex_t &msc,string f,cell_fn_t t,cell_fn_t r,int &num_c)
+  {
+    msc.load(f);
+    msc.simplify(t,r);
+    num_c = msc.m_canc_list.size();
+    msc.stow(f);
+  }
+
   void data_manager_t::compute_subdomain_msgraphs ()
   {
     using namespace boost::lambda;
@@ -202,12 +211,43 @@ namespace grid
       ds->init(dp->bn(m_basename)+".raw");
       ds->computeMsGraph(msc);
 
-      msc->simplify(m_simp_tresh,m_f_range);
-
       msc->stow(dp->bn(m_basename)+".msgraph.bin");
       ds->stow(dp->bn(m_basename)+".dataset.bin");
 
-      cout<<g_timer.getElapsedTimeInMilliSec()<<"\t:processed piece"<<pc_i<<endl;
+      cout<<g_timer.getElapsedTimeInMilliSec()<<"\t:processed piece "<<pc_i
+          <<endl;
+    }
+
+    using boost::ref;
+
+    for(int pc_i = pc_beg ; pc_i < pc_end;)
+    {
+      mscomplex_ptr_t mscs[g_num_threads];
+      int             rets[g_num_threads];
+
+      boost::thread_group group;
+
+      int j = 0;
+
+      for(; pc_i < pc_end && j < g_num_threads; ++pc_i,++j)
+      {
+        piece_ptr_t dp = m_pieces[pc_i];
+        mscs[j].reset(new mscomplex_t(dp->m_rect,dp->m_ext_rect,dp->m_domain_rect));
+
+        string f = dp->bn(m_basename)+".msgraph.bin";
+        cell_fn_t t= m_simp_tresh;
+        cell_fn_t r= m_f_range;
+
+        group.create_thread(bind(load_simplify_stow,ref(*mscs[j]),f,t,r,ref(rets[j])));
+      }
+
+      group.join_all();
+
+      for(j--; j >= 0 ; j--)
+      {
+        cout<<g_timer.getElapsedTimeInMilliSec()<<"\t:simplified piece "<<pc_i-j
+            <<"\t num_canc = "<<rets[j]<<endl;
+      }
     }
   }
 
@@ -225,15 +265,20 @@ namespace grid
 
         mscomplex_t msc(dp->m_rect,dp->m_ext_rect,dp->m_domain_rect);
 
+        int num_mrg_canc =
         msc.load_merge(dp1->bn(m_basename)+".msgraph.bin",
                        dp2->bn(m_basename)+".msgraph.bin");
 
         msc.simplify(m_simp_tresh,m_f_range);
 
+        int num_c = msc.m_canc_list.size();
+
         msc.stow(dp->bn(m_basename)+".msgraph.bin");
 
         cout<<g_timer.getElapsedTimeInMilliSec()
             <<"\t:merged ("<<(n+i)*2-1<<","<<(n+i)*2<<") -->"<<n+i-1
+            <<"\t num_mrg_canc = "<<num_mrg_canc
+            <<"\t num_canc = "<<num_c
             <<endl;
       }
     }
@@ -264,7 +309,6 @@ namespace grid
             <<endl;
       }
     }
-    exit(0);
   }
 
   void data_manager_t::save_graphs()
@@ -278,12 +322,22 @@ namespace grid
 
   void data_manager_t::save_mfolds()
   {
-//    for(int i = two_power(m_level_ct)-1 ;i < m_pieces.size(); ++i)
-//    {
-//      piece_ptr_t dp = m_pieces[i];
-//      dp->m_msgraph->invert_for_collection();
-//      dp->m_dataset->saveManifolds(dp->m_msgraph,dp->get_basename(m_basename));
-//    }
+    for(int i = two_power(m_level_ct)-1 ;i < int(m_pieces.size()); ++i)
+    {
+      piece_ptr_t dp = m_pieces[i];
+
+      dataset_ptr_t   ds(new dataset_t(dp->m_rect,dp->m_ext_rect,dp->m_domain_rect));
+      mscomplex_ptr_t msc(new mscomplex_t(dp->m_rect,dp->m_ext_rect,dp->m_domain_rect));
+
+      msc->load(dp->bn(m_basename)+".msgraph.bin");
+      msc->un_simplify();
+      msc->invert_for_collection();
+
+      ds->load(dp->bn(m_basename)+".dataset.bin");
+      ds->saveManifolds(msc,dp->bn(m_basename));
+
+      cout<<g_timer.getElapsedTimeInMilliSec()<<"\t:processed piece"<<i<<endl;
+    }
   }
 
   void data_manager_t::destoryPieces()
@@ -313,9 +367,6 @@ namespace grid
 
     merge_down_subdomain_msgraphs();
     cout<<"merge down done ---------- "<<g_timer.getElapsedTimeInMilliSec()<<endl;
-
-    save_graphs();
-    cout<<"save graphs done --------- "<<g_timer.getElapsedTimeInMilliSec()<<endl;
 
     save_mfolds();
     cout<<"save mfolds done --------- "<<g_timer.getElapsedTimeInMilliSec()<<endl;

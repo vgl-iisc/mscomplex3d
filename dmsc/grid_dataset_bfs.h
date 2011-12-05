@@ -152,7 +152,7 @@ inline void compute_mfold
 
     for(cellid_t *b = f,*e = f + ds.get_cets<dir>(c,f);b != e; ++b)
     {
-      if(!ds.isCellCritical(*b))
+      if(!ds.isCellCritical(*b) && ds.m_rect.contains(*b))
       {
         cellid_t p = ds.getCellPairId(*b);
 

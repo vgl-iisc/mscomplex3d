@@ -62,6 +62,7 @@ namespace grid
     rect_t             m_rect;
     rect_t             m_ext_rect;
     rect_t             m_domain_rect;
+    rect_t             m_work_rect;
 
     varray_t           m_vert_fns;
     cellflag_array_t   m_cell_flags;
@@ -296,8 +297,12 @@ namespace grid
   template <int dim>
   inline bool dataset_t::compare_cells(const cellid_t & c1, const cellid_t &c2) const
   {
+    ASSERT(m_work_rect.contains(c1));
+    ASSERT(m_work_rect.contains(c2));
+
     cellid_t f1 = getCellMaxFacetId(c1);
     cellid_t f2 = getCellMaxFacetId(c2);
+
 
     if(f1 == f2)
       return m_cell_order(c1) < m_cell_order(c2);
