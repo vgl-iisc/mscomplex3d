@@ -84,6 +84,8 @@ namespace grid
   public:
     void  computeMsGraph(mscomplex_ptr_t msgraph);
 
+    void  compute_owner_grad();
+
     void  saveManifolds(mscomplex_ptr_t msgraph,const std::string &);
 
   // subroutines to main functions

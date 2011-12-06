@@ -212,7 +212,7 @@ namespace grid
       ds->computeMsGraph(msc);
 
       msc->stow(dp->bn(m_basename)+".msgraph.bin");
-      ds->stow(dp->bn(m_basename)+".dataset.bin");
+//      ds->stow(dp->bn(m_basename)+".dataset.bin");
 
       cout<<g_timer.getElapsedTimeInMilliSec()<<"\t:processed piece "<<pc_i
           <<endl;
@@ -333,7 +333,9 @@ namespace grid
       msc->un_simplify();
       msc->invert_for_collection();
 
-      ds->load(dp->bn(m_basename)+".dataset.bin");
+      ds->init(dp->bn(m_basename)+".raw");
+      ds->compute_owner_grad();
+//      ds->load(dp->bn(m_basename)+".dataset.bin");
       ds->saveManifolds(msc,dp->bn(m_basename));
 
       cout<<g_timer.getElapsedTimeInMilliSec()<<"\t:processed piece"<<i<<endl;

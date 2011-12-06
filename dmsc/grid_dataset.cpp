@@ -959,6 +959,13 @@ namespace grid
     }
   }
 
+  void dataset_t::compute_owner_grad()
+  {
+#ifdef BUILD_EXEC_OPENCL
+    opencl::assign_gradient_and_owner_extrema(shared_from_this());
+#endif
+  }
+
   typedef tr1::tuple<cellid_t,cellid_list_ptr_t,cellid_list_ptr_t> cp_mfold_qitem_t;
 
   typedef producer_consumer_t<cp_mfold_qitem_t> cp_mfold_que_t;
