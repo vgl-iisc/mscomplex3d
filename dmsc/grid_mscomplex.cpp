@@ -650,8 +650,8 @@ namespace grid
   }
 
   template<typename T>
-  inline void bin_write_vec(std::ostream &os, std::vector<T> &v)
-  {os.write((const char*)(const void*)v.data(),v.size()*sizeof(T));v.clear();}
+  inline void bin_write_vec(std::ostream &os, std::vector<T> &v,bool purge = true)
+  {os.write((const char*)(const void*)v.data(),v.size()*sizeof(T));if(purge) v.clear();}
 
   template<typename T>
   inline void bin_write(std::ostream &os, const T &v)
@@ -665,7 +665,7 @@ namespace grid
   inline void bin_read(std::istream &is, const T &v)
   {is.read((char*)(void*)&v,sizeof(T));}
 
-  void mscomplex_t::stow(std::ostream &os)
+  void mscomplex_t::stow(std::ostream &os, bool purge_data)
   {
     int N = get_num_critpts();
 
@@ -674,12 +674,12 @@ namespace grid
     bin_write(os,m_ext_rect);
     bin_write(os,m_domain_rect);
 
-    bin_write_vec(os,m_cp_cellid);
-    bin_write_vec(os,m_cp_vertid);
-    bin_write_vec(os,m_cp_pair_idx);
-    bin_write_vec(os,m_cp_index);
-    bin_write_vec(os,m_cp_is_cancelled);
-    bin_write_vec(os,m_cp_fn);
+    bin_write_vec(os,m_cp_cellid,purge_data);
+    bin_write_vec(os,m_cp_vertid,purge_data);
+    bin_write_vec(os,m_cp_pair_idx,purge_data);
+    bin_write_vec(os,m_cp_index,purge_data);
+    bin_write_vec(os,m_cp_is_cancelled,purge_data);
+    bin_write_vec(os,m_cp_fn,purge_data);
 
     int_list_t nconn(2*N);
     int_list_t adj;
@@ -697,12 +697,15 @@ namespace grid
     bin_write_vec(os,nconn);
     bin_write_vec(os,adj);
 
-    m_id_cp_map.clear();
-    m_conn[0].clear();
-    m_conn[1].clear();
+    if(purge_data)
+    {
+      m_id_cp_map.clear();
+      m_conn[0].clear();
+      m_conn[1].clear();
+    }
 
     bin_write(os,int(m_canc_list.size()));
-    bin_write_vec(os,m_canc_list);
+    bin_write_vec(os,m_canc_list,purge_data);
   }
 
   void mscomplex_t::load(std::istream &is)

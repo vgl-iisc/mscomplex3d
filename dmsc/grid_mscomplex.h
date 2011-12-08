@@ -145,11 +145,11 @@ namespace grid
     void write_graph(std::ostream & os) const;
     void write_graph(const std::string & fn) const;
 
-    void stow(std::ostream &os);
+    void stow(std::ostream &os,bool purge_data=true);
     void load(std::istream &is);
 
-    inline void stow(const std::string &f)
-    {std::fstream fs(f.c_str(),std::ios::out|std::ios::binary);stow(fs);}
+    inline void stow(const std::string &f,bool purge_data=true)
+    {std::fstream fs(f.c_str(),std::ios::out|std::ios::binary);stow(fs,purge_data);}
     void load(const std::string &f)
     {std::fstream fs(f.c_str(),std::ios::in|std::ios::binary);load(fs);}
 

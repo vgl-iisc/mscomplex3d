@@ -437,7 +437,7 @@ namespace grid
     cout<<"simplification done ------ "<<g_timer.getElapsedTimeInMilliSec()<<endl;
     }
 
-    msgraph->write_graph(basename+".graph.txt");
+    msgraph->stow(basename+".graph.bin",false);
     cout<<"write msgraph done ------- "<<g_timer.getElapsedTimeInMilliSec()<<endl;
 
     msgraph->invert_for_collection();

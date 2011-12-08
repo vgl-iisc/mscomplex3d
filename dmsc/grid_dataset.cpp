@@ -1121,7 +1121,7 @@ namespace grid
     ensure(fs.is_open(),"unable to open file");
     boost::thread_group group;
     group.create_thread(bind(save_saddle_mfolds,boost::ref(fs),boost::ref(*this),boost::ref(*msc)));
-    save_saddle_mfolds(fs,*this,*msc);
+//    save_saddle_mfolds(fs,*this,*msc);
 
 #ifdef BUILD_EXEC_OPENCL
     opencl::update_to_surv_extrema(shared_from_this(),msc);
