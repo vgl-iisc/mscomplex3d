@@ -88,6 +88,8 @@ namespace grid
 
     void  saveManifolds(mscomplex_ptr_t msgraph,const std::string &);
 
+    void  saveConnectingOneManifolds(mscomplex_ptr_t ,const std::string &);
+
   // subroutines to main functions
   public:
 

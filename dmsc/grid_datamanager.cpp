@@ -440,6 +440,7 @@ namespace grid
 
     msgraph->invert_for_collection();
     dataset->saveManifolds(msgraph,basename);
+    dataset->saveConnectingOneManifolds(msgraph,basename);
     cout<<"write msmfolds done ------ "<<g_timer.getElapsedTimeInMilliSec()<<endl;
 
     cout<<"------------------------------------"<<endl;

@@ -127,7 +127,7 @@ inline cellid_list_ptr_t compute_inc_pairs
 }
 
 
-template <int dim,eGDIR dir,typename Titer,typename cmp_t>
+template <int dim,eGDIR dir,bool thruReachedPairs,typename Titer,typename cmp_t>
 inline void compute_mfold
 (Titer b, Titer e,
  const dataset_t &ds,
@@ -156,7 +156,8 @@ inline void compute_mfold
       {
         cellid_t p = ds.getCellPairId(*b);
 
-        if (p != c && ds.getCellDim(p) == dim )
+        if (p != c && ds.getCellDim(p) == dim &&
+            (!thruReachedPairs|| ds.isCellVisited(*b)) )
           pq.push(p);
       }
     }

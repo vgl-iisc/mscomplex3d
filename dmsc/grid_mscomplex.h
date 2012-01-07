@@ -124,8 +124,9 @@ namespace grid
     inline bool is_extrema(int i) const;
     inline bool is_saddle(int i) const;
 
-    inline bool is_unpaired_saddle(int i) const
-    {return (is_saddle(i) &&(is_paired(i) == false));}
+    inline bool is_unpaired_saddle(int i) const;
+    inline bool is_unpaired_two_saddle(int i) const;
+    inline bool is_unpaired_one_saddle(int i) const;
 
   public:
 
@@ -446,6 +447,17 @@ namespace grid
   {
     return (index(i) == 1 || index(i) == 2);
   }
+
+  inline bool mscomplex_t::is_unpaired_saddle(int i) const
+  {
+    return (is_saddle(i) &&(is_paired(i) == false));
+  }
+
+  inline bool mscomplex_t::is_unpaired_two_saddle(int i) const
+  {return ((index(i) == 2) &&(is_paired(i) == false));}
+
+  inline bool mscomplex_t::is_unpaired_one_saddle(int i) const
+  {return ((index(i) == 1) &&(is_paired(i) == false));}
 
   inline int mscomplex_t::surv_extrema(int i) const
   {

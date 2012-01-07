@@ -970,29 +970,30 @@ namespace grid
 
   typedef producer_consumer_t<cp_mfold_qitem_t> cp_mfold_que_t;
 
+  template<eGDIR dir>
+  inline void collect_contrib_cps(mscomplex_t &msc,cellid_list_t &cplist, int i)
+  {
+    if(msc.m_rect.contains(msc.cellid(i)))
+      cplist.push_back(msc.cellid(i));
+
+    conn_iter_t b = msc.m_conn[dir][i].begin(),e=msc.m_conn[dir][i].end();
+
+    for(;b!=e; ++b)
+      if(msc.m_rect.contains(msc.cellid(msc.pair_idx(*b))))
+        cplist.push_back(msc.cellid(msc.pair_idx(*b)));
+
+  }
+
   template<int dim,eGDIR dir,typename cmp_t>
   inline cellid_list_ptr_t compute_mfold(dataset_t &ds,mscomplex_t &msc,int i,cmp_t cmp)
   {
     cellid_list_ptr_t mfold(new cellid_list_t);
 
-    cellid_list_t contrib_cps;
+    cellid_list_t cplist;
 
-    if(ds.m_rect.contains(msc.cellid(i)))
-      contrib_cps.push_back(msc.cellid(i));
+    collect_contrib_cps<dir>(msc,cplist,i);
 
-    conn_iter_t b = msc.m_conn[dir][i].begin(),e=msc.m_conn[dir][i].end();
-
-    for(;b!=e; ++b)
-    {
-      cellid_t c = msc.cellid(msc.pair_idx(*b));
-
-      if(ds.m_rect.contains(c))
-      {
-        contrib_cps.push_back(msc.cellid(msc.pair_idx(*b)));
-      }
-    }
-
-    compute_mfold<dim,dir>(contrib_cps.begin(),contrib_cps.end(),ds,*mfold,cmp);
+    compute_mfold<dim,dir,false>(cplist.begin(),cplist.end(),ds,*mfold,cmp);
 
     return mfold;
   }
@@ -1066,6 +1067,11 @@ namespace grid
   template<typename T>
   inline void bin_read(std::istream &is, const T &v)
   {is.read((char*)(void*)&v,sizeof(T));}
+
+  template<typename T>
+  inline void bin_write_vec(std::ostream &os, std::vector<T> &v)
+  {os.write((const char*)(const void*)v.data(),v.size()*sizeof(T));}
+
 
   void write_header(std::ostream & os, dataset_t &ds,int_list_t & offsets,cellid_list_t &cps)
   {
@@ -1153,6 +1159,61 @@ namespace grid
 
     group.join_all();
     fs.close();
+  }
+
+  template<int dim,eGDIR dir,typename cmp_t,typename Titer>
+  inline cellid_list_ptr_t compute_mfold(dataset_t &ds,mscomplex_t &msc,Titer b,Titer e,cmp_t cmp)
+  {
+    using boost::ref;
+
+    cellid_list_ptr_t mfold(new cellid_list_t);
+
+    cellid_list_t cplist;
+
+    for_each(b,e,bind(collect_contrib_cps<dir>,ref(msc),ref(cplist),_1));
+
+    const bool trp = (dim==1 && dir==GDIR_ASC)||(dim==2 && dir==GDIR_DES);
+
+    compute_mfold<dim,dir,trp>(cplist.begin(),cplist.end(),ds,*mfold,cmp);
+
+    return mfold;
+  }
+
+
+  void dataset_t::saveConnectingOneManifolds(mscomplex_ptr_t msc,const std::string &bn)
+  {
+    mscomplex_t::memb_filter_t fltr_1 = &mscomplex_t::is_unpaired_one_saddle;
+    mscomplex_t::memb_filter_t fltr_2 = &mscomplex_t::is_unpaired_two_saddle;
+
+    mscomplex_t::fiterator_t b_1 = msc->fbegin(fltr_1),e_1 = msc->fend(fltr_1);
+    mscomplex_t::fiterator_t b_2 = msc->fbegin(fltr_2),e_2 = msc->fend(fltr_2);
+
+    BOOST_AUTO(des2_cmp,boost::bind(&dataset_t::compare_cells<2>,this,_1,_2));
+    BOOST_AUTO(asc2_cmp,boost::bind(&dataset_t::compare_cells<2>,this,_2,_1));
+    BOOST_AUTO(des1_cmp,boost::bind(&dataset_t::compare_cells<1>,this,_1,_2));
+    BOOST_AUTO(asc1_cmp,boost::bind(&dataset_t::compare_cells<1>,this,_2,_1));
+
+    cellid_list_t cplist;
+
+    for_each(b_2,e_2,bind(collect_contrib_cps<GDIR_DES>,ref(*msc),ref(cplist),_1));
+
+    mark_reachable<2,GDIR_DES>(cplist.begin(),cplist.end(),*this);
+
+    cellid_list_ptr_t one_des = compute_mfold<1,GDIR_DES>(*this,*msc,b_1,e_1,des1_cmp);
+    cellid_list_ptr_t one_asc = compute_mfold<1,GDIR_ASC>(*this,*msc,b_1,e_1,asc1_cmp);
+    cellid_list_ptr_t two_asc = compute_mfold<2,GDIR_ASC>(*this,*msc,b_2,e_2,asc1_cmp);
+
+    std::ofstream fs((bn+".onemfold.bin").c_str());
+    ensure(fs.is_open(),"unable to open file");
+
+    bin_write(fs,int(one_des->size()));
+    bin_write(fs,int(one_asc->size()));
+    bin_write(fs,int(0));
+    bin_write(fs,int(two_asc->size()));
+
+    bin_write_vec(fs,*one_des);
+    bin_write_vec(fs,*one_asc);
+    bin_write_vec(fs,*two_asc);
   }
 
   template<typename T>
