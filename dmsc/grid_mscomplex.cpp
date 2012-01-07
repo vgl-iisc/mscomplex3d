@@ -537,7 +537,7 @@ namespace grid
       if(is_valid_canc_edge(*this,is_inc_ext,pr) == false)
         continue;
 
-      int p = pr[0],q = pr[1];
+      int &p = pr[0],&q = pr[1];
 
       order_pr_by_cp_index(*this,p,q);
 

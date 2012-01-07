@@ -433,12 +433,10 @@ namespace grid
     if(simp_tresh >=0)
     {
     msgraph->simplify(simp_tresh,-1);
+    msgraph->stow(basename+".graph.bin",false);
     msgraph->un_simplify();
     cout<<"simplification done ------ "<<g_timer.getElapsedTimeInMilliSec()<<endl;
     }
-
-    msgraph->stow(basename+".graph.bin",false);
-    cout<<"write msgraph done ------- "<<g_timer.getElapsedTimeInMilliSec()<<endl;
 
     msgraph->invert_for_collection();
     dataset->saveManifolds(msgraph,basename);
