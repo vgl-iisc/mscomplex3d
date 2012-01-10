@@ -72,8 +72,6 @@ namespace grid
 
     int_pair_list_t m_canc_list;
 
-    id_cp_map_t   m_id_cp_map;
-
     conn_list_t   m_conn[GDIR_CT];
     conn_list_t  &m_des_conn;
     conn_list_t  &m_asc_conn;
@@ -86,10 +84,7 @@ namespace grid
     inline int  get_num_critpts() const;
     void  resize(int i);
 
-    int  add_critpt(cellid_t c,char i,cell_fn_t f,cellid_t vert_cell);
     void set_critpt(int i,cellid_t c,char idx,cell_fn_t f,cellid_t vert_cell);
-
-    void build_id_cp_map();
 
     void connect_cps(cellid_t c1,cellid_t c2);
     void connect_cps(int p, int q);
@@ -191,6 +186,8 @@ namespace grid
 
     inline cp_id_fiterator cp_id_fbegin(filter_t f) const;
     inline cp_id_fiterator cp_id_fend(filter_t f) const;
+
+    inline mscomplex_ptr_t make_copy()const;
 
   };
 
@@ -475,6 +472,25 @@ namespace grid
     ASSERT(!is_paired(j));
 
     return j;
+  }
+
+  inline mscomplex_ptr_t mscomplex_t::make_copy()const
+  {
+    mscomplex_ptr_t msc = mscomplex_ptr_t(new mscomplex_t(m_rect,m_ext_rect,m_domain_rect));
+
+    msc->m_cp_cellid       = m_cp_cellid;
+    msc->m_cp_vertid       = m_cp_vertid;
+    msc->m_cp_pair_idx     = m_cp_pair_idx;
+    msc->m_cp_index        = m_cp_index;
+    msc->m_cp_is_cancelled = m_cp_is_cancelled;
+    msc->m_cp_fn           = m_cp_fn;
+
+    msc->m_canc_list       = m_canc_list;
+
+    msc->m_conn[0]         = m_conn[0];
+    msc->m_conn[1]         = m_conn[1];
+
+    return msc;
   }
 
   inline std::string mscomplex_t::cp_info (int cp_no) const

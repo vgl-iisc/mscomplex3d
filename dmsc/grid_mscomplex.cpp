@@ -37,19 +37,6 @@ namespace grid
     fn(i)     = f;
   }
 
-  int mscomplex_t::add_critpt(cellid_t c,char idx,cell_fn_t f,cellid_t v)
-  {
-    int i = get_num_critpts();
-
-    ASSERT(m_id_cp_map.count(c) == 0);
-    m_id_cp_map.insert(std::make_pair(c,i));
-
-    resize(i+1);
-    set_critpt(i,c,idx,f,v);
-
-    return (i);
-  }
-
   void  mscomplex_t::resize(int i)
   {
     m_cp_cellid.resize(i,cellid_t(-1,-1,-1));
@@ -60,44 +47,6 @@ namespace grid
     m_cp_fn.resize(i);
     m_des_conn.resize(i);
     m_asc_conn.resize(i);
-  }
-
-  void mscomplex_t::build_id_cp_map()
-  {
-    for(int i = 0 ; i < get_num_critpts(); ++i)
-    {
-      try
-      {
-        ASSERT(cellid(i) != cellid_t(-1,-1,-1));
-        ASSERT(m_id_cp_map.count(cellid(i)) == 0);
-        m_id_cp_map.insert(std::make_pair(cellid(i),i));
-      }
-      catch(assertion_error e)
-      {
-        e.push(_FFL);
-        e.push(SVAR(cp_info(i)));
-
-        throw;
-      }
-    }
-  }
-
-  void mscomplex_t::connect_cps(cellid_t c0,cellid_t c1)
-  {
-    try
-    {
-      ASSERT(m_id_cp_map.count(c0) == 1);
-      ASSERT(m_id_cp_map.count(c1) == 1);
-
-      connect_cps(m_id_cp_map[c0],m_id_cp_map[c1]);
-    }
-    catch(assertion_error e)
-    {
-      e.push(_FFL);
-      e.push(SVAR2(c0,m_id_cp_map.count(c0)));
-      e.push(SVAR2(c1,m_id_cp_map.count(c1)));
-      throw;
-    }
   }
 
   void mscomplex_t::connect_cps(int p, int q)
@@ -138,14 +87,6 @@ namespace grid
     }
   }
 
-  void mscomplex_t::dir_connect_cps(cellid_t c1,cellid_t c2)
-  {
-    ASSERT(m_id_cp_map.count(c1) == 1);
-    ASSERT(m_id_cp_map.count(c2) == 1);
-
-    dir_connect_cps(m_id_cp_map[c1],m_id_cp_map[c2]);
-  }
-
   void mscomplex_t::dir_connect_cps(int p, int q)
   {
     try
@@ -168,14 +109,6 @@ namespace grid
       e.push(SVAR(cp_info(q)));
       throw;
     }
-  }
-
-  void mscomplex_t::pair_cps(cellid_t c1,cellid_t c2)
-  {
-    ASSERT(m_id_cp_map.count(c1) == 1);
-    ASSERT(m_id_cp_map.count(c2) == 1);
-
-    pair_cps(m_id_cp_map[c1],m_id_cp_map[c2]);
   }
 
   void mscomplex_t::pair_cps(int p, int q)
@@ -325,7 +258,6 @@ namespace grid
     m_cp_index.clear();
     m_cp_is_cancelled.clear();
     m_cp_fn.clear();
-    m_id_cp_map.clear();
     m_des_conn.clear();
     m_asc_conn.clear();
   }
@@ -568,9 +500,10 @@ namespace grid
     typedef int_pair_list_t::const_reverse_iterator revit_t;
 
     for(revit_t it = m_canc_list.rbegin();it != m_canc_list.rend() ; ++it)
+    {
+      if(is_canceled((*it)[0]) == false) break;
       uncancel_pair((*it)[0],(*it)[1]);
-
-    m_canc_list.clear();
+    }
   }
 
   void mscomplex_t::invert_for_collection()
@@ -699,7 +632,6 @@ namespace grid
 
     if(purge_data)
     {
-      m_id_cp_map.clear();
       m_conn[0].clear();
       m_conn[1].clear();
     }

@@ -782,7 +782,11 @@ namespace grid
 
   void  store_connections( mscomplex_t &msc,cp_conn_que_t &que,int n)
   {
-    msc.build_id_cp_map();
+    map<cellid_t,int> id_cp_map;
+
+    for( int i = 0 ; i < msc.get_num_critpts(); ++i)
+      id_cp_map[msc.cellid(i)] = i;
+
 
     while( n-- > 0)
     {
@@ -791,7 +795,12 @@ namespace grid
 
       for(int i = 0 ; i < (int)inc_pairs.size(); i +=2)
       {
-        msc.connect_cps(inc_pairs[i],inc_pairs[i+1]);
+        cellid_t u = inc_pairs[i],v = inc_pairs[i+1];
+
+        ASSERT(id_cp_map.count(u) ==1);
+        ASSERT(id_cp_map.count(v) ==1);
+
+        msc.connect_cps(id_cp_map[u],id_cp_map[v]);
       }
     }
   }
@@ -1201,7 +1210,7 @@ namespace grid
 
     cellid_list_ptr_t one_des = compute_mfold<1,GDIR_DES>(*this,*msc,b_1,e_1,des1_cmp);
     cellid_list_ptr_t one_asc = compute_mfold<1,GDIR_ASC>(*this,*msc,b_1,e_1,asc1_cmp);
-    cellid_list_ptr_t two_asc = compute_mfold<2,GDIR_ASC>(*this,*msc,b_2,e_2,asc1_cmp);
+    cellid_list_ptr_t two_asc = compute_mfold<2,GDIR_ASC>(*this,*msc,b_2,e_2,asc2_cmp);
 
     std::ofstream fs((bn+".onemfold.bin").c_str());
     ensure(fs.is_open(),"unable to open file");

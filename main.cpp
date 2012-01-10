@@ -39,9 +39,10 @@ namespace grid
 int main(int ac , char **av)
 {
   string         filename;
-  cellid_t size;
+  cellid_t       size;
   double         simp_tresh;
-  cellid_t levels;
+  cellid_t       levels;
+  bool           incr_simp;
 
 #ifdef BUILD_EXEC_GUI
   bool           gui;
@@ -50,11 +51,18 @@ int main(int ac , char **av)
   bpo::options_description desc("Allowed options");
   desc.add_options()
       ("help,h", "produce help message")
-      ("file,f",bpo::value<string >(&filename)->required(), "grid file name")
-      ("dim,d", bpo::value<cellid_t>(&size)->required(), "dim of grid entered as [x,y,z]")
+      ("file,f",bpo::value<string >(&filename)->required(),
+       "grid file name")
+      ("dim,d", bpo::value<cellid_t>(&size)->required(),
+       "dim of grid entered as [x,y,z]")
       ("levels,l",bpo::value<cellid_t>(&levels)->default_value(cellid_t(0,0,0)),
        "number of subdivision levels in each dim .. entered as [x,y,z]")
-      ("simp-tresh,t",bpo::value<double>(&simp_tresh)->default_value(0.0),"simplification treshold")
+      ("simp-tresh,t",bpo::value<double>(&simp_tresh)->default_value(0.0),
+       "simplification treshold")
+      ("incr-simp,i", bpo::value<bool>(&incr_simp)->default_value(false),
+       "Incrementally simplify the MS complex\n"\
+       "simp-tresh is increased in steps of t (-t option) till 1\n"\
+       "Results for each step are stored")
 #ifdef BUILD_EXEC_GUI
       ("gui,g",bpo::value<bool>(&gui)->default_value(false),"show gui")
 #endif
@@ -87,7 +95,11 @@ int main(int ac , char **av)
     opencl::init();
 #endif
 
-  if(levels == cellid_t::zero)
+  if(incr_simp)
+  {
+    compute_mscomplex_incr_simp(filename,size,simp_tresh);
+  }
+  else if(levels == cellid_t::zero)
   {
     compute_mscomplex_basic(filename,size,simp_tresh);
   }

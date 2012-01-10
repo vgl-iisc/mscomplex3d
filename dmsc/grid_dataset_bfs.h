@@ -2,6 +2,7 @@
 #include <map>
 #include <queue>
 #include <stack>
+#include <set>
 
 #include <tr1/tuple>
 
@@ -126,6 +127,19 @@ inline cellid_list_ptr_t compute_inc_pairs
   return cp_inc_pairs;
 }
 
+template<typename T,typename Titer>
+int check_unique_elems(Titer b,Titer e)
+{
+  std::multiset<T> eset(b,e);
+
+  for(;b!=e;++b)
+  {
+    ensure(eset.count(*b) == 1,"duplicate elems");
+  }
+
+  return true;
+}
+
 
 template <int dim,eGDIR dir,bool thruReachedPairs,typename Titer,typename cmp_t>
 inline void compute_mfold
@@ -162,6 +176,8 @@ inline void compute_mfold
       }
     }
   }
+
+  ASSERT(check_unique_elems<cellid_t>(mfold.begin(),mfold.end()));
 }
 
 }
