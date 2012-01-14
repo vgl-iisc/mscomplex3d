@@ -1272,6 +1272,31 @@ namespace grid
     bin_read_marray(is,m_owner_minima.data(),(m_rect.span()/2)+1);
   }
 
+  template<eGDIR dir>
+  void copy_owner_extrema(int_marray_t &dest,const int_marray_t &src,const dataset_t & ds)
+  {
+    rect_t ex_rct = ds.get_extrema_rect<dir>();
+
+    int num_ex = num_cells2(ex_rct);
+
+    dest.resize(ex_rct.span()/2+1);
+
+    memcpy((void*)dest.data(),(void*)src.data(),num_ex*sizeof(int));
+  }
+
+  void  dataset_t::stowOwnerArrays(int_marray_t &omax,int_marray_t &omin) const
+  {
+    copy_owner_extrema<GDIR_DES>(omax,m_owner_maxima,*this);
+    copy_owner_extrema<GDIR_ASC>(omin,m_owner_minima,*this);
+  }
+
+  void  dataset_t::loadOwnerArrays(int_marray_t &omax,int_marray_t &omin)
+  {
+    copy_owner_extrema<GDIR_DES>(m_owner_maxima,omax,*this);
+    copy_owner_extrema<GDIR_ASC>(m_owner_minima,omin,*this);
+  }
+
+
 
   void dataset_t::log_flags()
   {

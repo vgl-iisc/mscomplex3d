@@ -90,6 +90,9 @@ namespace grid
 
     void  saveConnectingOneManifolds(mscomplex_ptr_t ,const std::string &);
 
+    void  stowOwnerArrays(int_marray_t &,int_marray_t &) const;
+    void  loadOwnerArrays(int_marray_t &,int_marray_t &);
+
   // subroutines to main functions
   public:
 

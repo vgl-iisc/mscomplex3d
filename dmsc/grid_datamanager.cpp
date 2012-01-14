@@ -494,7 +494,12 @@ namespace grid
       msc_2->un_simplify();
       msc_2->invert_for_collection();
 
+      int_marray_t omax,omin;
+
+      ds->stowOwnerArrays(omax,omin);
       ds->saveManifolds(msc_2,bn);
+      ds->loadOwnerArrays(omax,omin);
+
       ds->saveConnectingOneManifolds(msc_2,bn);
 
       cout<<"write msmfolds done ------ "<<g_timer.getElapsedTimeInMilliSec()<<endl;
