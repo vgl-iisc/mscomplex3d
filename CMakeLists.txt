@@ -12,7 +12,7 @@ set(NUM_PARALLEL_TASKS 4 CACHE STRING "number of tasks to do in parallel")
 
 if(BUILD_EXEC)
 
-  find_package(Boost COMPONENTS program_options thread serialization REQUIRED)
+  find_package(Boost 1.48 COMPONENTS program_options thread REQUIRED)
 
   set(${PROJECT_NAME}_SRCS ${${PROJECT_NAME}_SRCS}
 

@@ -6,10 +6,18 @@
 #include <cstdlib>
 
 #include <boost/typeof/typeof.hpp>
+#include <boost/range/adaptors.hpp>
+#include <boost/range/algorithm.hpp>
+#include <boost/range/iterator_range.hpp>
+#include <boost/assign.hpp>
+#include <boost/foreach.hpp>
 
 #include <grid_mscomplex.h>
 
 using namespace std;
+
+namespace br = boost::range;
+namespace ba = boost::adaptors;
 
 namespace grid
 {
@@ -31,10 +39,10 @@ namespace grid
 
   void mscomplex_t::set_critpt(int i,cellid_t c,char idx,cell_fn_t f,cellid_t v)
   {
-    cellid(i) = c;
-    vertid(i) = v;
-    index(i)  = idx;
-    fn(i)     = f;
+    m_cp_cellid[i] = c;
+    m_cp_vertid[i] = v;
+    m_cp_index[i]  = idx;
+    m_cp_fn[i]     = f;
   }
 
   void  mscomplex_t::resize(int i)
@@ -49,7 +57,7 @@ namespace grid
     m_asc_conn.resize(i);
   }
 
-  void mscomplex_t::connect_cps(int p, int q)
+  void mscomplex_t::connect_cps(int p, int q,int m)
   {
     try
     {
@@ -62,13 +70,18 @@ namespace grid
 
       ASSERT(!(is_paired(p) && index(pair_idx(p))!= index(q)));
       ASSERT(!(is_paired(q) && index(pair_idx(q))!= index(p)));
-      ASSERT(m_des_conn[p].count(q) == m_asc_conn[q].count(p));
 
-      if(m_des_conn[p].count(q) == 2)
-        return;
+      if( m_des_conn[p].count(q) == 0)
+      {
+        ASSERT(m_asc_conn[q].count(p) == 0);
+        m_des_conn[p][q] = 0;
+        m_asc_conn[q][p] = 0;
+      }
 
-      m_des_conn[p].insert(q);
-      m_asc_conn[q].insert(p);
+      ASSERT(m_des_conn[p][q] == m_asc_conn[q][p]);
+
+      m_des_conn[p][q] += m;
+      m_asc_conn[q][p] += m;
     }
     catch(assertion_error e)
     {
@@ -87,7 +100,7 @@ namespace grid
     }
   }
 
-  void mscomplex_t::dir_connect_cps(int p, int q)
+  void mscomplex_t::dir_connect_cps(int p, int q,int m)
   {
     try
     {
@@ -97,10 +110,12 @@ namespace grid
       if(is_paired(q))
         std::swap(p,q);
 
-      conn_t &conn = (index(p) > index(q))?(m_des_conn[p]):(m_asc_conn[p]);
+      eGDIR dir = (index(p) > index(q))?(DES):(ASC);
 
-      if(conn.count(q) == 0)
-        conn.insert(q);
+      if(m_conn[dir][p].count(q) == 0)
+        m_conn[dir][p][q] =0;
+
+      m_conn[dir][p][q] += m;
     }
     catch(assertion_error e)
     {
@@ -113,9 +128,13 @@ namespace grid
 
   void mscomplex_t::pair_cps(int p, int q)
   {
-    pair_idx(p) = q;
-    pair_idx(q) = p;
+    m_cp_pair_idx[p] = q;
+    m_cp_pair_idx[q] = p;
   }
+
+  template <eGDIR dir>
+  inline void conn_eraser(mscomplex_t &msc,int p,int q)
+  {msc.m_conn[dir][p].erase(q);}
 
   void mscomplex_t::cancel_pair ( int p, int q)
   {
@@ -130,33 +149,30 @@ namespace grid
       ASSERT(is_canceled(q) == false);
       ASSERT(m_des_conn[p].count(q) == 1);
       ASSERT(m_asc_conn[q].count(p) == 1);
-
-      conn_iter_t i,j;
+      ASSERT(m_des_conn[p][q] == 1);
+      ASSERT(m_asc_conn[q][p] == 1);
 
       m_des_conn[p].erase(q);
       m_asc_conn[q].erase(p);
 
       // cps in lower of u except l
-      for(i = m_des_conn[p].begin();i != m_des_conn[p].end();++i)
-        for(j = m_asc_conn[q].begin();j != m_asc_conn[q].end();++j)
-        {
-          ASSERT(is_canceled(*i) == false);
-          ASSERT(is_canceled(*j) == false);
+      BOOST_FOREACH(int_int_t i,m_des_conn[p])
+      BOOST_FOREACH(int_int_t j,m_asc_conn[q])
+      {
+        int u = i.first;
+        int v = j.first;
+        int m = i.second*j.second;
 
-          connect_cps(*i,*j);
-        }
+        ASSERT(is_canceled(u) == false);
+        ASSERT(is_canceled(v) == false);
 
-      for(j = m_des_conn[p].begin();j != m_des_conn[p].end();++j)
-        m_asc_conn[*j].erase(p);
+        connect_cps(u,v,m);
+      }
 
-      for(j = m_asc_conn[p].begin();j != m_asc_conn[p].end();++j)
-        m_des_conn[*j].erase(p);
-
-      for(j = m_des_conn[q].begin();j != m_des_conn[q].end();++j)
-        m_asc_conn[*j].erase(q);
-
-      for(j = m_asc_conn[q].begin();j != m_asc_conn[q].end();++j)
-        m_des_conn[*j].erase(q);
+      br::for_each(m_des_conn[p]|ba::map_keys,bind(conn_eraser<ASC>,ref(*this),_1,p));
+      br::for_each(m_asc_conn[p]|ba::map_keys,bind(conn_eraser<DES>,ref(*this),_1,p));
+      br::for_each(m_des_conn[q]|ba::map_keys,bind(conn_eraser<ASC>,ref(*this),_1,q));
+      br::for_each(m_asc_conn[q]|ba::map_keys,bind(conn_eraser<DES>,ref(*this),_1,q));
 
       set_is_canceled(p,true);
       set_is_canceled(q,true);
@@ -167,8 +183,6 @@ namespace grid
     catch (assertion_error ex)
     {
       ex.push(_FFL).push(SVAR(cp_info(p))).push(SVAR(cp_info(q)));
-      ex.PUSHVAR(m_des_conn[p].count(q));
-      ex.PUSHVAR(m_asc_conn[q].count(p));
       throw;
     }
   }
@@ -186,8 +200,6 @@ namespace grid
       set_is_canceled(p,false);
       set_is_canceled(q,false);
 
-      conn_iter_t i,j;
-
       for(int d = 0 ; d <2 ; ++d)
       {
         int ed = (d == 0)?(p):(q);
@@ -196,49 +208,51 @@ namespace grid
 
         m_conn[d][ed].clear();
 
-        for(i = old_conn.begin();i != old_conn.end() ; ++i)
+        BOOST_FOREACH(int_int_t i,old_conn)
         {
-          if(is_paired(*i) == false)
+          int c = i.first;
+          int m = i.second;
+
+          if(is_paired(c) == false)
           {
-            dir_connect_cps(ed,*i);
+            dir_connect_cps(ed,c,m);
             continue;
           }
 
-          int r = pair_idx(*i);
+          int r = pair_idx(c);
 
           if(index(ed) != index(r))
             continue;
 
           try
           {
-            ASSERT(is_canceled(*i) ==false && is_canceled(r) ==false);
-            ASSERT(abs(index(*i) - index(r)) == 1);
-            ASSERT(pair_idx(r) == int(*i) && pair_idx(*i) ==  r);
+            ASSERT(is_canceled(c) ==false && is_canceled(r) ==false);
+            ASSERT(abs(index(c) - index(r)) == 1);
+            ASSERT(pair_idx(r) == int(c) && pair_idx(c) ==  r);
           }
           catch (assertion_error ex)
           {
-            ex.push(_FFL).push(SVAR(cp_info(r))).push(SVAR(cp_info(*i)));
+            ex.push(_FFL).push(SVAR(cp_info(r))).push(SVAR(cp_info(c)));
             ex.push(SVAR(cp_info(ed)));
             throw;
           }
 
-          try
+          BOOST_FOREACH(int_int_t j,m_conn[d][r])
           {
-            for(j = m_conn[d][r].begin(); j!= m_conn[d][r].end() ; ++j )
-              dir_connect_cps(ed,*j);
-          }
-          catch(assertion_error ex)
-          {
-            ex.push(_FFL)
-              .push("failed to connect ed to *j via pair (*i,r)")
-              .push(SVAR(cp_info(ed)))
-              .push(SVAR(cp_info(*i)))
-              .push(SVAR(cp_info(r)))
-              .push(SVAR(cp_info(*j)));
+            try{dir_connect_cps(ed,j.first,j.second*m);}
+            catch(assertion_error ex)
+            {
+              ex.push(_FFL)
+                  .push("failed to connect ed to *j via pair (*i,r)")
+                  .push(SVAR(cp_info(ed)))
+                  .push(SVAR(cp_info(i.first)))
+                  .push(SVAR(cp_info(r)))
+                  .push(SVAR(cp_info(j.first)));
 
-            if(is_paired(*j))
-              ex.push(SVAR(cp_info(pair_idx(*j))));
-            throw;
+              if(is_paired(j.first))
+                ex.push(SVAR(cp_info(pair_idx(j.first))));
+              throw;
+            }
           }
         }
       }
@@ -262,7 +276,8 @@ namespace grid
     m_asc_conn.clear();
   }
 
-  inline bool is_valid_canc_edge(const mscomplex_t &msc,const std::vector<bool> &is_inc_ext, int_pair_t e )
+  inline bool is_valid_canc_edge
+  (const mscomplex_t &msc,const std::vector<bool> &is_inc_ext, int_pair_t e )
   {
     order_pr_by_cp_index(msc,e[0],e[1]);
 
@@ -279,9 +294,11 @@ namespace grid
        msc.m_domain_rect.isOnBoundry(msc.cellid(e[1])))
       return false;
 
-    ASSERT(msc.m_des_conn[e[0]].count(e[1]) == msc.m_asc_conn[e[1]].count(e[0]));
+    ASSERT(msc.m_des_conn[e[0]].count(e[1]) == 1);
+    ASSERT(msc.m_asc_conn[e[1]].count(e[0]) == 1);
+    ASSERT(msc.m_des_conn[e[0]][e[1]] == msc.m_asc_conn[e[1]][e[0]]);
 
-    if(msc.m_des_conn[e[0]].count(e[1]) != 1)
+    if(msc.m_des_conn[e[0]][e[1]] != 1)
       return false;
 
     return true;
@@ -305,7 +322,8 @@ namespace grid
     return (pd - 1)*(qa - 1) - (pd + qd + pa +qa -1);
   }
 
-  inline bool fast_persistence_lt(const mscomplex_t &msc, int_pair_t p0, int_pair_t p1)
+  inline bool fast_persistence_lt
+  (const mscomplex_t &msc, int_pair_t p0, int_pair_t p1)
   {
     bool eps_p0 = is_epsilon_persistent(msc,p0);
     bool eps_p1 = is_epsilon_persistent(msc,p1);
@@ -385,14 +403,19 @@ namespace grid
     return c01 < c11;
   }
 
-  inline bool is_within_treshold(const mscomplex_t & msc,int_pair_t e,cell_fn_t t)
+  inline bool is_in_treshold(const mscomplex_t & msc,int_pair_t e,cell_fn_t t)
   {
     return (is_epsilon_persistent(msc,e) || get_persistence(msc,e) < t);
   }
 
-  inline void make_is_inc_ext(const mscomplex_t &msc, vector<bool> &is_inc_on_ext)
+  inline void make_is_inc_ext(const mscomplex_t &msc, vector<bool> &inc_on_ext)
   {
-    is_inc_on_ext.resize(msc.get_num_critpts(),false);
+    inc_on_ext.resize(msc.get_num_critpts(),false);
+
+    using boost::ref;
+    using boost::cref;
+
+    BOOST_AUTO(ftor,bind(&utls::set_vec_value<bool>,ref(inc_on_ext),_1,true));
 
     for(int i = 0 ;i < msc.get_num_critpts();++i)
     {
@@ -400,18 +423,13 @@ namespace grid
 
       cellid_t c = msc.cellid(i);
 
-      if( !msc.is_paired(i) && msc.m_rect.boundryCount(c) == msc.m_ext_rect.boundryCount(c)) continue;
+      if( !msc.is_paired(i) && msc.m_rect.boundryCount(c) == msc.m_ext_rect.boundryCount(c))
+        continue;
 
-      is_inc_on_ext[i] = true;
+      inc_on_ext[i] = true;
 
-      conn_iter_t db = msc.m_des_conn[i].begin();
-      conn_iter_t de = msc.m_des_conn[i].end();
-
-      conn_iter_t ab = msc.m_asc_conn[i].begin();
-      conn_iter_t ae = msc.m_asc_conn[i].end();
-
-      for(;db!=de;++db) is_inc_on_ext[*db] = true;
-      for(;ab!=ae;++ab) is_inc_on_ext[*ab] = true;
+      br::for_each(msc.m_des_conn[i]|ba::map_keys,ftor);
+      br::for_each(msc.m_asc_conn[i]|ba::map_keys,ftor);
     }
   }
 
@@ -436,10 +454,7 @@ namespace grid
     priority_queue<int_pair_t,int_pair_list_t,typeof(cmp)> pq(cmp);
 
     if(f_range <= 0)
-    {
-      f_range = *max_element(m_cp_fn.begin(),m_cp_fn.end()) -
-          *min_element(m_cp_fn.begin(),m_cp_fn.end());
-    }
+      f_range = *br::max_element(m_cp_fn) - *br::min_element(m_cp_fn);
 
     f_tresh *= f_range;
 
@@ -449,11 +464,11 @@ namespace grid
 
     for(int i = 0 ;i < get_num_critpts();++i)
     {
-      for(conn_iter_t j = m_des_conn[i].begin();j != m_des_conn[i].end() ;++j)
+      BOOST_FOREACH(int_int_t j,m_des_conn[i])
       {
-        int_pair_t pr(i,*j);
+        int_pair_t pr(i,j.first);
 
-        if(is_valid_canc_edge(*this,is_inc_ext,pr) && is_within_treshold(*this,pr,f_tresh))
+        if(is_valid_canc_edge(*this,is_inc_ext,pr) && is_in_treshold(*this,pr,f_tresh))
           pq.push(pr);
       }
     }
@@ -481,28 +496,26 @@ namespace grid
 
       m_canc_list.push_back(pr);
 
-      for(conn_iter_t i = m_des_conn[p].begin();i != m_des_conn[p].end();++i)
-        for(conn_iter_t j = m_asc_conn[q].begin();j != m_asc_conn[q].end();++j)
-        {
-          int_pair_t npr(*i,*j);
+      BOOST_FOREACH(int_int_t i,m_des_conn[p])
+      BOOST_FOREACH(int_int_t j,m_asc_conn[q])
+      {
+        int_pair_t npr(i.first,j.first);
 
-          update_is_inc_ext(*this,is_inc_ext,npr);
+        update_is_inc_ext(*this,is_inc_ext,npr);
 
-          if(is_valid_canc_edge(*this,is_inc_ext,npr) && is_within_treshold(*this,npr,f_tresh))
-            pq.push(npr);
+        if(is_valid_canc_edge(*this,is_inc_ext,npr) && is_in_treshold(*this,npr,f_tresh))
+          pq.push(npr);
 
-        }
+      }
     }
   }
 
   void mscomplex_t::un_simplify()
   {
-    typedef int_pair_list_t::const_reverse_iterator revit_t;
-
-    for(revit_t it = m_canc_list.rbegin();it != m_canc_list.rend() ; ++it)
+    BOOST_FOREACH(int_pair_t p,boost::make_iterator_range(m_canc_list)|ba::reversed)
     {
-      if(is_canceled((*it)[0]) == false) break;
-      uncancel_pair((*it)[0],(*it)[1]);
+      if(is_canceled(p[0]) == false) break;
+      uncancel_pair(p[0],p[1]);
     }
   }
 
@@ -529,11 +542,14 @@ namespace grid
 
       int dir = (index(i) > index(pair_idx(i)))?(0):(1);
 
-      for(conn_iter_t j  = m_conn[dir][i].begin(); j != m_conn[dir][i].end(); ++j)
+      BOOST_FOREACH(int_int_t j,m_conn[dir][i])
       {
-        ASSERT(is_paired(*j) == false);
+        ASSERT(is_paired(j.first) == false);
 
-        m_conn[dir^1][*j].insert(i);
+        if(m_conn[dir^1][j.first].count(i) == 0)
+          m_conn[dir^1][j.first][i] = 0;
+
+        m_conn[dir^1][j.first][i] += j.second;
       }
 
 //      m_conn[dir][i].clear();
@@ -572,11 +588,8 @@ namespace grid
       os<<(int)m_des_conn[i].size()<<" ";
       os<<(int)m_asc_conn[i].size()<<" ";
 
-      for(conn_iter_t j = m_des_conn[i].begin(); j != m_des_conn[i].end(); ++j)
-        os<<*j<<" ";
-
-      for(conn_iter_t j = m_asc_conn[i].begin(); j != m_asc_conn[i].end(); ++j)
-        os<<*j<<" ";
+      br::transform(m_des_conn[i],ostream_iterator<string>(os," "),utls::to_string<int,int>);
+      br::transform(m_asc_conn[i],ostream_iterator<string>(os," "),utls::to_string<int,int>);
 
       os<<endl;
     }
@@ -598,6 +611,7 @@ namespace grid
   inline void bin_read(std::istream &is, const T &v)
   {is.read((char*)(void*)&v,sizeof(T));}
 
+
   void mscomplex_t::stow(std::ostream &os, bool purge_data)
   {
     int N = get_num_critpts();
@@ -615,15 +629,15 @@ namespace grid
     bin_write_vec(os,m_cp_fn,purge_data);
 
     int_list_t nconn(2*N);
-    int_list_t adj;
+    int_int_list_t adj;
 
     for(int i = 0 ; i < N; ++i)
     {
       nconn[2*i]   = m_des_conn[i].size();
       nconn[2*i+1] = m_asc_conn[i].size();
 
-      std::copy(m_des_conn[i].begin(),m_des_conn[i].end(),back_inserter(adj));
-      std::copy(m_asc_conn[i].begin(),m_asc_conn[i].end(),back_inserter(adj));
+      br::copy(m_des_conn[i],back_inserter(adj));
+      br::copy(m_asc_conn[i],back_inserter(adj));
     }
 
     bin_write(os,(int)adj.size());
@@ -645,7 +659,8 @@ namespace grid
     clear();
 
     int N,NC;
-    int_list_t nconn,adj;
+    int_list_t     nconn;
+    int_int_list_t adj;
 
     bin_read(is,N);
     bin_read(is,m_rect);
@@ -663,10 +678,10 @@ namespace grid
     bin_read_vec(is,nconn,2*N);
     bin_read_vec(is,adj,NC);
 
-    int_list_t::iterator a,b,c = adj.begin();
-
     m_des_conn.resize(N);
     m_asc_conn.resize(N);
+
+    int_int_list_t::iterator a,b,c = adj.begin();
 
     for(int i = 0 ; i < N; ++i)
     {
@@ -674,8 +689,8 @@ namespace grid
       b = a + (nconn[2*i]);
       c = b + (nconn[2*i+1]);
 
-      m_des_conn[i].insert(a,b);
-      m_asc_conn[i].insert(b,c);
+      copy(a,b,inserter(m_des_conn[i],m_des_conn[i].begin()));
+      copy(b,c,inserter(m_asc_conn[i],m_asc_conn[i].begin()));
     }
 
     bin_read(is,NC);
@@ -832,11 +847,12 @@ namespace grid
 
   template<bool KEEP_IXN_EDGES>
   inline void copy_adj_info(mscomplex_t & msc,int_list_t & idx_map,
-                            int_list_t nconn,int_list_t adj,rect_t &ixn,cellid_list_t & cl)
+                            int_list_t& nconn,int_int_list_t &adj,
+                            rect_t &ixn,cellid_list_t & cl)
   {
     int N1 = nconn.size()/2;
 
-    int_list_t::iterator a,b,c = adj.begin();
+    int_int_list_t::iterator a,b,c = adj.begin();
 
     for(int i = 0 ; i < N1; ++i)
     {
@@ -852,17 +868,17 @@ namespace grid
       bool in_ixn = ixn.contains(cl[i]);
 
       for(;a != b; ++a)
-        if(KEEP_IXN_EDGES || !(in_ixn && ixn.contains(cl[*a])))
+        if(KEEP_IXN_EDGES || !(in_ixn && ixn.contains(cl[a->first])))
         {
-          ASSERT(is_in_range(idx_map[*a],0,msc.get_num_critpts()));
-          msc.m_des_conn[j].insert(idx_map[*a]);
+          ASSERT(is_in_range(idx_map[a->first],0,msc.get_num_critpts()));
+          msc.m_des_conn[j].insert(make_pair(idx_map[a->first],a->second));
         }
 
       for(;b != c; ++b)
-        if(KEEP_IXN_EDGES || !(in_ixn && ixn.contains(cl[*b])))
+        if(KEEP_IXN_EDGES || !(in_ixn && ixn.contains(cl[b->first])))
         {
-          ASSERT(is_in_range(idx_map[*b],0,msc.get_num_critpts()));
-          msc.m_asc_conn[j].insert(idx_map[*b]);
+          ASSERT(is_in_range(idx_map[b->first],0,msc.get_num_critpts()));
+          msc.m_des_conn[j].insert(make_pair(idx_map[b->first],b->second));
         }
     }
   }
@@ -1000,7 +1016,8 @@ namespace grid
     bool_list_t    ic1,ic2;
     cell_fn_list_t fn1,fn2;
 
-    int_list_t     nconn1,adj1,nconn2,adj2;
+    int_list_t     nconn1,nconn2;
+    int_int_list_t adj1,adj2;
     int            NC1,NC2;
 
     bin_read_vec(is1,cl1,N1);      bin_read_vec(is2,cl2,N2);
@@ -1087,36 +1104,41 @@ namespace grid
         ridx_map[idx_map[i]] = i;
   }
 
-  inline int adj_converter(int j,int_list_t &idx_map,int_list_t &ridx_map)
+  inline int_int_t adj_converter
+    (const int_int_t &p,int_list_t &idx_map,int_list_t &ridx_map)
   {
+    int j = p.first;
+
     if(ridx_map[j] == -1)
     {
       ridx_map[j] = idx_map.size();
       idx_map.push_back(j);
     }
 
-    return ridx_map[j];
+    return make_pair(ridx_map[j],p.second);
   }
 
-  inline bool is_surv(int i, const mscomplex_t &msc, const int_list_t &idx_map)
+  inline bool is_surv(int_int_t i, const mscomplex_t &msc, const int_list_t &idx_map)
   {
-    ASSERT(idx_map[i] >= 0);
-    return !(msc.is_paired(idx_map[i]));
+    ASSERT(idx_map[i.first] >= 0);
+    return !(msc.is_paired(idx_map[i.first]));
   }
 
   inline void copy_into_new_adj
-  ( int_list_t &idx_map,int_list_t &ridx_map,int_list_t &adj,int_list_t &nconn,
-    int_list_t &new_adj,const mscomplex_t &msc)
+  ( int_list_t &idx_map,int_list_t &ridx_map,
+    int_int_list_t &adj,int_list_t &nconn,
+    int_int_list_t &new_adj,
+   const mscomplex_t &msc)
   {
     int N = idx_map.size();
 
     using boost::ref;
     using boost::cref;
 
-    BOOST_AUTO(ftor,bind(adj_converter,_1,ref(idx_map),ref(ridx_map)));
+    BOOST_AUTO(ac_ftr,bind(adj_converter,_1,ref(idx_map),ref(ridx_map)));
     BOOST_AUTO(surv_ftor,bind(is_surv,_1,cref(msc),cref(idx_map)));
 
-    int_list_t::iterator a,b,c = adj.begin();
+    int_int_list_t::iterator a,b,c = adj.begin();
 
     for(int i = 0 ; i < N; ++i)
     {
@@ -1130,8 +1152,8 @@ namespace grid
       {
         if( msc.is_paired(j))
         {
-          transform(msc.m_des_conn[j].begin(),msc.m_des_conn[j].end(),back_inserter(new_adj),ftor);
-          transform(msc.m_asc_conn[j].begin(),msc.m_asc_conn[j].end(),back_inserter(new_adj),ftor);
+          br::transform(msc.m_des_conn[i],back_inserter(new_adj),ac_ftr);
+          br::transform(msc.m_asc_conn[i],back_inserter(new_adj),ac_ftr);
 
           nconn[2*i]   = msc.m_des_conn[j].size();
           nconn[2*i+1] = msc.m_asc_conn[j].size();
@@ -1243,7 +1265,8 @@ namespace grid
     bool_list_t    ic;
     cell_fn_list_t fn;
 
-    int_list_t      nconn,adj;
+    int_list_t      nconn;
+    int_int_list_t  adj;
     int             NC,NCanc;
     int_pair_list_t cancl;
 
@@ -1262,7 +1285,7 @@ namespace grid
 
     make_rev_map(idx_map,msc.get_num_critpts(),ridx_map);
 
-    int_list_t new_adj;
+    int_int_list_t new_adj;
 
     update_maps_for_new_pairs(msc,idx_map,ridx_map);
     nconn.resize(idx_map.size()*2,0);
@@ -1355,134 +1378,6 @@ namespace grid
     copy_into_stream<false>(*this,is2,N2,r2,e2,d2,ixn_idx,ixn,ixn_dir,off);
   }
 
-
-
-//  inline int adj_converter(int_list_t &rev_map,int i,int_list_t &new_cps,int off)
-//  {
-//    if(rev_map[i] == -1)
-//    {
-//      rev_map[i] = off + new_cps.size();
-//      new_cps.push_back(i);
-//    }
-
-//    return rev_map[i];
-
-//  }
-
-//  inline copy_info_to_adj(const mscomplex_t &msc,int_list_t &adj,int_list_t &nconn, int_list_t &idx_map,int_list_t &rev_map)
-//  {
-//    int N = nconn.size()/2;
-
-//    int_list_t new_adj,new_cps,off = idx_map.size(),new_conn;
-
-//    BOOST_AUTO(ftor,bind(adj_converter,ref(rev_map),_1,ref(new_cps),off));
-
-
-//    for(int i = 0 ; i < N; ++i)
-//    {
-//      int j = idx_map[i];
-
-//      if(j >= 0)
-//      {
-//        transform(msc.m_des_conn[j].begin(),msc.m_des_conn[j].end(),back_inserter(new_adj),ftor);
-//        transform(msc.m_asc_conn[j].begin(),msc.m_asc_conn[j].end(),back_inserter(new_adj),ftor);
-
-//        new_conn[2*i]   = msc.m_des_conn[j].size();
-//        new_conn[2*i+1] = msc.m_asc_conn[j].size();
-//      }
-//      else
-//      {
-//        copy(c_b,c_e,back_inserter(new_conn));
-//        new_conn[2*i] = conn[2*i];
-//        new_conn[2*i] = conn[2*i+1];
-//      }
-//    }
-//  }
-
-//  void mscomplex_t::merge_save
-//      (std::istream &is1,std::istream &is2)
-//  {
-//    rect_t        ixn;
-//    cellid_t      ixn_dir;
-//    int_marray_t  ixn_idx;
-
-//    int            N1,N2;
-//    rect_t         r1,r2,e1,e2,d1,d2;
-
-//    bin_read(is1,N1);bin_read(is2,N2);
-//    bin_read(is1,r1);bin_read(is2,r2);
-//    bin_read(is1,e1);bin_read(is2,e2);
-//    bin_read(is1,d1);bin_read(is2,d2);
-
-//    get_ixn(ixn,ixn_dir,r1,r2,e1,e2);
-
-//    ixn_idx.resize(ixn.span()+1);
-//    ixn_idx.reindex(ixn.lc());
-
-//    memset(ixn_idx.data(),-1,(ixn.pt_begin()-ixn.pt_end())*sizeof(int));
-
-//    fill_ixn_idx(ixn_idx,ixn,m_cp_cellid);
-
-//    for(rect_t::pt_iterator b = ixn.pt_begin(),e = ixn.pt_end() ; b !=e; ++b)
-//    {
-//      int p = ixn_idx(c);
-
-//      if(p < 0) continue;
-
-//      if(is_canceled(p) == false) continue;
-
-//      int q = m_cp_pair_idx[p];
-
-//      if(q < 0) continue;
-
-//      ASSERT(pair_idx(pair_idx(p)) == p);
-
-//      if(ixn.contains(cellid(q))) continue;
-
-//      cancel_pair(p,q);
-//    }
-
-//    memset(ixn_idx.data(),-1,(ixn.pt_begin()-ixn.pt_end())*sizeof(int));
-
-//    int num_common = 0,offset = 0;
-//    {
-//      int_list_t    idx_map1;
-
-//      cellid_list_t  cl1;
-//      cellid_list_t  vl1;
-//      int_list_t     pi1;
-//      char_list_t    ci1;
-//      bool_list_t    ic1;
-//      cell_fn_list_t fn1;
-
-//      int_list_t     nconn1,adj1;
-//      int            NC1;
-
-//      bin_read_vec(is1,cl1,N1);
-//      bin_read_vec(is1,vl1,N1);
-//      bin_read_vec(is1,pi1,N1);
-//      bin_read_vec(is1,ci1,N1);
-//      bin_read_vec(is1,ic1,N1);
-//      bin_read_vec(is1,fn1,N1);
-
-//      bin_read(is1,NC1);
-//      bin_read_vec(is1,nconn1,2*N1);
-//      bin_read_vec(is1,adj1,NC1);
-
-//      get_idx_map(idx_map1,ixn,ixn_idx,ixn_dir,cl1,ic1,pi1,num_common,offset);
-
-//      int_list_t rev_idx_map1;
-
-//      rev_map(idx_map1,N,rev_idx_map1);
-
-
-
-//    }
-
-
-//  }
-
-
   void mscomplex_t::write_graph(const std::string &fn) const
   {
     std::fstream os(fn.c_str(),std::ios::out);
@@ -1494,122 +1389,59 @@ namespace grid
     os.close();
   }
 
+  std::string mscomplex_t::cp_conn (int i) const
+  {
+    std::stringstream ss;
+
+    ss<<std::endl<<"des = ";
+
+    br::copy(m_des_conn[i]|ba::map_keys|ba::transformed(bind(&mscomplex_t::cellid,this,_1)),
+             ostream_iterator<cellid_t>(ss));
+
+    ss<<std::endl<<"asc = ";
+
+    br::copy(m_asc_conn[i]|ba::map_keys|ba::transformed(bind(&mscomplex_t::cellid,this,_1)),
+             ostream_iterator<cellid_t>(ss));
+
+    ss<<std::endl;
+
+    return ss.str();
+  }
 }
 
+//template<bool isRead,typename T>
+//inline void bin_xfer(std::iostream &s,T& v);
 
-//#include <boost/serialization/vector.hpp>
-//#include <boost/serialization/array.hpp>
-//#include <boost/serialization/map.hpp>
-//#include <boost/serialization/set.hpp>
-//#include <boost/serialization/base_object.hpp>
-//#include <boost/serialization/binary_object.hpp>
-//
-//#include <boost/archive/binary_iarchive.hpp>
-//#include <boost/archive/binary_oarchive.hpp>
-//
-//using namespace grid;
-//
-//namespace boost
+//template<bool isRead,typename T>
+//inline void bin_xfer_vec(std::iostream &s,std::vector<T> &v,int &sz);
+
+//template<bool isRead>
+//inline void xfer_msc
+//(std::iostream &s,rect_t &r,rect_t &e,rect_t &d,
+// cellid_list_t &ci, cellid_list_t &vi,int_list_t &pi,bool_list_t &ic,
+// cell_fn_list_t &fn,int_int_list_t &adj,int_pair_list_t &conn,int_pair_list_t &cl)
 //{
-//  namespace serialization
-//  {
-//    template<class Archive>
-//    void serialize(Archive & ar, rect_range_t & r, const unsigned int )
-//    {
-//      typedef boost::array<rect_range_t::value_type,rect_range_t::static_size>
-//          rect_range_base_t;
-//
-//      ar & boost::serialization::base_object<rect_range_base_t>(r);
-//    }
-//
-//    template<class Archive>
-//    void serialize(Archive & ar, rect_point_t & p, const unsigned int )
-//    {
-//      typedef boost::array<rect_point_t::value_type,rect_point_t::static_size>
-//          rect_point_base_t;
-//
-//      ar & boost::serialization::base_object<rect_point_base_t>(p);
-//    }
-//
-//    template<class Archive>
-//    void serialize(Archive & ar, rect_t & r, const unsigned int )
-//    {
-//      typedef boost::array<rect_t::value_type,rect_t::static_size>
-//          rect_base_t;
-//
-//      ar & boost::serialization::base_object<rect_base_t>(r);
-//    }
-//
-//    template<class Archive>
-//    void serialize(Archive & ar, critpt_t & c, const unsigned int )
-//    {
-//      ar & c.cellid;
-//      for(uint dir = 0 ;dir <0 ;++dir)
-//        ar& c.conn[dir];
-//      ar & c.is_paired;
-//      ar & c.isCancelled;
-//      ar & c.pair_idx;
-//      ar & c.fn;
-//    }
-//
-//
-//    template<class Archive>
-//    void serialize(Archive & ar, mscomplex_t & g, const unsigned int )
-//    {
-//      ar & g.m_rect;
-//      ar & g.m_ext_rect;
-//      ar & g.m_id_cp_map;
-//      ar & g.m_cps;
-//    }
-//
-//    //    template<class Archive>
-//    //    void serialize(Archive & ar, GridDataset & ds, const unsigned int )
-//    //    {
-//    //       ar & ds.m_rect;
-//    //       ar & ds.m_ext_rect;
-//    //
-//    //       GridDataset::rect_size_t ext_sz = ds.m_ext_rect.size();
-//    //       uint num_data_items = (ext_sz[0]+1)*(ext_sz[1]+1);
-//    //
-//    //       if(Archive::is_loading::value)
-//    //         ds.init(NULL);
-//    //
-//    //       ar & make_binary_object(ds.(*m_cell_flags).data(),num_data_items*sizeof(GridDataset::cell_flag_t));
-//    //       ar & make_binary_object(ds.m_cell_pairs.data(),num_data_items*sizeof(GridDataset::cellid_t));
-//    //    }
-//  }
+//  int N    = (isRead)?(-1):(ci.size());
+//  int NC   = (isRead)?(-1):(adj.size());
+//  int NCnc = (isRead)?(-1):(cl.size());
+
+//  bin_xfer<isRead>(s,N);
+//  bin_xfer<isRead>(s,r);
+//  bin_xfer<isRead>(s,e);
+//  bin_xfer<isRead>(s,d);
+
+//  bin_xfer_vec<isRead>(s,ci,N);
+//  bin_xfer_vec<isRead>(s,vi,N);
+//  bin_xfer_vec<isRead>(s,pi,N);
+//  bin_xfer_vec<isRead>(s,ic,N);
+//  bin_xfer_vec<isRead>(s,fn,N);
+
+//  bin_xfer<isRead>(s,NC);
+//  bin_xfer_vec<isRead>(s,conn,N);
+//  bin_xfer_vec<isRead>(s,adj,NC);
+
+//  bin_xfer<isRead>(s,NCnc);
+//  bin_xfer_vec<isRead>(s,cl,NCnc);
 //}
-//
-////// without the explicit instantiations below, the program will
-////// fail to link for lack of instantiantiation of the above function
-////// The impls are visible only in this file to save compilation time..
-////
-////template void boost::serialization::serialize<boost::archive::text_iarchive>(
-////    boost::archive::text_iarchive & ar,
-////    GridDataset & g,
-////    const unsigned int file_version
-////);
-////
-////template void boost::serialization::serialize<boost::archive::text_oarchive>(
-////    boost::archive::text_oarchive & ar,
-////    GridDataset & g,
-////    const unsigned int file_version
-////);
-//
-//
-//// without the explicit instantiations below, the program will
-//// fail to link for lack of instantiantiation of the above function
-//// The impls are visible only in this file to save compilation time..
-//
-//template void boost::serialization::serialize<boost::archive::binary_iarchive>(
-//    boost::archive::binary_iarchive & ar,
-//    mscomplex_t & g,
-//    const unsigned int file_version
-//    );
-//template void boost::serialization::serialize<boost::archive::binary_oarchive>(
-//    boost::archive::binary_oarchive & ar,
-//    mscomplex_t & g,
-//    const unsigned int file_version
-//    );
-//
-//
+
+

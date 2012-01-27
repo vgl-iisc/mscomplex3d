@@ -32,9 +32,6 @@
 #include <boost/iterator/counting_iterator.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/functional.hpp>
-
-
-
 #include <boost/bind.hpp>
 
 #include <grid.h>
@@ -49,11 +46,12 @@ namespace grid
   typedef std::map<cellid_t,uint>    id_cp_map_t;
   typedef std::vector<critpt_t >     critpt_list_t;
 
-  typedef std::multiset<uint>                 conn_t;
-  typedef std::multiset<uint>::iterator       conn_iter_t;
-  typedef std::multiset<uint>::const_iterator const_conn_iter_t;
-  typedef std::vector<conn_t>                 conn_list_t;
+  typedef std::pair<int,int>         int_int_t;
+  typedef std::vector<int_int_t>     int_int_list_t;
 
+
+  typedef std::map<int,int>                 conn_t;
+  typedef std::vector<conn_t>               conn_list_t;
 
   class mscomplex_t:public boost::enable_shared_from_this<mscomplex_t>
   {
@@ -86,33 +84,20 @@ namespace grid
 
     void set_critpt(int i,cellid_t c,char idx,cell_fn_t f,cellid_t vert_cell);
 
-    void connect_cps(cellid_t c1,cellid_t c2);
-    void connect_cps(int p, int q);
-
-    void dir_connect_cps(cellid_t c1,cellid_t c2);
-    void dir_connect_cps(int p , int q);
-
-    void pair_cps(cellid_t c1,cellid_t c2);
+    void connect_cps(int p, int q,int m=1);
+    void dir_connect_cps(int p , int q,int m=1);
     void pair_cps(int p , int q);
 
-    inline char& index(int i);
-    inline const char& index(int i) const;
-
-    inline int& pair_idx(int i);
+//    inline int& pair_idx(int i);
     inline const int& pair_idx(int i) const;
-
     inline bool is_paired(int i) const;
 
     inline void set_is_canceled(int i,bool b);
     inline bool is_canceled(int i) const;
 
-    inline cellid_t& cellid(int i);
     inline const cellid_t& cellid(int i) const;
-
-    inline cellid_t& vertid(int i);
     inline const cellid_t& vertid(int i) const;
-
-    inline cell_fn_t& fn(int i);
+    inline const char& index(int i) const;
     inline const cell_fn_t& fn(int i) const;
 
     inline int surv_extrema(int i) const;
@@ -165,7 +150,7 @@ namespace grid
 
 
     inline std::string cp_info (int cp_no) const;
-    inline std::string cp_conn (int cp_no) const;
+           std::string cp_conn (int cp_no) const;
 
     typedef boost::counting_iterator<int> iterator_t;
     typedef boost::function<bool (int)> filter_t;
@@ -188,7 +173,6 @@ namespace grid
     inline cp_id_fiterator cp_id_fend(filter_t f) const;
 
     inline mscomplex_ptr_t make_copy()const;
-
   };
 
   inline void order_pr_by_cp_index(const mscomplex_t &msc,int &p,int &q)
@@ -329,28 +313,12 @@ namespace grid
     return m_cp_cellid.size();
   }
 
-  inline char& mscomplex_t::index(int i)
-  {
-    try{ASSERT(is_in_range(i,0,(int)m_cp_index.size()));}
-    catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
-
-    return m_cp_index[i];
-  }
-
   inline const char& mscomplex_t::index(int i) const
   {
     try{ASSERT(is_in_range(i,0,(int)m_cp_index.size()));}
     catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
 
     return m_cp_index[i];
-  }
-
-  inline int& mscomplex_t::pair_idx(int i)
-  {
-    try{ASSERT(is_in_range(i,0,(int)m_cp_pair_idx.size()));}
-    catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
-
-    return m_cp_pair_idx[i];
   }
 
   inline const int& mscomplex_t::pair_idx(int i) const
@@ -386,15 +354,6 @@ namespace grid
     return m_cp_is_cancelled[i];
   }
 
-  inline cellid_t& mscomplex_t::cellid(int i)
-  {
-    try{ASSERT(is_in_range(i,0,(int)m_cp_cellid.size()));}
-    catch(assertion_error e)
-    {e.push(_FFL).push(SVAR(i)).push(SVAR(m_cp_cellid.size()));throw;}
-
-    return m_cp_cellid[i];
-  }
-
   inline const cellid_t& mscomplex_t::cellid(int i) const
   {
     try{ASSERT(is_in_range(i,0,(int)m_cp_cellid.size()));}
@@ -403,28 +362,12 @@ namespace grid
     return m_cp_cellid[i];
   }
 
-  inline cellid_t& mscomplex_t::vertid(int i)
-  {
-    try{ASSERT(is_in_range(i,0,(int)m_cp_vertid.size()));}
-    catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
-
-    return m_cp_vertid[i];
-  }
-
   inline const cellid_t& mscomplex_t::vertid(int i) const
   {
     try{ASSERT(is_in_range(i,0,(int)m_cp_vertid.size()));}
     catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
 
     return m_cp_vertid[i];
-  }
-
-  inline cell_fn_t& mscomplex_t::fn(int i)
-  {
-    try{ASSERT(is_in_range(i,0,(int)m_cp_fn.size()));}
-    catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
-
-    return m_cp_fn[i];
   }
 
   inline const cell_fn_t& mscomplex_t::fn(int i) const
@@ -463,11 +406,11 @@ namespace grid
     if(is_paired(i) == false)
       return i;
 
-    eGDIR dir = (index(i) == 3)?(GDIR_ASC):(GDIR_DES);
+    eGDIR dir = (index(i) == 3)?(ASC):(DES);
 
     ASSERT(m_conn[dir][pair_idx(i)].size() == 1);
 
-    int j = *m_conn[dir][pair_idx(i)].begin();
+    int j = m_conn[dir][pair_idx(i)].begin()->first;
 
     ASSERT(!is_paired(j));
 
@@ -508,38 +451,7 @@ namespace grid
     ss<<"pair_idx     ::"<<pair_idx(cp_no)<<std::endl;
     return ss.str();
   }
-
-  inline std::string mscomplex_t::cp_conn (int i) const
-  {
-    std::stringstream ss;
-
-    ss<<std::endl<<"des = ";
-
-    for(const_conn_iter_t it = m_des_conn[i].begin(); it != m_des_conn[i].end(); ++it)
-      ss<<cellid(*it);
-
-    ss<<std::endl<<"asc = ";
-
-    for(const_conn_iter_t it = m_asc_conn[i].begin(); it != m_asc_conn[i].end(); ++it)
-      ss<<cellid(*it);
-
-    ss<<std::endl;
-
-    return ss.str();
-  }
 }
 
 
-//#include <boost/serialization/array.hpp>
-//#include <boost/serialization/base_object.hpp>
-//
-//namespace boost
-//{
-//  namespace serialization
-//  {
-//    template<class Archive>
-//    void serialize(Archive & ar, grid::mscomplex_t & g, const unsigned int );
-//
-//  } // namespace serialization
-//}
 #endif

@@ -36,7 +36,10 @@ namespace grid
 
   typedef boost::multi_array<int,gc_grid_dim>             int_marray_t;
 
-  enum eGDIR  {GDIR_DES,GDIR_ASC,GDIR_CT};
+  enum eGDIR  {DES=0,ASC,GDIR_CT};
+
+  const eGDIR GDIR_DES=DES;
+  const eGDIR GDIR_ASC=ASC;
 
   class dataset_t;
   class mscomplex_t;

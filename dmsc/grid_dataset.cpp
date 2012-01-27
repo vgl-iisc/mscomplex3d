@@ -15,6 +15,12 @@
 #include <boost/iterator/filter_iterator.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
+#include <boost/range/adaptors.hpp>
+#include <boost/range/algorithm.hpp>
+#include <boost/range/iterator_range.hpp>
+#include <boost/assign.hpp>
+#include <boost/foreach.hpp>
+
 #define static_assert BOOST_STATIC_ASSERT
 
 #include <config.h>
@@ -28,6 +34,9 @@
 #endif
 
 using namespace std;
+namespace br = boost::range;
+namespace ba = boost::adaptors;
+
 
 namespace grid
 {
@@ -979,17 +988,21 @@ namespace grid
 
   typedef producer_consumer_t<cp_mfold_qitem_t> cp_mfold_que_t;
 
+  inline cellid_t cellid_of_pair(mscomplex_t &msc,int i)
+  {return msc.cellid(msc.pair_idx(i));}
+
   template<eGDIR dir>
   inline void collect_contrib_cps(mscomplex_t &msc,cellid_list_t &cplist, int i)
   {
+    BOOST_AUTO(cop_ftr,bind(cellid_of_pair,boost::ref(msc),_1));
+    BOOST_AUTO(in_rect_ftr,bind(&rect_t::contains_point,&msc.m_rect,_1));
+
     if(msc.m_rect.contains(msc.cellid(i)))
       cplist.push_back(msc.cellid(i));
 
-    conn_iter_t b = msc.m_conn[dir][i].begin(),e=msc.m_conn[dir][i].end();
-
-    for(;b!=e; ++b)
-      if(msc.m_rect.contains(msc.cellid(msc.pair_idx(*b))))
-        cplist.push_back(msc.cellid(msc.pair_idx(*b)));
+    br::copy(boost::make_iterator_range(msc.m_conn[dir][i])
+             |ba::map_keys|ba::transformed(cop_ftr)|ba::filtered(in_rect_ftr),
+             back_inserter(cplist));
 
   }
 
@@ -1132,11 +1145,10 @@ namespace grid
 
   void  dataset_t::saveManifolds(mscomplex_ptr_t msc,const std::string &bn)
   {
-    std::ofstream fs((bn+".mfold.bin").c_str());
-    ensure(fs.is_open(),"unable to open file");
-    boost::thread_group group;
-    group.create_thread(bind(save_saddle_mfolds,boost::ref(fs),boost::ref(*this),boost::ref(*msc)));
-//    save_saddle_mfolds(fs,*this,*msc);
+//    std::ofstream fs((bn+".mfold.bin").c_str());
+//    ensure(fs.is_open(),"unable to open file");
+//    boost::thread_group group;
+//    group.create_thread(bind(save_saddle_mfolds,boost::ref(fs),boost::ref(*this),boost::ref(*msc)));
 
 #ifdef BUILD_EXEC_OPENCL
     opencl::update_to_surv_extrema(shared_from_this(),msc);
@@ -1166,8 +1178,7 @@ namespace grid
       fs.close();
     }
 
-    group.join_all();
-    fs.close();
+//    group.join_all();
   }
 
   template<int dim,eGDIR dir,typename cmp_t,typename Titer>
