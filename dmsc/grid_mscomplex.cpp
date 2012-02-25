@@ -21,6 +21,9 @@ namespace ba = boost::adaptors;
 
 namespace grid
 {
+  inline void make_id_cp_map(id_cp_map_t  &m,const cellid_list_t &cl)
+  {for(int i = 0 ; i < cl.size(); ++i) m.insert(make_pair(cl[i],i));}
+
   inline std::string edge_to_string(mscomplex_t *msc,int_pair_t e)
   {
     std::stringstream ss;
@@ -654,6 +657,37 @@ namespace grid
     bin_write_vec(os,m_canc_list,purge_data);
   }
 
+  ostream& to_stream(ostream &os, conn_t::value_type v)
+  {
+    return os<<v.first<<":"<<v.second<<" ";
+  }
+
+  void mscomplex_t::stow_ascii(std::ostream &os)
+  {
+    os<<get_num_critpts()<<"\n";
+
+    for(int i = 0; i < get_num_critpts(); ++i)
+    {
+      os<<m_cp_cellid[i]<<" "
+        <<m_cp_vertid[i]<< " "
+        <<m_cp_pair_idx[i]<< " "
+        <<int(m_cp_index[i])<< " "
+        <<int(m_cp_is_cancelled[i])<< " "
+        <<m_cp_fn[i]<< "\n";
+    }
+
+    for(int i = 0; i < get_num_critpts(); ++i)
+    {
+      os<<m_des_conn[i].size()<<" "
+        <<m_asc_conn[i].size()<<" ";
+
+      for_each(m_des_conn[i].begin(),m_des_conn[i].end(),bind(to_stream,boost::ref(os),_1));
+      for_each(m_asc_conn[i].begin(),m_asc_conn[i].end(),bind(to_stream,boost::ref(os),_1));
+
+      os<<"\n";
+    }
+  }
+
   void mscomplex_t::load(std::istream &is)
   {
     clear();
@@ -878,7 +912,7 @@ namespace grid
         if(KEEP_IXN_EDGES || !(in_ixn && ixn.contains(cl[b->first])))
         {
           ASSERT(is_in_range(idx_map[b->first],0,msc.get_num_critpts()));
-          msc.m_des_conn[j].insert(make_pair(idx_map[b->first],b->second));
+          msc.m_asc_conn[j].insert(make_pair(idx_map[b->first],b->second));
         }
     }
   }
@@ -1152,8 +1186,8 @@ namespace grid
       {
         if( msc.is_paired(j))
         {
-          br::transform(msc.m_des_conn[i],back_inserter(new_adj),ac_ftr);
-          br::transform(msc.m_asc_conn[i],back_inserter(new_adj),ac_ftr);
+          br::transform(msc.m_des_conn[j],back_inserter(new_adj),ac_ftr);
+          br::transform(msc.m_asc_conn[j],back_inserter(new_adj),ac_ftr);
 
           nconn[2*i]   = msc.m_des_conn[j].size();
           nconn[2*i+1] = msc.m_asc_conn[j].size();

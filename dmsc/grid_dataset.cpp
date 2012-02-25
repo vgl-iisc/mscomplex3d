@@ -1145,10 +1145,10 @@ namespace grid
 
   void  dataset_t::saveManifolds(mscomplex_ptr_t msc,const std::string &bn)
   {
-//    std::ofstream fs((bn+".mfold.bin").c_str());
-//    ensure(fs.is_open(),"unable to open file");
-//    boost::thread_group group;
-//    group.create_thread(bind(save_saddle_mfolds,boost::ref(fs),boost::ref(*this),boost::ref(*msc)));
+    std::ofstream fs((bn+".mfold.bin").c_str());
+    ensure(fs.is_open(),"unable to open file");
+    boost::thread_group group;
+    group.create_thread(bind(save_saddle_mfolds,boost::ref(fs),boost::ref(*this),boost::ref(*msc)));
 
 #ifdef BUILD_EXEC_OPENCL
     opencl::update_to_surv_extrema(shared_from_this(),msc);
@@ -1178,7 +1178,7 @@ namespace grid
       fs.close();
     }
 
-//    group.join_all();
+    group.join_all();
   }
 
   template<int dim,eGDIR dir,typename cmp_t,typename Titer>

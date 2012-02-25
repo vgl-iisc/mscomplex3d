@@ -134,6 +134,10 @@ namespace grid
     void load(const std::string &f)
     {std::fstream fs(f.c_str(),std::ios::in|std::ios::binary);load(fs);}
 
+    void stow_ascii(std::ostream &os);
+    inline void stow_ascii(const std::string &f)
+    {std::fstream fs(f.c_str(),std::ios::out);stow_ascii(fs);}
+
     int load_merge(std::istream &is1,std::istream &is2);
 
     inline int load_merge(const std::string &f1,const std::string &f2)
