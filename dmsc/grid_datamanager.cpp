@@ -187,12 +187,12 @@ namespace grid
     m_f_range = f_max-f_min;
   }
 
-  void load_simplify_stow(mscomplex_t &msc,string f,cell_fn_t t,cell_fn_t r,int &num_c)
+  void load_simplify_store(mscomplex_t &msc,string f,cell_fn_t t,cell_fn_t r,int &num_c)
   {
     msc.load(f);
     msc.simplify(t,r);
     num_c = msc.m_canc_list.size();
-    msc.stow(f);
+    msc.store(f);
   }
 
   void data_manager_t::compute_subdomain_msgraphs ()
@@ -212,8 +212,8 @@ namespace grid
       ds->init(dp->bn(m_basename)+".raw");
       ds->computeMsGraph(msc);
 
-      msc->stow(dp->bn(m_basename)+".msgraph.bin");
-//      ds->stow(dp->bn(m_basename)+".dataset.bin");
+      msc->store(dp->bn(m_basename)+".msgraph.bin");
+//      ds->store(dp->bn(m_basename)+".dataset.bin");
 
       cout<<g_timer.getElapsedTimeInMilliSec()<<"\t:processed piece "<<pc_i
           <<endl;
@@ -239,7 +239,7 @@ namespace grid
         cell_fn_t t= m_simp_tresh;
         cell_fn_t r= m_f_range;
 
-        group.create_thread(bind(load_simplify_stow,ref(*mscs[j]),f,t,r,ref(rets[j])));
+        group.create_thread(bind(load_simplify_store,ref(*mscs[j]),f,t,r,ref(rets[j])));
       }
 
       group.join_all();
@@ -274,7 +274,7 @@ namespace grid
 
         int num_c = msc.m_canc_list.size();
 
-        msc.stow(dp->bn(m_basename)+".msgraph.bin");
+        msc.store(dp->bn(m_basename)+".msgraph.bin");
 
         cout<<g_timer.getElapsedTimeInMilliSec()
             <<"\t:merged ("<<(n+i)*2-1<<","<<(n+i)*2<<") -->"<<n+i-1
@@ -434,7 +434,7 @@ namespace grid
     if(simp_tresh >=0)
     {
     msgraph->simplify(simp_tresh,-1);
-    msgraph->stow(basename+".graph.bin",false);
+    msgraph->store(basename+".graph.bin",false);
     msgraph->un_simplify();
     cout<<"simplification done ------ "<<g_timer.getElapsedTimeInMilliSec()<<endl;
     }
@@ -490,13 +490,13 @@ namespace grid
 
       mscomplex_ptr_t msc_2 = msc->make_copy();
 
-      msc_2->stow(bn+".graph.bin",false);
+      msc_2->store(bn+".graph.bin",false);
       msc_2->un_simplify();
       msc_2->invert_for_collection();
 
       int_marray_t omax,omin;
 
-      ds->stowOwnerArrays(omax,omin);
+      ds->storeOwnerArrays(omax,omin);
       ds->saveManifolds(msc_2,bn);
       ds->loadOwnerArrays(omax,omin);
 

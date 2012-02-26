@@ -1245,7 +1245,7 @@ namespace grid
   {is.read((char*)(void*)p,sizeof(T)*s[0]*s[1]*s[2]);}
 
 
-  void dataset_t::stow(std::ostream &os)
+  void dataset_t::store(std::ostream &os)
   {
     bin_write(os,m_rect);
     bin_write(os,m_ext_rect);
@@ -1295,7 +1295,7 @@ namespace grid
     memcpy((void*)dest.data(),(void*)src.data(),num_ex*sizeof(int));
   }
 
-  void  dataset_t::stowOwnerArrays(int_marray_t &omax,int_marray_t &omin) const
+  void  dataset_t::storeOwnerArrays(int_marray_t &omax,int_marray_t &omin) const
   {
     copy_owner_extrema<GDIR_DES>(omax,m_owner_maxima,*this);
     copy_owner_extrema<GDIR_ASC>(omin,m_owner_minima,*this);

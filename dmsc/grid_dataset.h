@@ -90,7 +90,7 @@ namespace grid
 
     void  saveConnectingOneManifolds(mscomplex_ptr_t ,const std::string &);
 
-    void  stowOwnerArrays(int_marray_t &,int_marray_t &) const;
+    void  storeOwnerArrays(int_marray_t &,int_marray_t &) const;
     void  loadOwnerArrays(int_marray_t &,int_marray_t &);
 
   // subroutines to main functions
@@ -229,11 +229,11 @@ namespace grid
     template<eGDIR dir>
     inline int_marray_t & owner_extrema() ;
 
-    void stow(std::ostream &os);
+    void store(std::ostream &os);
     void load(std::istream &is);
 
-    inline void stow(const std::string &f)
-    {std::fstream fs(f.c_str(),std::ios::out|std::ios::binary);stow(fs);}
+    inline void store(const std::string &f)
+    {std::fstream fs(f.c_str(),std::ios::out|std::ios::binary);store(fs);}
     inline void load(const std::string &f)
     {std::fstream fs(f.c_str(),std::ios::in|std::ios::binary);load(fs);}
 

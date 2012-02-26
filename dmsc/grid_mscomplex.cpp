@@ -559,7 +559,7 @@ namespace grid
     }
   }
 
-  void mscomplex_t::write_graph(std::ostream & os) const
+  void mscomplex_t::store_ascii(std::ostream & os) const
   {
     using namespace std;
 
@@ -615,7 +615,7 @@ namespace grid
   {is.read((char*)(void*)&v,sizeof(T));}
 
 
-  void mscomplex_t::stow(std::ostream &os, bool purge_data)
+  void mscomplex_t::store(std::ostream &os, bool purge_data)
   {
     int N = get_num_critpts();
 
@@ -655,37 +655,6 @@ namespace grid
 
     bin_write(os,int(m_canc_list.size()));
     bin_write_vec(os,m_canc_list,purge_data);
-  }
-
-  ostream& to_stream(ostream &os, conn_t::value_type v)
-  {
-    return os<<v.first<<":"<<v.second<<" ";
-  }
-
-  void mscomplex_t::stow_ascii(std::ostream &os)
-  {
-    os<<get_num_critpts()<<"\n";
-
-    for(int i = 0; i < get_num_critpts(); ++i)
-    {
-      os<<m_cp_cellid[i]<<" "
-        <<m_cp_vertid[i]<< " "
-        <<m_cp_pair_idx[i]<< " "
-        <<int(m_cp_index[i])<< " "
-        <<int(m_cp_is_cancelled[i])<< " "
-        <<m_cp_fn[i]<< "\n";
-    }
-
-    for(int i = 0; i < get_num_critpts(); ++i)
-    {
-      os<<m_des_conn[i].size()<<" "
-        <<m_asc_conn[i].size()<<" ";
-
-      for_each(m_des_conn[i].begin(),m_des_conn[i].end(),bind(to_stream,boost::ref(os),_1));
-      for_each(m_asc_conn[i].begin(),m_asc_conn[i].end(),bind(to_stream,boost::ref(os),_1));
-
-      os<<"\n";
-    }
   }
 
   void mscomplex_t::load(std::istream &is)
@@ -1412,13 +1381,13 @@ namespace grid
     copy_into_stream<false>(*this,is2,N2,r2,e2,d2,ixn_idx,ixn,ixn_dir,off);
   }
 
-  void mscomplex_t::write_graph(const std::string &fn) const
+  void mscomplex_t::store_ascii(const std::string &fn) const
   {
     std::fstream os(fn.c_str(),std::ios::out);
 
     ensure(os.is_open(),"failed to open file");
 
-    write_graph(os);
+    store_ascii(os);
 
     os.close();
   }
@@ -1442,40 +1411,3 @@ namespace grid
     return ss.str();
   }
 }
-
-//template<bool isRead,typename T>
-//inline void bin_xfer(std::iostream &s,T& v);
-
-//template<bool isRead,typename T>
-//inline void bin_xfer_vec(std::iostream &s,std::vector<T> &v,int &sz);
-
-//template<bool isRead>
-//inline void xfer_msc
-//(std::iostream &s,rect_t &r,rect_t &e,rect_t &d,
-// cellid_list_t &ci, cellid_list_t &vi,int_list_t &pi,bool_list_t &ic,
-// cell_fn_list_t &fn,int_int_list_t &adj,int_pair_list_t &conn,int_pair_list_t &cl)
-//{
-//  int N    = (isRead)?(-1):(ci.size());
-//  int NC   = (isRead)?(-1):(adj.size());
-//  int NCnc = (isRead)?(-1):(cl.size());
-
-//  bin_xfer<isRead>(s,N);
-//  bin_xfer<isRead>(s,r);
-//  bin_xfer<isRead>(s,e);
-//  bin_xfer<isRead>(s,d);
-
-//  bin_xfer_vec<isRead>(s,ci,N);
-//  bin_xfer_vec<isRead>(s,vi,N);
-//  bin_xfer_vec<isRead>(s,pi,N);
-//  bin_xfer_vec<isRead>(s,ic,N);
-//  bin_xfer_vec<isRead>(s,fn,N);
-
-//  bin_xfer<isRead>(s,NC);
-//  bin_xfer_vec<isRead>(s,conn,N);
-//  bin_xfer_vec<isRead>(s,adj,NC);
-
-//  bin_xfer<isRead>(s,NCnc);
-//  bin_xfer_vec<isRead>(s,cl,NCnc);
-//}
-
-
