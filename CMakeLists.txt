@@ -32,13 +32,21 @@ if(BUILD_EXEC)
     ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
     )
 
+  option(BUILD_EXEC_TBB "build using thread building blocks" OFF)
+
+  if(BUILD_EXEC_TBB)
+    find_package(tbb REQUIRED)
+  endif(BUILD_EXEC_TBB)
+
   include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/
     ${Boost_INCLUDE_DIRS}
     ${CMAKE_CURRENT_BINARY_DIR}
+    ${tbb_INCLUDE_DIR}
   )
 
-  set(${PROJECT_NAME}_LIBS ${${PROJECT_NAME}_LIBS} ${Boost_LIBRARIES})
+
+  set(${PROJECT_NAME}_LIBS ${${PROJECT_NAME}_LIBS} ${Boost_LIBRARIES} ${tbb_LIBRARY})
 
   option(BUILD_EXEC_CUDA "build with cuda support" OFF)
 

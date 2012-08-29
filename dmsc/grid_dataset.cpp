@@ -33,6 +33,13 @@
 #include <grid_dataset_cl.h>
 #endif
 
+#ifdef BUILD_EXEC_TBB
+
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_for.h>
+
+#endif
+
 using namespace std;
 namespace br = boost::range;
 namespace ba = boost::adaptors;
@@ -874,6 +881,41 @@ namespace grid
     }
   }
 
+#ifdef BUILD_EXEC_TBB
+
+  struct compute_saddle_connections_tbb_ftor
+  {
+    cellid_list_t  &m_saddles;
+    dataset_t      &m_ds;
+    mscomplex_t    &m_msc;
+    cp_conn_que_t  &m_que;
+
+    void operator()( const tbb::blocked_range<size_t>& r) const
+    {
+      for( size_t i=r.begin(); i!=r.end(); ++i )
+        m_que.put(compute_inc_pairs<2>(m_saddles[i],m_ds));
+    }
+
+    compute_saddle_connections_tbb_ftor
+      (cellid_list_t & s,dataset_t &ds,mscomplex_t &msc,cp_conn_que_t &que):
+      m_saddles(s),m_ds(ds),m_msc(msc),m_que(que){}
+  };
+
+  void compute_saddle_connections_tbb(dataset_t &ds, mscomplex_t &msc,cp_conn_que_t &que)
+  {
+    cellid_list_t saddles;
+
+    br::copy(msc.cpno_range()
+             |ba::filtered(bind(is_required_cp<2,DES>,boost::cref(msc),_1))
+             |ba::transformed(bind(&mscomplex_t::cellid,boost::cref(msc),_1)),
+             back_inserter(saddles));
+
+    tbb::parallel_for(tbb::blocked_range<size_t>(0,saddles.size()),
+                      compute_saddle_connections_tbb_ftor(saddles,ds,msc,que),
+                      tbb::auto_partitioner());
+  }
+#endif
+
 
   void  dataset_t::computeMsGraph(mscomplex_ptr_t msc)
   {
@@ -936,13 +978,15 @@ namespace grid
     }
 #endif
 
-    mscomplex_t::filter_t f_1asc = bind(is_required_cp<1,GDIR_ASC>,boost::cref(*msc),_1);
     mscomplex_t::filter_t f_2des = bind(is_required_cp<2,GDIR_DES>,boost::cref(*msc),_1);
 
     mscomplex_t::filter_t f_2asc = bind(is_required_cp<2,GDIR_ASC>,boost::cref(*msc),_1);
     mscomplex_t::filter_t f_1des = bind(is_required_cp<1,GDIR_DES>,boost::cref(*msc),_1);
 
-    mark_reachable<1,GDIR_ASC>(msc->cp_id_fbegin(f_1asc),msc->cp_id_fend(f_1asc),*this);
+    mark_reachable<1,GDIR_ASC>
+        (msc->cpno_range()
+         |ba::filtered(bind(is_required_cp<1,GDIR_ASC>,boost::cref(*msc),_1))
+         |ba::transformed(bind(&mscomplex_t::cellid,boost::cref(msc),_1)),*this);
 
     {
       cp_id_producer_t prd(msc,f_2des);
@@ -953,11 +997,17 @@ namespace grid
 
       group.create_thread(bind(store_connections,boost::ref(*msc),boost::ref(que),prd.count()+2));
 
+#ifdef BUILD_EXEC_TBB
+      using boost::ref;
+      group.create_thread(bind(compute_saddle_connections_tbb,ref(*this),ref(*msc),ref(que)));
+
+#else
       for(int tid = 0 ; tid < g_num_threads; ++tid)
         group.create_thread(bind(compute_saddle_connections,boost::ref(*this),boost::ref(prd),boost::ref(que)));
+      //      int n = prd.count();
+      //      compute_saddle_connections(*this,prd,que);
+#endif
 
-//      int n = prd.count();
-//      compute_saddle_connections(*this,prd,que);
 
 #ifdef BUILD_EXEC_OPENCL
       w.owner_extrema(shared_from_this());
@@ -1217,7 +1267,7 @@ namespace grid
 
     for_each(b_2,e_2,bind(collect_contrib_cps<GDIR_DES>,ref(*msc),ref(cplist),_1));
 
-    mark_reachable<2,GDIR_DES>(cplist.begin(),cplist.end(),*this);
+    mark_reachable<2,GDIR_DES>(cplist,*this);
 
     cellid_list_ptr_t one_des = compute_mfold<1,GDIR_DES>(*this,*msc,b_1,e_1,des1_cmp);
     cellid_list_ptr_t one_asc = compute_mfold<1,GDIR_ASC>(*this,*msc,b_1,e_1,asc1_cmp);

@@ -33,6 +33,7 @@
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/functional.hpp>
 #include <boost/bind.hpp>
+#include <boost/range/iterator_range.hpp>
 
 #include <grid.h>
 
@@ -159,6 +160,8 @@ namespace grid
     template <typename it_t>            class cp_id_iterator;
     typedef cp_id_iterator<fiterator_t> cp_id_fiterator;
 
+    inline boost::iterator_range<iterator_t> cpno_range() const
+    {return boost::make_iterator_range(iterator_t(0),iterator_t(get_num_critpts()));}
 
     inline iterator_t begin() const;
     inline iterator_t end() const;

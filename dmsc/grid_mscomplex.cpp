@@ -22,7 +22,7 @@ namespace ba = boost::adaptors;
 namespace grid
 {
   inline void make_id_cp_map(id_cp_map_t  &m,const cellid_list_t &cl)
-  {for(int i = 0 ; i < cl.size(); ++i) m.insert(make_pair(cl[i],i));}
+  {for(int i = 0 ; i < int(cl.size()); ++i) m.insert(make_pair(cl[i],i));}
 
   inline std::string edge_to_string(mscomplex_t *msc,int_pair_t e)
   {

@@ -2,5 +2,6 @@
 #cmakedefine BUILD_EXEC_GUI
 #cmakedefine BUILD_EXEC_CUDA
 #cmakedefine BUILD_EXEC_OPENCL
+#cmakedefine BUILD_EXEC_TBB
 
 #cmakedefine NUM_PARALLEL_TASKS @NUM_PARALLEL_TASKS@

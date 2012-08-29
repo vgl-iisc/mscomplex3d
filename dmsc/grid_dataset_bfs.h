@@ -7,18 +7,19 @@
 #include <tr1/tuple>
 
 #include <boost/bind/bind.hpp>
+#include <boost/range.hpp>
 
 using namespace std;
 
 namespace grid
 {
 
-template<int dim,eGDIR dir,typename iter_t>
-inline void mark_reachable(iter_t cp_b,iter_t cp_e,dataset_t &ds)
+template<int dim,eGDIR dir,typename range_t>
+inline void mark_reachable(range_t rng,dataset_t &ds)
 {
  cellid_t cets[40];
 
- cellid_list_t stk(cp_b,cp_e);
+ cellid_list_t stk(boost::begin(rng),boost::end(rng));
 
  while(stk.size() != 0 )
  {
