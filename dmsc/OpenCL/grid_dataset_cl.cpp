@@ -7,13 +7,14 @@
 #include <boost/thread/thread.hpp>
 
 #include <cpputils.h>
+#include <config.h>
 
 #include<grid_dataset_cl.h>
 #include<grid_dataset.h>
 #include<grid_mscomplex.h>
 
-const int WI_SIZE = 256;
-const int WG_NUM  = 32;
+const int WI_SIZE = OPENCL_NUM_WORK_ITEMS_PER_GROUP;
+const int WG_NUM  = OPENCL_NUM_WORK_GROUPS;
 const int WG_SIZE = WG_NUM*WI_SIZE;
 
 cl::Context       s_context;
@@ -48,6 +49,7 @@ cl::KernelFunctor s_init_update_to_surv_cp_no;
 cl::KernelFunctor s_update_to_surv_cp_no;
 
 
+const char * s_config_file = CONFIG_H_LOCATION;
 const char * s_header_file =
     "/home/nithin/projects/mscomplex-3d/dmsc/OpenCL/grid_dataset.clh";
 const char * s_source1_file =
@@ -209,6 +211,30 @@ namespace grid
       cl::Program             program2;
       cl::Program             program3;
 
+      ifstream configFile (s_config_file);
+      ifstream headerFile (s_header_file);
+      ifstream sourceFile1(s_source1_file);
+      ifstream sourceFile2(s_source2_file);
+      ifstream sourceFile3(s_source3_file);
+
+      ensure(configFile. is_open(),"unable to open file");
+      ensure(headerFile. is_open(),"unable to open file");
+      ensure(sourceFile1.is_open(),"unable to open file");
+      ensure(sourceFile2.is_open(),"unable to open file");
+      ensure(sourceFile3.is_open(),"unable to open file");
+
+      string configCode (istreambuf_iterator<char>(configFile),
+                         (istreambuf_iterator<char>()));
+      string headerCode (istreambuf_iterator<char>(headerFile),
+                         (istreambuf_iterator<char>()));
+      string sourceCode1(istreambuf_iterator<char>(sourceFile1),
+                         (istreambuf_iterator<char>()));
+      string sourceCode2(istreambuf_iterator<char>(sourceFile2),
+                         (istreambuf_iterator<char>()));
+      string sourceCode3(istreambuf_iterator<char>(sourceFile3),
+                         (istreambuf_iterator<char>()));
+
+
       try
       {
         std::vector<cl::Platform> platforms;
@@ -234,18 +260,10 @@ namespace grid
 
       try
       {
-        std::ifstream sourceFile(s_source1_file);
-        ensure(sourceFile.is_open(),"unable to open file");
-
-        std::ifstream headerFile(s_header_file);
-        ensure(headerFile.is_open(),"unable to open file");
-
-        std::string headerCode(std::istreambuf_iterator<char>(headerFile),(std::istreambuf_iterator<char>()));
-        std::string sourceCode(std::istreambuf_iterator<char>(sourceFile),(std::istreambuf_iterator<char>()));
-
         cl::Program::Sources sources;
-        sources.push_back(std::make_pair(headerCode.c_str(),headerCode.size()));
-        sources.push_back(std::make_pair(sourceCode.c_str(),sourceCode.size()));
+        sources.push_back(make_pair(configCode.c_str(),configCode.size()));
+        sources.push_back(make_pair(headerCode.c_str(),headerCode.size()));
+        sources.push_back(make_pair(sourceCode1.c_str(),sourceCode1.size()));
 
         program1 = cl::Program(s_context, sources);
         program1.build(devices);
@@ -291,18 +309,10 @@ namespace grid
 
       try
       {
-        std::ifstream sourceFile(s_source2_file);
-        ensure(sourceFile.is_open(),"unable to open file");
-
-        std::ifstream headerFile(s_header_file);
-        ensure(headerFile.is_open(),"unable to open file");
-
-        std::string headerCode(std::istreambuf_iterator<char>(headerFile),(std::istreambuf_iterator<char>()));
-        std::string sourceCode(std::istreambuf_iterator<char>(sourceFile),(std::istreambuf_iterator<char>()));
-
         cl::Program::Sources sources;
-        sources.push_back(std::make_pair(headerCode.c_str(),headerCode.size()));
-        sources.push_back(std::make_pair(sourceCode.c_str(),sourceCode.size()));
+        sources.push_back(make_pair(configCode.c_str(),configCode.size()));
+        sources.push_back(make_pair(headerCode.c_str(),headerCode.size()));
+        sources.push_back(make_pair(sourceCode2.c_str(),sourceCode2.size()));
 
         program2 = cl::Program(s_context, sources);
         program2.build(devices);
@@ -345,18 +355,10 @@ namespace grid
 
       try
       {
-        std::ifstream sourceFile(s_source3_file);
-        ensure(sourceFile.is_open(),"unable to open file");
-
-        std::ifstream headerFile(s_header_file);
-        ensure(headerFile.is_open(),"unable to open file");
-
-        std::string headerCode(std::istreambuf_iterator<char>(headerFile),(std::istreambuf_iterator<char>()));
-        std::string sourceCode(std::istreambuf_iterator<char>(sourceFile),(std::istreambuf_iterator<char>()));
-
         cl::Program::Sources sources;
-        sources.push_back(std::make_pair(headerCode.c_str(),headerCode.size()));
-        sources.push_back(std::make_pair(sourceCode.c_str(),sourceCode.size()));
+        sources.push_back(make_pair(configCode.c_str(),configCode.size()));
+        sources.push_back(make_pair(headerCode.c_str(),headerCode.size()));
+        sources.push_back(make_pair(sourceCode3.c_str(),sourceCode3.size()));
 
         program3 = cl::Program(s_context, sources);
         program3.build(devices);

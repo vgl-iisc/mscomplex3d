@@ -1,5 +1,5 @@
-#define NUM_LOCAL_THREADS 256
-#define NUM_GROUPS        32
+#define NUM_LOCAL_THREADS (OPENCL_NUM_WORK_ITEMS_PER_GROUP)
+#define NUM_GROUPS        (OPENCL_NUM_WORK_GROUPS)
 #define binary_op(a, b) ((a) +(b))
 
 inline void __scan_local_threads(__local int * array)
