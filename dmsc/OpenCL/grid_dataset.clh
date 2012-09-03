@@ -1,6 +1,9 @@
 #ifndef GRID_DATASET_CLH
 #define GRID_DATASET_CLH
 
+#define OPENCL_NUM_WORK_ITEMS_PER_GROUP @OPENCL_NUM_WORK_ITEMS_PER_GROUP@
+#define OPENCL_NUM_WORK_GROUPS @OPENCL_NUM_WORK_GROUPS@
+
 typedef short4 cell_t;
 typedef int4   cell_pair_t;
 typedef uchar  flag_t;

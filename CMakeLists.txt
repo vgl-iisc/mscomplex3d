@@ -74,11 +74,9 @@ set(${PROJECT_NAME}_SRCS ${${PROJECT_NAME}_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
     )
 
-set(CONFIG_H_LOCATION ${PROJECT_BINARY_DIR}/config.h)
-
 set(BUILD_EXEC_OPENCL 1)
 
-configure_file(${PROJECT_SOURCE_DIR}/config.h.in ${CONFIG_H_LOCATION})
+configure_file(${PROJECT_SOURCE_DIR}/config.h.in ${PROJECT_BINARY_DIR}/config.h)
 
 add_executable(${PROJECT_NAME}  ${${PROJECT_NAME}_SRCS})
 

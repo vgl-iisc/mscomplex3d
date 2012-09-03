@@ -49,7 +49,6 @@ cl::KernelFunctor s_init_update_to_surv_cp_no;
 cl::KernelFunctor s_update_to_surv_cp_no;
 
 
-const char * s_config_file = CONFIG_H_LOCATION;
 const char * s_header_file =
     "/home/nithin/projects/mscomplex-3d/dmsc/OpenCL/grid_dataset.clh";
 const char * s_source1_file =
@@ -211,20 +210,16 @@ namespace grid
       cl::Program             program2;
       cl::Program             program3;
 
-      ifstream configFile (s_config_file);
       ifstream headerFile (s_header_file);
       ifstream sourceFile1(s_source1_file);
       ifstream sourceFile2(s_source2_file);
       ifstream sourceFile3(s_source3_file);
 
-      ensure(configFile. is_open(),"unable to open file");
       ensure(headerFile. is_open(),"unable to open file");
       ensure(sourceFile1.is_open(),"unable to open file");
       ensure(sourceFile2.is_open(),"unable to open file");
       ensure(sourceFile3.is_open(),"unable to open file");
 
-      string configCode (istreambuf_iterator<char>(configFile),
-                         (istreambuf_iterator<char>()));
       string headerCode (istreambuf_iterator<char>(headerFile),
                          (istreambuf_iterator<char>()));
       string sourceCode1(istreambuf_iterator<char>(sourceFile1),
@@ -234,6 +229,14 @@ namespace grid
       string sourceCode3(istreambuf_iterator<char>(sourceFile3),
                          (istreambuf_iterator<char>()));
 
+      const string s1("@OPENCL_NUM_WORK_ITEMS_PER_GROUP@");
+      const string s2("@OPENCL_NUM_WORK_GROUPS@");
+
+      headerCode.replace(headerCode.find(s1),s1.size(),
+                         utls::to_string(OPENCL_NUM_WORK_ITEMS_PER_GROUP));
+
+      headerCode.replace(headerCode.find(s2),s2.size(),
+                         utls::to_string(OPENCL_NUM_WORK_GROUPS));
 
       try
       {
@@ -261,7 +264,6 @@ namespace grid
       try
       {
         cl::Program::Sources sources;
-        sources.push_back(make_pair(configCode.c_str(),configCode.size()));
         sources.push_back(make_pair(headerCode.c_str(),headerCode.size()));
         sources.push_back(make_pair(sourceCode1.c_str(),sourceCode1.size()));
 
@@ -310,7 +312,6 @@ namespace grid
       try
       {
         cl::Program::Sources sources;
-        sources.push_back(make_pair(configCode.c_str(),configCode.size()));
         sources.push_back(make_pair(headerCode.c_str(),headerCode.size()));
         sources.push_back(make_pair(sourceCode2.c_str(),sourceCode2.size()));
 
@@ -356,7 +357,6 @@ namespace grid
       try
       {
         cl::Program::Sources sources;
-        sources.push_back(make_pair(configCode.c_str(),configCode.size()));
         sources.push_back(make_pair(headerCode.c_str(),headerCode.size()));
         sources.push_back(make_pair(sourceCode3.c_str(),sourceCode3.size()));
 
