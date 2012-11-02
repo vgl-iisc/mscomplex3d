@@ -1,0 +1,13 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+  <qresource prefix="/icons">
+    <!-- Typical file operations. -->
+    <file>fileopen.png</file>
+    <file>filesave.png</file>
+    <file>print.png</file>
+    <file>close.png</file>
+
+    <!-- Help -->
+    <file>help.png</file>
+  </qresource>
+</RCC>

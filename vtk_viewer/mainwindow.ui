@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1002</width>
+    <height>666</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="icons/icons.qrc">
+    <normaloff>:/icons/help.png</normaloff>:/icons/help.png</iconset>
+  </property>
+  <property name="iconSize">
+   <size>
+    <width>22</width>
+    <height>22</height>
+   </size>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QGroupBox" name="groupBoxGraph">
+    <property name="geometry">
+     <rect>
+      <x>9</x>
+      <y>9</y>
+      <width>984</width>
+      <height>569</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+      <horstretch>1</horstretch>
+      <verstretch>1</verstretch>
+     </sizepolicy>
+    </property>
+    <layout class="QVBoxLayout">
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <property name="margin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QSplitter" name="splitter">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <widget class="QWidget" name="verticalLayoutWidget">
+        <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+            <widget class="QToolBar" name="toolBarLeft" >
+            <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="iconSize" >
+              <size>
+              <width>22</width>
+              <height>22</height>
+              </size>
+            </property>
+            <attribute name="toolBarArea" >
+              <enum>TopToolBarArea</enum>
+            </attribute>
+            <attribute name="toolBarBreak" >
+              <bool>false</bool>
+            </attribute>
+            <addaction name="actionOpenMsComplex" />
+            <addaction name="actionCloseMsComplex" />
+            </widget>
+          </item>
+          <item>
+            <widget class="QVTKWidget" name="qvtkWidgetLeft" >
+              <property name="sizePolicy" >
+              <sizepolicy vsizetype="Expanding" hsizetype="Expanding" >
+                <horstretch>1</horstretch>
+                <verstretch>1</verstretch>
+              </sizepolicy>
+              </property>
+              <property name="minimumSize" >
+              <size>
+                <width>300</width>
+                <height>300</height>
+              </size>
+              </property>
+            </widget>
+          </item>
+        </layout>
+       </widget>
+      <widget class="QWidget" name="verticalLayoutWidget_2">
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+           <item>
+            <widget class="QToolBar" name="toolBarRight" >
+            <property name="orientation" >
+              <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="iconSize" >
+              <size>
+              <width>22</width>
+              <height>22</height>
+              </size>
+            </property>
+            <attribute name="toolBarArea" >
+              <enum>TopToolBarArea</enum>
+            </attribute>
+            <attribute name="toolBarBreak" >
+              <bool>false</bool>
+            </attribute>
+            <addaction name="actionOpenVolume" />
+            <addaction name="actionCloseVolume" />
+            <addaction name="separator" />
+            </widget>
+          </item>
+          <item>
+            <widget class="QVTKWidget" name="qvtkWidgetRight" >
+              <property name="sizePolicy" >
+              <sizepolicy vsizetype="Expanding" hsizetype="Expanding" >
+                <horstretch>1</horstretch>
+                <verstretch>1</verstretch>
+              </sizepolicy>
+              </property>
+              <property name="minimumSize" >
+              <size>
+                <width>300</width>
+                <height>300</height>
+              </size>
+              </property>
+            </widget>
+          </item>
+        </layout>
+       </widget>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionOpenMsComplex">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icons/icons.qrc">
+     <normaloff>:/icons/fileopen.png</normaloff>:/icons/fileopen.png</iconset>
+   </property>
+   <property name="text">
+    <string>Open Mscomplex...</string>
+   </property>
+  </action>  
+  <action name="actionCloseMsComplex">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icons/icons.qrc">
+     <normaloff>:/icons/close.png</normaloff>:/icons/close.png</iconset>
+   </property>
+   <property name="text">
+    <string>Close Mscomplex...</string>
+   </property>
+  </action>
+    <action name="actionOpenVolume">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icons/icons.qrc">
+     <normaloff>:/icons/fileopen.png</normaloff>:/icons/fileopen.png</iconset>
+   </property>
+   <property name="text">
+    <string>Open Volume...</string>
+   </property>
+  </action>  
+  <action name="actionCloseVolume">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icons/icons.qrc">
+     <normaloff>:/icons/close.png</normaloff>:/icons/close.png</iconset>
+   </property>
+   <property name="text">
+    <string>Close Volume...</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="icon">
+    <iconset>
+     <normaloff/>
+    </iconset>
+   </property>
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionHelp">
+   <property name="icon">
+    <iconset resource="icons/icons.qrc">
+     <normaloff>:/icons/help.png</normaloff>:/icons/help.png</iconset>
+   </property>
+   <property name="text">
+    <string>Help</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QVTKWidget</class>
+   <extends>QWidget</extends>
+   <header>QVTKWidget.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="icons/icons.qrc" />
+ </resources>
+ <connections/>
+</ui>

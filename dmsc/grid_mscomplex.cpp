@@ -6,9 +6,6 @@
 #include <cstdlib>
 
 #include <boost/typeof/typeof.hpp>
-#include <boost/range/adaptors.hpp>
-#include <boost/range/algorithm.hpp>
-#include <boost/range/iterator_range.hpp>
 #include <boost/assign.hpp>
 #include <boost/foreach.hpp>
 
@@ -32,6 +29,9 @@ namespace grid
 
     return ss.str();
   }
+
+  mscomplex_t::mscomplex_t()
+    :m_des_conn(m_conn[0]),m_asc_conn(m_conn[1]){}
 
   mscomplex_t::mscomplex_t(rect_t r,rect_t e,rect_t d)
     :m_rect(r),m_ext_rect(e),m_domain_rect(d),

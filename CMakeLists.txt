@@ -104,3 +104,9 @@ target_link_libraries(${PROJECT_NAME}
 #     add_executable(${PROJECT_NAME}  ${${PROJECT_NAME}_SRCS})
 #
 #   endif(BUILD_EXEC_CUDA)
+
+option(BUILD_VTK_VIEWER "build the mscomplex viewer" ON)
+
+if(BUILD_VTK_VIEWER)
+include(vtk_viewer/vtk_viewer.cmake)
+endif(BUILD_VTK_VIEWER)

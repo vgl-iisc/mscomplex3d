@@ -34,6 +34,9 @@
 #include <boost/functional.hpp>
 #include <boost/bind.hpp>
 #include <boost/range/iterator_range.hpp>
+#include <boost/range/adaptors.hpp>
+#include <boost/range/algorithm.hpp>
+
 
 #include <grid.h>
 
@@ -77,6 +80,7 @@ namespace grid
 
   public:
 
+    mscomplex_t();
     mscomplex_t(rect_t r,rect_t e,rect_t d);
     ~mscomplex_t();
 
@@ -176,6 +180,9 @@ namespace grid
     inline cp_id_fiterator cp_id_fend(filter_t f) const;
 
     inline mscomplex_ptr_t make_copy()const;
+
+    inline cell_fn_t fn_min() const;
+    inline cell_fn_t fn_max() const;
   };
 
   inline void order_pr_by_cp_index(const mscomplex_t &msc,int &p,int &q)
@@ -419,6 +426,14 @@ namespace grid
 
     return j;
   }
+
+  inline cell_fn_t mscomplex_t::fn_min() const
+  {return *boost::range::min_element(m_cp_fn);}
+
+  inline cell_fn_t mscomplex_t::fn_max() const
+  {return *boost::range::max_element(m_cp_fn);
+  }
+
 
   inline mscomplex_ptr_t mscomplex_t::make_copy()const
   {
