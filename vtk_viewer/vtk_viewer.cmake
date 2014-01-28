@@ -11,6 +11,8 @@ INCLUDE_DIRECTORIES(
   ${PROJECT_SOURCE_DIR}/vtk_viewer/
 )
 
+find_package(Boost 1.48 COMPONENTS program_options thread system REQUIRED)
+
 # Set your files and resources here
 SET(VTK_VIEWER_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/vtk_viewer/main.cpp
@@ -62,4 +64,4 @@ ADD_EXECUTABLE(mscomplex3d-vtk-viewer
   ${VTK_VIEWER_MOCSrcs}
   ${VTK_VIEWER_RCSrcs}
 )
-TARGET_LINK_LIBRARIES(mscomplex3d-vtk-viewer vtkHybrid QVTK)
+TARGET_LINK_LIBRARIES(mscomplex3d-vtk-viewer vtkHybrid QVTK ${Boost_LIBRARIES})

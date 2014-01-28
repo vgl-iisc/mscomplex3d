@@ -8,7 +8,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 find_package(OpenCL REQUIRED)
 
-find_package(Boost 1.48 COMPONENTS program_options thread REQUIRED)
+find_package(Boost 1.48 COMPONENTS program_options thread system REQUIRED)
 
 set(NUM_PARALLEL_TASKS 4 CACHE STRING
       "number of tasks to do in parallel")
