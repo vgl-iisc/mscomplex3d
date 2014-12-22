@@ -117,6 +117,9 @@ target_link_libraries(${PROJECT_NAME}
   ${OPENCL_LIBRARIES}
 )
 
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+
 # option(BUILD_EXEC_CUDA "build with cuda support" OFF)
 #
 #   if(BUILD_EXEC_CUDA)

@@ -968,42 +968,6 @@ namespace grid
   }
 
 
-  void dataset_t::saveConnectingOneManifolds(mscomplex_ptr_t msc,const std::string &bn)
-  {
-    mscomplex_t::memb_filter_t fltr_1 = &mscomplex_t::is_unpaired_one_saddle;
-    mscomplex_t::memb_filter_t fltr_2 = &mscomplex_t::is_unpaired_two_saddle;
-
-    mscomplex_t::fiterator_t b_1 = msc->fbegin(fltr_1),e_1 = msc->fend(fltr_1);
-    mscomplex_t::fiterator_t b_2 = msc->fbegin(fltr_2),e_2 = msc->fend(fltr_2);
-
-    BOOST_AUTO(des2_cmp,boost::bind(&dataset_t::compare_cells_pp<2>,this,_1,_2));
-    BOOST_AUTO(asc2_cmp,boost::bind(&dataset_t::compare_cells_pp<2>,this,_2,_1));
-    BOOST_AUTO(des1_cmp,boost::bind(&dataset_t::compare_cells_pp<1>,this,_1,_2));
-    BOOST_AUTO(asc1_cmp,boost::bind(&dataset_t::compare_cells_pp<1>,this,_2,_1));
-
-    cellid_list_t cplist;
-
-    for_each(b_2,e_2,bind(collect_contrib_cps<GDIR_DES>,ref(*msc),ref(cplist),_1));
-
-    mark_reachable<2,GDIR_DES>(cplist,*this);
-
-    cellid_list_ptr_t one_des = compute_mfold<1,GDIR_DES>(*this,*msc,b_1,e_1,des1_cmp);
-    cellid_list_ptr_t one_asc = compute_mfold<1,GDIR_ASC>(*this,*msc,b_1,e_1,asc1_cmp);
-    cellid_list_ptr_t two_asc = compute_mfold<2,GDIR_ASC>(*this,*msc,b_2,e_2,asc2_cmp);
-
-    std::ofstream fs((bn+".onemfold.bin").c_str());
-    ensure(fs.is_open(),"unable to open file");
-
-    bin_write(fs,int(one_des->size()));
-    bin_write(fs,int(one_asc->size()));
-    bin_write(fs,int(0));
-    bin_write(fs,int(two_asc->size()));
-
-    bin_write_vec(fs,*one_des);
-    bin_write_vec(fs,*one_asc);
-    bin_write_vec(fs,*two_asc);
-  }
-
   template<typename T>
   inline void bin_write_marray(std::ostream & os,const T * p, const cellid_t & s)
   {os.write((const char*)(const void*)p,sizeof(T)*s[0]*s[1]*s[2]);}

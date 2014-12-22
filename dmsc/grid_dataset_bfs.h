@@ -178,7 +178,7 @@ inline void compute_mfold
     }
   }
 
-  ASSERT(check_unique_elems<cellid_t>(mfold.begin(),mfold.end()));
+//  ASSERT(check_unique_elems<cellid_t>(mfold.begin(),mfold.end()));
 }
 
 }

@@ -87,8 +87,6 @@ namespace grid
 
     void  saveManifolds(mscomplex_ptr_t msgraph,const std::string &);
 
-    void  saveConnectingOneManifolds(mscomplex_ptr_t ,const std::string &);
-
     void  storeOwnerArrays(int_marray_t &,int_marray_t &) const;
     void  loadOwnerArrays(int_marray_t &,int_marray_t &);
 

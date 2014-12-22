@@ -449,69 +449,6 @@ namespace grid
     cout<<"===================================="<<endl;
   }
 
-  void compute_mscomplex_incr_simp(std::string filename, cellid_t size, double inc)
-  {
-    ensure(0.0<inc && inc < 1.0,"inc not in (0,1)");
-    ensure(inc>=0.01,"Too many intervals");
-
-    g_timer.start();
-
-    cout<<"===================================="<<endl;
-    cout<<"         Starting Processing        "<<endl;
-    cout<<"------------------------------------"<<endl;
-
-    rect_t d(cellid_t::zero,(size-cellid_t::one)*2);
-    dataset_ptr_t   ds(new dataset_t(d,d,d));
-    mscomplex_ptr_t msc(new mscomplex_t(d,d,d));
-
-
-    string basename(filename);
-
-    int ext_pos = basename.size() -4;
-
-    if(ext_pos >=0 && basename.substr(ext_pos,4) == ".raw")
-      basename = basename.substr(0,ext_pos);
-
-    ds->init(filename);
-    cout<<"data read ---------------- "<<g_timer.getElapsedTimeInMilliSec()<<endl;
-
-    ds->computeMsGraph(msc);
-    cout<<"msgraph done ------------- "<<g_timer.getElapsedTimeInMilliSec()<<endl;
-
-    for(double tresh=0; tresh < 1.0;)
-    {
-      tresh = min(tresh+inc,1.0);
-
-      string bn= basename + "_" + boost::lexical_cast<string>(int(tresh*100.0));
-
-      msc->simplify(tresh,-1);
-
-      cout<<"simplification done ------ "<<g_timer.getElapsedTimeInMilliSec()<<endl;
-
-      mscomplex_ptr_t msc_2 = msc->make_copy();
-
-      msc_2->store(bn+".graph.bin",false);
-      msc_2->un_simplify();
-      msc_2->invert_for_collection();
-
-      int_marray_t omax,omin;
-
-      ds->storeOwnerArrays(omax,omin);
-      ds->saveManifolds(msc_2,bn);
-      ds->loadOwnerArrays(omax,omin);
-
-      ds->saveConnectingOneManifolds(msc_2,bn);
-
-      cout<<"write msmfolds done ------ "<<g_timer.getElapsedTimeInMilliSec()<<endl;
-    }
-
-    cout<<"------------------------------------"<<endl;
-    cout<<"        Finished Processing         "<<endl;
-    cout<<"===================================="<<endl;
-
-
-  }
-
   octtree_piece_t::octtree_piece_t (rect_t p,rect_t pd,int l):
       m_prct(p),
       m_ext_prct(pd.intersection(rect_t(p.lc()-1,p.uc()+1))),

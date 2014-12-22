@@ -91,8 +91,6 @@ namespace grid
 
   void compute_mscomplex_basic(std::string filename, cellid_t size, double simp_tresh);
 
-  void compute_mscomplex_incr_simp(std::string , cellid_t , double );
-
 }
 
 #endif

@@ -95,11 +95,7 @@ int main(int ac , char **av)
     opencl::init();
 #endif
 
-  if(incr_simp)
-  {
-    compute_mscomplex_incr_simp(filename,size,simp_tresh);
-  }
-  else if(levels == cellid_t::zero)
+  if(levels == cellid_t::zero)
   {
     compute_mscomplex_basic(filename,size,simp_tresh);
   }
