@@ -49,7 +49,7 @@ typedef std::vector<pq_item_t>   pq_list_t;
 template <int dim>
 inline bool compare_pq_items(const dataset_t &ds,const pq_item_t &c1,const pq_item_t &c2)
 {
-  return ds.compare_cells<dim>(tr1::get<0>(c1),tr1::get<0>(c2));
+  return ds.compare_cells_pp<dim>(tr1::get<0>(c1),tr1::get<0>(c2));
 }
 
 template <int dim>

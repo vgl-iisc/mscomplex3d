@@ -26,10 +26,6 @@ cl::KernelFunctor s_assign_max_facet_cube;
 cl::KernelFunctor s_assign_pairs;
 cl::KernelFunctor s_assign_pairs2;
 cl::KernelFunctor s_assign_pairs3;
-cl::KernelFunctor s_assign_est_order_edge;
-cl::KernelFunctor s_assign_est_order_face;
-cl::KernelFunctor s_assign_est_order_cube;
-cl::KernelFunctor s_adjust_est_order_for_pairs;
 
 cl::KernelFunctor s_mark_cps;
 cl::KernelFunctor s_mark_boundry_cps;
@@ -49,15 +45,7 @@ cl::KernelFunctor s_init_update_to_surv_cp_no;
 cl::KernelFunctor s_update_to_surv_cp_no;
 
 
-const char * s_header_file =
-    "/home/nithin/projects/mscomplex-3d/dmsc/OpenCL/grid_dataset.clh";
-const char * s_source1_file =
-    "/home/nithin/projects/mscomplex-3d/dmsc/OpenCL/grid_dataset_assigngradient.cl";
-const char * s_source2_file =
-    "/home/nithin/projects/mscomplex-3d/dmsc/OpenCL/grid_dataset_markandcollect.cl";
-const char * s_source3_file =
-    "/home/nithin/projects/mscomplex-3d/dmsc/OpenCL/grid_dataset_ownerextrema.cl";
-
+#include <grid_dataset_cl_sources.h>
 
 using namespace std;
 
@@ -210,24 +198,11 @@ namespace grid
       cl::Program             program2;
       cl::Program             program3;
 
-      ifstream headerFile (s_header_file);
-      ifstream sourceFile1(s_source1_file);
-      ifstream sourceFile2(s_source2_file);
-      ifstream sourceFile3(s_source3_file);
 
-      ensure(headerFile. is_open(),"unable to open file");
-      ensure(sourceFile1.is_open(),"unable to open file");
-      ensure(sourceFile2.is_open(),"unable to open file");
-      ensure(sourceFile3.is_open(),"unable to open file");
-
-      string headerCode (istreambuf_iterator<char>(headerFile),
-                         (istreambuf_iterator<char>()));
-      string sourceCode1(istreambuf_iterator<char>(sourceFile1),
-                         (istreambuf_iterator<char>()));
-      string sourceCode2(istreambuf_iterator<char>(sourceFile2),
-                         (istreambuf_iterator<char>()));
-      string sourceCode3(istreambuf_iterator<char>(sourceFile3),
-                         (istreambuf_iterator<char>()));
+      string headerCode (GRID_DATASET_CLH);
+      string sourceCode1(GRID_DATASET_ASSIGNGRADIENT_CL);
+      string sourceCode2(GRID_DATASET_MARKANDCOLLECT_CL);
+      string sourceCode3(GRID_DATASET_OWNEREXTREMA_CL);
 
       const string s1("@OPENCL_NUM_WORK_ITEMS_PER_GROUP@");
       const string s2("@OPENCL_NUM_WORK_GROUPS@");
@@ -287,18 +262,6 @@ namespace grid
 
         s_assign_pairs3 = cl::Kernel(program1, "assign_pairs3").
             bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE/2));
-
-        s_assign_est_order_edge = cl::Kernel(program1, "assign_est_order_edge").
-            bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE/2));
-
-        s_assign_est_order_face = cl::Kernel(program1, "assign_est_order_face").
-            bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE/2));
-
-        s_assign_est_order_cube = cl::Kernel(program1, "assign_est_order_cube").
-            bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE));
-
-        s_adjust_est_order_for_pairs = cl::Kernel(program1, "adjust_est_order_for_pairs").
-            bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE));
 
       }
       catch (cl::Error err)
@@ -395,8 +358,7 @@ namespace grid
         cl::Image3D &func_img,
         cl::Image3D &flag_img,
         cell_fn_t   *h_func,
-        cell_flag_t *h_flag,
-        cell_flag_t *h_order)
+        cell_flag_t *h_flag)
     {
       cl::size_t<3> func_size = to_size(from_cell_pair(ext).span()/2+ 1);
       cl::size_t<3> flag_size = get_size(ext);
@@ -414,8 +376,6 @@ namespace grid
                                flag_size[0],flag_size[1],flag_size[2],0,0);
 
         cl::Buffer flag_buf(s_context,CL_MEM_READ_WRITE,cell_ct*sizeof(cell_flag_t));
-
-        cl::Buffer order_buf(s_context,CL_MEM_READ_WRITE,cell_ct*sizeof(cell_flag_t));
 
         s_assign_max_facet_edge
             (func_img,flag_img,rct.lo,rct.hi,ext.lo,ext.hi,dom.lo,dom.hi,flag_buf);
@@ -465,22 +425,6 @@ namespace grid
 //            (flag_buf,flag_img,0,to_size(0,0,0),flag_size);
 //        s_queue.finish();
 
-        s_assign_est_order_edge
-            (func_img,flag_img,rct.lo,rct.hi,ext.lo,ext.hi,dom.lo,dom.hi,order_buf);
-        s_queue.finish();
-
-        s_assign_est_order_face
-            (func_img,flag_img,rct.lo,rct.hi,ext.lo,ext.hi,dom.lo,dom.hi,order_buf);
-        s_queue.finish();
-
-        s_assign_est_order_cube
-            (func_img,flag_img,rct.lo,rct.hi,ext.lo,ext.hi,dom.lo,dom.hi,order_buf);
-        s_queue.finish();
-
-        s_adjust_est_order_for_pairs
-            (func_img,flag_img,rct.lo,rct.hi,ext.lo,ext.hi,dom.lo,dom.hi,order_buf);
-        s_queue.finish();
-
         s_mark_cps(rct,ext,dom,flag_buf);
 
         rect_list_t bnds;
@@ -497,7 +441,6 @@ namespace grid
 
         s_queue.enqueueCopyBufferToImage(flag_buf,flag_img,0,to_size(0,0,0),flag_size);
         s_queue.enqueueReadBuffer(flag_buf,false,0,cell_ct*sizeof(cell_flag_t),h_flag);
-        s_queue.enqueueReadBuffer(order_buf,false,0,cell_ct*sizeof(cell_flag_t),h_order);
 
         s_queue.finish();
       }
@@ -618,7 +561,7 @@ namespace grid
       cell_pair_t dom = to_cell_pair(ds->m_domain_rect);
 
       __assign_gradient(rct,ext,dom,func_img,flag_img,
-                        ds->m_vert_fns.data(),ds->m_cell_flags.data(),ds->m_cell_order.data());
+                        ds->m_vert_fns.data(),ds->m_cell_flags.data());
 
 
       cl::Buffer cp_offset_buf;
@@ -706,7 +649,7 @@ namespace grid
         cl::Image3D  func_img;
 
         __assign_gradient(rct,ext,dom,func_img,flag_img,
-                          ds->m_vert_fns.data(),ds->m_cell_flags.data(),ds->m_cell_order.data());
+                          ds->m_vert_fns.data(),ds->m_cell_flags.data());
       }
 
       __owner_extrema(rct,ext,dom,max_rect,flag_img,ds->m_owner_maxima.data());

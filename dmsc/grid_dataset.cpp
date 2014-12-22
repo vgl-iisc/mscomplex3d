@@ -33,13 +33,6 @@
 #include <grid_dataset_cl.h>
 #endif
 
-#ifdef BUILD_EXEC_TBB
-
-#include <tbb/blocked_range.h>
-#include <tbb/parallel_for.h>
-
-#endif
-
 using namespace std;
 namespace br = boost::range;
 namespace ba = boost::adaptors;
@@ -67,7 +60,6 @@ namespace grid
       m_work_rect((r.lc()+e.lc())/2,(r.uc()+e.uc())/2),
       m_vert_fns(cellid_t::zero,boost::fortran_storage_order()),
       m_cell_flags(cellid_t::zero,boost::fortran_storage_order()),
-      m_cell_order(cellid_t::zero,boost::fortran_storage_order()),
       m_owner_maxima(cellid_t::zero,boost::fortran_storage_order()),
       m_owner_minima(cellid_t::zero,boost::fortran_storage_order())
 
@@ -90,14 +82,12 @@ namespace grid
     rect_point_t bl = m_ext_rect.lower_corner();
 
     m_cell_flags.resize(span);
-    m_cell_order.resize(span);
     m_vert_fns.resize(pt_span);
 
     uint num_cells = span[0]*span[1]*span[2];
     uint num_pts   = pt_span[0]*pt_span[1]*pt_span[2];
 
     m_cell_flags.reindex(bl);
-    m_cell_order.reindex(bl);
     m_vert_fns.reindex(bl/2);
 
     std::fill_n(m_cell_flags.data(),num_cells,0);
@@ -124,7 +114,6 @@ namespace grid
   void  dataset_t::clear()
   {
     m_cell_flags.resize(cellid_t::zero);
-    m_cell_order.resize(cellid_t::zero);
     m_vert_fns.resize(cellid_t::zero);
     m_owner_maxima.resize(cellid_t::zero);
     m_owner_minima.resize(cellid_t::zero);
@@ -474,184 +463,6 @@ namespace grid
 //    }
   }
 
-  inline bool is_pairable2
-  ( const dataset_t &ds,
-    cellid_t p, cellid_t p_mf ,cellid_t q)
-  {
-    if(!ds.m_ext_rect.contains(q))
-      return false;
-
-    if(ds.m_domain_rect.isOnBoundry(p) != ds.m_domain_rect.isOnBoundry(q))
-      return false;
-
-    cellid_t q_mf    = ds.getCellMaxFacetId(q);
-    cellid_t q_mf_mf = ds.getCellMaxFacetId(q_mf);
-
-    return ((q_mf != p) && (q_mf_mf == p_mf));
-  }
-
-  cellid_t invalid_cell(-1,-1,-1);
-
-  inline bool set_pair_edge2(dataset_t& ds, cellid_t e,cellid_t d0,cellid_t d1)
-  {
-    if(!ds.m_rect.contains(e))
-      return false;
-
-    if(ds.isCellPaired(e))
-      return false;
-
-    cellid_t e_mf =  ds.getCellMaxFacetId(e);
-
-    cellid_t f0 = e - d0;
-    cellid_t f1 = e + d0;
-    cellid_t f2 = e - d1;
-    cellid_t f3 = e + d1;
-
-    cellid_t f = invalid_cell;
-
-    if (is_pairable2(ds,e,e_mf,f0))
-      f = f0;
-
-    if ((is_pairable2(ds,e,e_mf,f1)) &&
-        ((f == invalid_cell) || ds.compare_cells<2>(f1,f)))
-      f = f1;
-
-    if ((is_pairable2(ds,e,e_mf,f2)) &&
-        ((f == invalid_cell) || ds.compare_cells<2>(f2,f)))
-      f = f2;
-
-    if ((is_pairable2(ds,e,e_mf,f3)) &&
-        ((f == invalid_cell) || ds.compare_cells<2>(f3,f)))
-      f = f3;
-
-    if(f != invalid_cell && !ds.isCellPaired(f))
-    {
-      ds.pairCells(e,f);
-      return true;
-    }
-    return false;
-  }
-
-  inline bool set_pair_face2
-  ( dataset_t &ds,cellid_t f,cellid_t d)
-  {
-    if(!ds.m_rect.contains(f))
-      return false;
-
-    if(ds.isCellPaired(f))
-      return false;
-
-    cellid_t c0 = f - d;
-    cellid_t c1 = f + d;
-
-    cellid_t f_mf =  ds.getCellMaxFacetId(f);
-
-    cellid_t c = invalid_cell;
-
-    if (is_pairable2(ds,f,f_mf,c0))
-      c = c0;
-
-    if ((is_pairable2(ds,f,f_mf,c1)) &&
-        ((c == invalid_cell) || ds.compare_cells<3>(c1,c)))
-      c = c1;
-
-    if(!(c == invalid_cell) && !ds.isCellPaired(c))
-    {
-      ds.pairCells(f,c);
-      return true;
-    }
-    return false;
-  }
-
-
-  inline bool is_pairable3
-  ( const dataset_t &ds,
-    cellid_t p, cellid_t p_mf ,cellid_t p_mf_mf ,cellid_t q)
-  {
-    if(!ds.m_ext_rect.contains(q))
-      return false;
-
-    if(ds.m_domain_rect.isOnBoundry(p) != ds.m_domain_rect.isOnBoundry(q))
-      return false;
-
-    cellid_t q_mf       = ds.getCellMaxFacetId(q);
-    cellid_t q_mf_mf    = ds.getCellMaxFacetId(q_mf);
-    cellid_t q_mf_mf_mf = ds.getCellMaxFacetId(q_mf_mf);
-
-    return ((q_mf != p) && (q_mf_mf != p_mf) && (q_mf_mf_mf == p_mf_mf));
-  }
-
-  inline bool set_pair_face3
-  ( dataset_t &ds,cellid_t f,cellid_t d)
-  {
-    if(!ds.m_rect.contains(f))
-      return false;
-
-    if(ds.isCellPaired(f))
-      return false;
-
-    cellid_t c0 = f - d;
-    cellid_t c1 = f + d;
-
-    cellid_t f_mf    =  ds.getCellMaxFacetId(f);
-    cellid_t f_mf_mf =  ds.getCellMaxFacetId(f_mf);
-
-    cellid_t c = invalid_cell;
-
-    if (is_pairable3(ds,f,f_mf,f_mf_mf,c0))
-      c = c0;
-
-    if ((is_pairable3(ds,f,f_mf,f_mf_mf,c1)) &&
-        ((c == invalid_cell) || ds.compare_cells<3>(c1,c)))
-      c = c1;
-
-    if(!(c == invalid_cell) && !ds.isCellPaired(c))
-    {
-      ds.pairCells(f,c);
-      return true;
-    }
-    return false;
-  }
-
-  void  dataset_t::assign_pairs2()
-  {
-    cellid_t X = cellid_t(1,0,0);
-    cellid_t Y = cellid_t(0,1,0);
-    cellid_t Z = cellid_t(0,0,1);
-
-    cellid_t XY = cellid_t(1,1,0);
-    cellid_t YZ = cellid_t(0,1,1);
-    cellid_t ZX = cellid_t(1,0,1);
-
-    int n_p = 0;
-
-    for(iterator_dim b = begin(0),e = end(0); b!= e; ++b)
-    {
-      cellid_t v = *b;
-
-      if (set_pair_edge2(*this,v+X,Y,Z)) ++n_p;
-      if (set_pair_edge2(*this,v+Y,Z,X)) ++n_p;
-      if (set_pair_edge2(*this,v+Z,X,Y)) ++n_p;
-
-      if (set_pair_face2(*this,v+XY,Z)) ++n_p;
-      if (set_pair_face2(*this,v+YZ,X)) ++n_p;
-      if (set_pair_face2(*this,v+ZX,Y)) ++n_p;
-    }
-
-    cout<<SVAR(n_p)<<endl;
-    n_p = 0;
-
-    for(iterator_dim b = begin(0),e = end(0); b!= e; ++b)
-    {
-      cellid_t v = *b;
-
-      if (set_pair_face3(*this,v+XY,Z)) ++n_p;
-      if (set_pair_face3(*this,v+YZ,X)) ++n_p;
-      if (set_pair_face3(*this,v+ZX,Y)) ++n_p;
-    }
-
-    cout<<SVAR(n_p)<<endl;
-  }
 
   void  dataset_t::markBoundry_thd(int tid, rect_t bnd, cellid_list_t *ccells)
   {
@@ -821,100 +632,65 @@ namespace grid
     }
   }
 
-  void check_order(const dataset_t & ds)
-  {
-    cellid_t f[40];
+//  void check_order(const dataset_t & ds)
+//  {
+//    cellid_t f[40];
 
-    for(dataset_t::iterator b = ds.begin(),e = ds.end(); b !=e ; ++b)
-    {
-      cellid_t c= *b;
+//    for(dataset_t::iterator b = ds.begin(),e = ds.end(); b !=e ; ++b)
+//    {
+//      cellid_t c= *b;
 
-      int n_gtr = 0;
+//      int n_gtr = 0;
 
-      for(cellid_t *f_b = f,*f_e = f+ ds.getCellFacets(c,f); f_b != f_e; ++f_b)
-      {
-        if(ds.compare_cells<-1>(c,*f_b))
-          n_gtr++;
-      }
+//      for(cellid_t *f_b = f,*f_e = f+ ds.getCellFacets(c,f); f_b != f_e; ++f_b)
+//      {
+//        if(ds.compare_cells<-1>(c,*f_b))
+//          n_gtr++;
+//      }
 
-      try{ASSERT(n_gtr <= 1);}catch(assertion_error e)
-      {
-        cout<<SVAR(c)<<endl;
-        cout<<SVAR(ds.get_cell_vert(c))<<endl;
-        for(cellid_t *f_b = f,*f_e = f+ ds.getCellEst(ds.get_cell_vert(c),f); f_b != f_e; ++f_b)
-        {
-          cout<<*f_b<<"\t"<<(int)ds.m_cell_order(*f_b);
+//      try{ASSERT(n_gtr <= 1);}catch(assertion_error e)
+//      {
+//        cout<<SVAR(c)<<endl;
+//        cout<<SVAR(ds.get_cell_vert(c))<<endl;
+//        for(cellid_t *f_b = f,*f_e = f+ ds.getCellEst(ds.get_cell_vert(c),f); f_b != f_e; ++f_b)
+//        {
+//          cout<<*f_b<<"\t"<<(int)ds.m_cell_order(*f_b);
 
-          if(ds.compare_cells<-1>(c,*f_b))
-            cout<<"*";
+//          if(ds.compare_cells<-1>(c,*f_b))
+//            cout<<"*";
 
-          cout<<"\t"<<get_cell_dim(*f_b);
+//          cout<<"\t"<<get_cell_dim(*f_b);
 
-          if(get_cell_dim(*f_b) != 0 )
-            cout<<"\t"<<ds.getCellMaxFacetId(*f_b);
+//          if(get_cell_dim(*f_b) != 0 )
+//            cout<<"\t"<<ds.getCellMaxFacetId(*f_b);
 
-          cout<<endl;
+//          cout<<endl;
 
-        }
-        throw;
-      }
+//        }
+//        throw;
+//      }
 
-      int n_lsr = 0;
+//      int n_lsr = 0;
 
-      for(cellid_t *f_b = f,*f_e = f+ ds.getCellCofacets(c,f); f_b != f_e; ++f_b)
-      {
-        if(ds.compare_cells<-1>(*f_b,c))
-          n_lsr++;
-      }
+//      for(cellid_t *f_b = f,*f_e = f+ ds.getCellCofacets(c,f); f_b != f_e; ++f_b)
+//      {
+//        if(ds.compare_cells<-1>(*f_b,c))
+//          n_lsr++;
+//      }
 
-      ASSERT(n_lsr <= 1);
+//      ASSERT(n_lsr <= 1);
 
-      if(ds.isCellPaired(c))
-      {
-        cellid_t p = ds.getCellPairId(c);
+//      if(ds.isCellPaired(c))
+//      {
+//        cellid_t p = ds.getCellPairId(c);
 
-        if(get_cell_dim(c) < get_cell_dim(p))
-        {
-          ASSERT(ds.m_cell_order(c) > ds.m_cell_order(p));
-        }
-      }
-    }
-  }
-
-#ifdef BUILD_EXEC_TBB
-
-  struct compute_saddle_connections_tbb_ftor
-  {
-    cellid_list_t  &m_saddles;
-    dataset_t      &m_ds;
-    mscomplex_t    &m_msc;
-    cp_conn_que_t  &m_que;
-
-    void operator()( const tbb::blocked_range<size_t>& r) const
-    {
-      for( size_t i=r.begin(); i!=r.end(); ++i )
-        m_que.put(compute_inc_pairs<2>(m_saddles[i],m_ds));
-    }
-
-    compute_saddle_connections_tbb_ftor
-      (cellid_list_t & s,dataset_t &ds,mscomplex_t &msc,cp_conn_que_t &que):
-      m_saddles(s),m_ds(ds),m_msc(msc),m_que(que){}
-  };
-
-  void compute_saddle_connections_tbb(dataset_t &ds, mscomplex_t &msc,cp_conn_que_t &que)
-  {
-    cellid_list_t saddles;
-
-    br::copy(msc.cpno_range()
-             |ba::filtered(bind(is_required_cp<2,DES>,boost::cref(msc),_1))
-             |ba::transformed(bind(&mscomplex_t::cellid,boost::cref(msc),_1)),
-             back_inserter(saddles));
-
-    tbb::parallel_for(tbb::blocked_range<size_t>(0,saddles.size()),
-                      compute_saddle_connections_tbb_ftor(saddles,ds,msc,que),
-                      tbb::auto_partitioner());
-  }
-#endif
+//        if(get_cell_dim(c) < get_cell_dim(p))
+//        {
+//          ASSERT(ds.m_cell_order(c) > ds.m_cell_order(p));
+//        }
+//      }
+//    }
+//  }
 
 
   void  dataset_t::computeMsGraph(mscomplex_ptr_t msc)
@@ -923,59 +699,7 @@ namespace grid
     opencl::worker w;
     w.assign_gradient(shared_from_this(),msc);
 #else
-    for(int dim = 1 ; dim <= gc_grid_dim; ++dim)
-    {
-      boost::thread_group group;
-
-      for(int tid = 0 ; tid < g_num_threads; ++tid)
-        group.create_thread(bind(&dataset_t::assignMaxFacets_thd,this,tid,dim));
-
-      group.join_all();
-    }
-
-    cellid_list_t ccells[g_num_threads];
-
-    {
-      boost::thread_group group;
-
-      for(int tid = 0 ; tid < g_num_threads; ++tid)
-        group.create_thread(bind(&dataset_t::pairCellsWithinEst_thd,this,tid,ccells+tid));
-
-      group.join_all();
-    }
-    {
-      rect_list_t bnds;
-
-      get_boundry_rects(m_rect,m_ext_rect,bnds);
-
-      for( int i = 0 ; i < bnds.size() ; ++i)
-      {
-        boost::thread_group group;
-
-        for(int tid = 0 ; tid < g_num_threads; ++tid)
-          group.create_thread(bind(&dataset_t::markBoundry_thd,this,tid,bnds[i],ccells+tid));
-
-        group.join_all();
-      }
-    }
-
-    {
-      int offset[g_num_threads+1];
-
-      offset[0] = 0;
-
-      for(int tid = 0 ; tid < g_num_threads; ++tid)
-        offset[tid + 1] = offset[tid] + ccells[tid].size();
-
-      msgraph->resize(offset[g_num_threads]);
-
-      boost::thread_group group;
-
-      for(int tid = 0 ; tid < g_num_threads; ++tid)
-        group.create_thread(bind(&dataset_t::setupCPs,this,msgraph,ccells+tid,offset[tid]));
-
-      group.join_all();
-    }
+      #error "please write code"
 #endif
 
     mscomplex_t::filter_t f_2des = bind(is_required_cp<2,GDIR_DES>,boost::cref(*msc),_1);
@@ -997,16 +721,8 @@ namespace grid
 
       group.create_thread(bind(store_connections,boost::ref(*msc),boost::ref(que),prd.count()+2));
 
-#ifdef BUILD_EXEC_TBB
-      using boost::ref;
-      group.create_thread(bind(compute_saddle_connections_tbb,ref(*this),ref(*msc),ref(que)));
-
-#else
       for(int tid = 0 ; tid < g_num_threads; ++tid)
         group.create_thread(bind(compute_saddle_connections,boost::ref(*this),boost::ref(prd),boost::ref(que)));
-      //      int n = prd.count();
-      //      compute_saddle_connections(*this,prd,que);
-#endif
 
 
 #ifdef BUILD_EXEC_OPENCL
@@ -1031,6 +747,8 @@ namespace grid
   {
 #ifdef BUILD_EXEC_OPENCL
     opencl::assign_gradient_and_owner_extrema(shared_from_this());
+#else
+    #error "please write code"
 #endif
   }
 
@@ -1072,10 +790,10 @@ namespace grid
 
   void compute_saddle_manifold(dataset_t &ds, mscomplex_t &msc, cp_producer_t &prd,cp_mfold_que_t &que)
   {
-    BOOST_AUTO(des2_cmp,boost::bind(&dataset_t::compare_cells<2>,&ds,_1,_2));
-    BOOST_AUTO(asc2_cmp,boost::bind(&dataset_t::compare_cells<2>,&ds,_2,_1));
-    BOOST_AUTO(des1_cmp,boost::bind(&dataset_t::compare_cells<1>,&ds,_1,_2));
-    BOOST_AUTO(asc1_cmp,boost::bind(&dataset_t::compare_cells<1>,&ds,_2,_1));
+    BOOST_AUTO(des2_cmp,boost::bind(&dataset_t::compare_cells_pp<2>,&ds,_1,_2));
+    BOOST_AUTO(asc2_cmp,boost::bind(&dataset_t::compare_cells_pp<2>,&ds,_2,_1));
+    BOOST_AUTO(des1_cmp,boost::bind(&dataset_t::compare_cells_pp<1>,&ds,_1,_2));
+    BOOST_AUTO(asc1_cmp,boost::bind(&dataset_t::compare_cells_pp<1>,&ds,_2,_1));
 
 
     for(BOOST_AUTO(it,prd.next()); prd.is_valid(it); it = prd.next())
@@ -1258,10 +976,10 @@ namespace grid
     mscomplex_t::fiterator_t b_1 = msc->fbegin(fltr_1),e_1 = msc->fend(fltr_1);
     mscomplex_t::fiterator_t b_2 = msc->fbegin(fltr_2),e_2 = msc->fend(fltr_2);
 
-    BOOST_AUTO(des2_cmp,boost::bind(&dataset_t::compare_cells<2>,this,_1,_2));
-    BOOST_AUTO(asc2_cmp,boost::bind(&dataset_t::compare_cells<2>,this,_2,_1));
-    BOOST_AUTO(des1_cmp,boost::bind(&dataset_t::compare_cells<1>,this,_1,_2));
-    BOOST_AUTO(asc1_cmp,boost::bind(&dataset_t::compare_cells<1>,this,_2,_1));
+    BOOST_AUTO(des2_cmp,boost::bind(&dataset_t::compare_cells_pp<2>,this,_1,_2));
+    BOOST_AUTO(asc2_cmp,boost::bind(&dataset_t::compare_cells_pp<2>,this,_2,_1));
+    BOOST_AUTO(des1_cmp,boost::bind(&dataset_t::compare_cells_pp<1>,this,_1,_2));
+    BOOST_AUTO(asc1_cmp,boost::bind(&dataset_t::compare_cells_pp<1>,this,_2,_1));
 
     cellid_list_t cplist;
 
@@ -1302,7 +1020,6 @@ namespace grid
     bin_write(os,m_domain_rect);
 
     bin_write_marray(os,m_cell_flags.data(),m_ext_rect.span()+1);
-    bin_write_marray(os,m_cell_order.data(),m_ext_rect.span()+1);
     bin_write_marray(os,m_vert_fns.data(),(m_ext_rect.span()/2)+1);
     bin_write_marray(os,m_owner_maxima.data(),m_rect.span()/2);
     bin_write_marray(os,m_owner_minima.data(),(m_rect.span()/2)+1);
@@ -1315,19 +1032,16 @@ namespace grid
     bin_read(is,m_domain_rect);
 
     m_cell_flags.resize(m_ext_rect.span()+1);
-    m_cell_order.resize(m_ext_rect.span()+1);
     m_vert_fns.resize((m_ext_rect.span()/2)+1);
     m_owner_maxima.resize(m_rect.span()/2);
     m_owner_minima.resize((m_rect.span()/2)+1);
 
     m_cell_flags.reindex(m_ext_rect.lc());
-    m_cell_order.reindex(m_ext_rect.lc());
     m_vert_fns.reindex(m_ext_rect.lc()/2);
     m_owner_maxima.reindex(m_rect.lc()/2);
     m_owner_minima.reindex(m_rect.lc()/2);
 
     bin_read_marray(is,m_cell_flags.data(),m_ext_rect.span()+1);
-    bin_read_marray(is,m_cell_order.data(),m_ext_rect.span()+1);
     bin_read_marray(is,m_vert_fns.data(),(m_ext_rect.span()/2)+1);
     bin_read_marray(is,m_owner_maxima.data(),(m_rect.span()/2));
     bin_read_marray(is,m_owner_minima.data(),(m_rect.span()/2)+1);

@@ -66,7 +66,6 @@ namespace grid
 
     varray_t           m_vert_fns;
     cellflag_array_t   m_cell_flags;
-    cellflag_array_t   m_cell_order;
 
     int_marray_t       m_owner_maxima;
     int_marray_t       m_owner_minima;
@@ -214,8 +213,15 @@ namespace grid
     template <int dim>
     inline bool compare_cells_orig(const cellid_t & c1, const cellid_t &c2) const;
 
+    template <int dim1,int dim2>
+    inline bool compare_cells_orig(const cellid_t & c1, const cellid_t &c2) const;
+
     template <int dim>
-    inline bool compare_cells(const cellid_t & c1, const cellid_t &c2) const;
+    inline bool compare_cells_pp(const cellid_t & c1, const cellid_t &c2) const;
+
+    template <int dim,int dim2>
+    inline bool compare_cells_pp(const cellid_t & c1, const cellid_t &c2) const;
+
 
     template<eGDIR dir>
     inline uint get_cets(cellid_t c,cellid_t *cets) const;
@@ -271,7 +277,7 @@ namespace grid
     cellid_t f2 = getCellMaxFacetId(c2);
 
     if(f1 != f2)
-      return compare_cells<dim-1>(f1,f2);
+      return compare_cells_orig<dim-1>(f1,f2);
 
     f1 = getCellSecondMaxFacetId(c1);
     f2 = getCellSecondMaxFacetId(c2);
@@ -282,7 +288,7 @@ namespace grid
     if(boundry_ct1 != boundry_ct2)
       return (boundry_ct1 <boundry_ct2);
 
-    return compare_cells<dim-1>(f1,f2);
+    return compare_cells_orig<dim-1>(f1,f2);
   }
 
   template <>
@@ -301,38 +307,46 @@ namespace grid
     return c1 < c2;
   }
 
+  template <int di,int dj>
+  inline bool dataset_t::compare_cells_orig(const cellid_t & c1, const cellid_t &c2) const
+  {
+    if ( di < dj)
+      return ! compare_cells_orig<dj,di>(c2,c1);
+
+    ASSERT(getCellDim(c1) == di && getCellDim(c2) == dj);
+
+    if( di == dj)
+      return compare_cells_orig<di>(c1,c2);
+
+    return compare_cells_orig<di-1,dj>(getCellMaxFacetId(c1),c2);
+  }
+
   template <int dim>
-  inline bool dataset_t::compare_cells(const cellid_t & c1, const cellid_t &c2) const
+  inline bool dataset_t::compare_cells_pp(const cellid_t & c1, const cellid_t &c2) const
   {
-    ASSERT(m_work_rect.contains(c1));
-    ASSERT(m_work_rect.contains(c2));
+    cellid_t oc1 = c1,oc2 = c2;
 
-    cellid_t f1 = getCellMaxFacetId(c1);
-    cellid_t f2 = getCellMaxFacetId(c2);
+    if(isCellPaired(c1) && getCellDim(getCellPairId(c1)) == dim+1)
+      oc1 = getCellMaxFacetId(getCellPairId(c1));
 
+    if(isCellPaired(c2) && getCellDim(getCellPairId(c2)) == dim+1)
+      oc2 = getCellMaxFacetId(getCellPairId(c2));
 
-    if(f1 == f2)
-      return m_cell_order(c1) < m_cell_order(c2);
-
-    return compare_cells<dim-1>(f1,f2);
+    return compare_cells_orig<dim>(oc1,oc2);
   }
 
-  template <>
-  inline bool dataset_t::compare_cells<0>(const cellid_t & c1, const cellid_t &c2) const
+  template <int di,int dj>
+  inline bool dataset_t::compare_cells_pp(const cellid_t & c1, const cellid_t &c2) const
   {
-    return compare_cells_orig<0>(c1,c2);
-  }
+    cellid_t oc1 = c1,oc2 = c2;
 
-  template <>
-  inline bool dataset_t::compare_cells<-1>(const cellid_t & c1, const cellid_t &c2) const
-  {
-    cellid_t v1 = get_cell_vert(c1);
-    cellid_t v2 = get_cell_vert(c2);
+    if(isCellPaired(c1) && getCellDim(getCellPairId(c1)) == di+1)
+      oc1 = getCellMaxFacetId(getCellPairId(c1));
 
-    if(v1 == v2)
-      return m_cell_order(c1) < m_cell_order(c2);
+    if(isCellPaired(c2) && getCellDim(getCellPairId(c2)) == dj+1)
+      oc2 = getCellMaxFacetId(getCellPairId(c2));
 
-    return compare_cells<0>(v1,v2);
+    return compare_cells_orig<di,dj>(oc1,oc2);
   }
 
   template<>
