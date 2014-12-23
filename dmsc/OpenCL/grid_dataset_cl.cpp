@@ -221,14 +221,54 @@ namespace grid
         if (platforms.size() == 0)
             throw std::runtime_error("cl Platform size 0\n");
 
+        std::vector<std::pair<int,int> > availablePlatformDeviceIDs;
+
+        int selectedPlatformDeviceID_GPU=-1;
+
+        for (int i = 0 ; i < platforms.size(); ++i)
+        {
+          // Should I really need to create a context to just read the list of devices??
+          cl_context_properties properties[] =
+             { CL_CONTEXT_PLATFORM, (cl_context_properties)(platforms[i])(), 0};
+
+          s_context = cl::Context(CL_DEVICE_TYPE_ALL, properties);
+
+          devices = s_context.getInfo<CL_CONTEXT_DEVICES>();
+
+          for (int j = 0 ; j < devices.size(); ++j)
+          {
+            availablePlatformDeviceIDs.push_back(std::make_pair(i,j));
+
+            if(selectedPlatformDeviceID_GPU == -1 &&
+               devices[j].getInfo<CL_DEVICE_TYPE>() == CL_DEVICE_TYPE_GPU)
+              selectedPlatformDeviceID_GPU = availablePlatformDeviceIDs.size()-1;
+          }
+        }
+
+        std::pair<int,int> selectedPlatformDevicePair = availablePlatformDeviceIDs[
+            (selectedPlatformDeviceID_GPU != -1)?(selectedPlatformDeviceID_GPU):(0)];
+
+        platforms[0] = platforms[selectedPlatformDevicePair.first];
+        platforms.resize(1);
+
         cl_context_properties properties[] =
            { CL_CONTEXT_PLATFORM, (cl_context_properties)(platforms[0])(), 0};
-        s_context = cl::Context(CL_DEVICE_TYPE_GPU, properties);
+        s_context = cl::Context(CL_DEVICE_TYPE_ALL, properties);
 
-        devices = s_context.getInfo<CL_CONTEXT_DEVICES>();
+        devices    = s_context.getInfo<CL_CONTEXT_DEVICES>();
+        devices[0] = devices[selectedPlatformDevicePair.second];
+        devices.resize(1);
 
         s_queue = cl::CommandQueue(s_context, devices[0]);
 
+        cout << "====================================" << endl;
+        cout << "    OpenCL platform/device Info     " << endl;
+        cout << "------------------------------------" << endl;
+        cout << "PlatformName   = " << platforms[0].getInfo<CL_PLATFORM_NAME>() << endl;
+        cout << "PlatformVendor = " << platforms[0].getInfo<CL_PLATFORM_VENDOR>() << endl;
+        cout << "DeviceName     = " << devices[0].getInfo<CL_DEVICE_NAME>() << endl;
+        cout << "DeviceVendor   = " << devices[0].getInfo<CL_DEVICE_VENDOR>() << endl;
+        cout << "====================================" << endl;
       }
       catch (cl::Error err)
       {
