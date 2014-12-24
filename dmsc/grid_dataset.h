@@ -88,20 +88,8 @@ namespace grid
     void  saveManifolds(mscomplex_ptr_t msgraph,const std::string &);
 
     void  storeOwnerArrays(int_marray_t &,int_marray_t &) const;
+
     void  loadOwnerArrays(int_marray_t &,int_marray_t &);
-
-  // subroutines to main functions
-  public:
-
-    void  assignMaxFacets_thd(int tid,int dim);
-
-    void  pairCellsWithinEst_thd(int tid,cellid_list_t * ccells);
-
-    void  assign_pairs2();
-
-    void  markBoundry_thd(int tid,rect_t bnd,cellid_list_t * ccells);
-
-    void  setupCPs(mscomplex_ptr_t msgraph,cellid_list_t * ccells,int offset);
 
   // dataset interface
   public:
@@ -211,14 +199,13 @@ namespace grid
     template <int dim>
     inline bool compare_cells_orig(const cellid_t & c1, const cellid_t &c2) const;
 
-    template <int dim1,int dim2>
-    inline bool compare_cells_orig(const cellid_t & c1, const cellid_t &c2) const;
-
     template <int dim>
     inline bool compare_cells_pp(const cellid_t & c1, const cellid_t &c2) const;
 
-    template <int dim,int dim2>
-    inline bool compare_cells_pp(const cellid_t & c1, const cellid_t &c2) const;
+    template <eGDIR dir, int dim>
+    inline bool compare_cells_pp_(cellid_t c1, cellid_t c2) const;
+
+
 
 
     template<eGDIR dir>
@@ -305,20 +292,6 @@ namespace grid
     return c1 < c2;
   }
 
-  template <int di,int dj>
-  inline bool dataset_t::compare_cells_orig(const cellid_t & c1, const cellid_t &c2) const
-  {
-    if ( di < dj)
-      return ! compare_cells_orig<dj,di>(c2,c1);
-
-    ASSERT(getCellDim(c1) == di && getCellDim(c2) == dj);
-
-    if( di == dj)
-      return compare_cells_orig<di>(c1,c2);
-
-    return compare_cells_orig<di-1,dj>(getCellMaxFacetId(c1),c2);
-  }
-
   template <int dim>
   inline bool dataset_t::compare_cells_pp(const cellid_t & c1, const cellid_t &c2) const
   {
@@ -333,19 +306,24 @@ namespace grid
     return compare_cells_orig<dim>(oc1,oc2);
   }
 
-  template <int di,int dj>
-  inline bool dataset_t::compare_cells_pp(const cellid_t & c1, const cellid_t &c2) const
-  {
-    cellid_t oc1 = c1,oc2 = c2;
+  template <> inline bool dataset_t::compare_cells_pp_<GDIR_DES,0>
+  (cellid_t c1, cellid_t c2) const  {return compare_cells_pp<0>(c1,c2);}
+  template <> inline bool dataset_t::compare_cells_pp_<GDIR_DES,1>
+  (cellid_t c1, cellid_t c2) const  {return compare_cells_pp<1>(c1,c2);}
+  template <> inline bool dataset_t::compare_cells_pp_<GDIR_DES,2>
+  (cellid_t c1, cellid_t c2) const  {return compare_cells_pp<2>(c1,c2);}
+  template <> inline bool dataset_t::compare_cells_pp_<GDIR_DES,3>
+  (cellid_t c1, cellid_t c2) const  {return compare_cells_pp<3>(c1,c2);}
+  template <> inline bool dataset_t::compare_cells_pp_<GDIR_ASC,0>
+  (cellid_t c1, cellid_t c2) const  {return compare_cells_pp<0>(c2,c1);}
+  template <> inline bool dataset_t::compare_cells_pp_<GDIR_ASC,1>
+  (cellid_t c1, cellid_t c2) const  {return compare_cells_pp<1>(c2,c1);}
+  template <> inline bool dataset_t::compare_cells_pp_<GDIR_ASC,2>
+  (cellid_t c1, cellid_t c2) const  {return compare_cells_pp<2>(c2,c1);}
+  template <> inline bool dataset_t::compare_cells_pp_<GDIR_ASC,3>
+  (cellid_t c1, cellid_t c2) const  {return compare_cells_pp<3>(c2,c1);}
 
-    if(isCellPaired(c1) && getCellDim(getCellPairId(c1)) == di+1)
-      oc1 = getCellMaxFacetId(getCellPairId(c1));
 
-    if(isCellPaired(c2) && getCellDim(getCellPairId(c2)) == dj+1)
-      oc2 = getCellMaxFacetId(getCellPairId(c2));
-
-    return compare_cells_orig<di,dj>(oc1,oc2);
-  }
 
   template<>
   inline int_marray_t & dataset_t::owner_extrema<GDIR_DES>()
@@ -481,13 +459,12 @@ namespace grid
     }
   }
 
-  template <eGDIR dir>
+  template <int sad_dim>
   inline void  get_adj_extrema(cellid_t c, cellid_t & e1,cellid_t & e2)
   {
-    const int a = (dir == GDIR_ASC)?(1):(0);
+    const int a = (sad_dim == 2)?(1):(0);
 
-    ASSERT(dir != GDIR_ASC || get_cell_dim(c) == 2 );
-    ASSERT(dir != GDIR_DES || get_cell_dim(c) == 1 );
+    ASSERT(get_cell_dim(c) == sad_dim );
 
     e1[0] = c[0] + ((c[0]+a)&1);
     e1[1] = c[1] + ((c[1]+a)&1);
@@ -497,8 +474,8 @@ namespace grid
     e2[1] = c[1] - ((c[1]+a)&1);
     e2[2] = c[2] - ((c[2]+a)&1);
 
-    ASSERT(dir != GDIR_ASC || (get_cell_dim(e1) == 3  && get_cell_dim(e2) == 3));
-    ASSERT(dir != GDIR_DES || (get_cell_dim(e1) == 0  && get_cell_dim(e2) == 0));
+//    ASSERT(dir != GDIR_ASC || (get_cell_dim(e1) == 3  && get_cell_dim(e2) == 3));
+//    ASSERT(dir != GDIR_DES || (get_cell_dim(e1) == 0  && get_cell_dim(e2) == 0));
   }
 
 }

@@ -24,7 +24,6 @@
 #include <boost/format.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/multi_array.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include <timer.h>
@@ -187,14 +186,6 @@ namespace grid
     m_f_range = f_max-f_min;
   }
 
-  void load_simplify_store(mscomplex_t &msc,string f,cell_fn_t t,cell_fn_t r,int &num_c)
-  {
-    msc.load(f);
-    msc.simplify(t,r);
-    num_c = msc.m_canc_list.size();
-    msc.store(f);
-  }
-
   void data_manager_t::compute_subdomain_msgraphs ()
   {
     using namespace boost::lambda;
@@ -219,36 +210,25 @@ namespace grid
           <<endl;
     }
 
-    using boost::ref;
-
-    for(int pc_i = pc_beg ; pc_i < pc_end;)
+    #pragma omp parallel for
+    for(int pc_i = pc_beg ; pc_i < pc_end;++pc_i)
     {
-      mscomplex_ptr_t mscs[g_num_threads];
-      int             rets[g_num_threads];
+      piece_ptr_t dp = m_pieces[pc_i];
+      mscomplex_ptr_t msc(new mscomplex_t(dp->m_rect,dp->m_ext_rect,dp->m_domain_rect));
 
-      boost::thread_group group;
+      string f = dp->bn(m_basename)+".msgraph.bin";
+      cell_fn_t t= m_simp_tresh;
+      cell_fn_t r= m_f_range;
 
-      int j = 0;
+      msc->load(f);
+      msc->simplify(t,r);
+      msc->store(f);
 
-      for(; pc_i < pc_end && j < g_num_threads; ++pc_i,++j)
-      {
-        piece_ptr_t dp = m_pieces[pc_i];
-        mscs[j].reset(new mscomplex_t(dp->m_rect,dp->m_ext_rect,dp->m_domain_rect));
-
-        string f = dp->bn(m_basename)+".msgraph.bin";
-        cell_fn_t t= m_simp_tresh;
-        cell_fn_t r= m_f_range;
-
-        group.create_thread(bind(load_simplify_store,ref(*mscs[j]),f,t,r,ref(rets[j])));
-      }
-
-      group.join_all();
-
-      for(j--; j >= 0 ; j--)
-      {
-        cout<<g_timer.getElapsedTimeInMilliSec()<<"\t:simplified piece "<<pc_i-j
-            <<"\t num_canc = "<<rets[j]<<endl;
-      }
+//      for(j--; j >= 0 ; j--)
+//      {
+//        cout<<g_timer.getElapsedTimeInMilliSec()<<"\t:simplified piece "<<pc_i-j
+//            <<"\t num_canc = "<<rets[j]<<endl;
+//      }
     }
   }
 

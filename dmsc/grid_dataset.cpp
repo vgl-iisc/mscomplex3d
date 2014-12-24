@@ -7,9 +7,6 @@
 
 #include <boost/typeof/typeof.hpp>
 #include <boost/function.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/condition.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/iterator/filter_iterator.hpp>
@@ -21,6 +18,8 @@
 #include <boost/assign.hpp>
 #include <boost/foreach.hpp>
 
+#include <omp.h>
+
 #define static_assert BOOST_STATIC_ASSERT
 
 #include <config.h>
@@ -29,9 +28,7 @@
 #include <grid_mscomplex.h>
 #include <grid_dataset_bfs.h>
 
-#ifdef BUILD_EXEC_OPENCL
 #include <grid_dataset_cl.h>
-#endif
 
 using namespace std;
 namespace br = boost::range;
@@ -390,137 +387,6 @@ namespace grid
     return (!m_rect.contains (c));
   }
 
-  void dataset_t::assignMaxFacets_thd(int thid,int dim)
-  {
-//    cellid_t f[20],c,s(0,0,0);
-
-//    for(int i = 0 ; i < dim; ++i)
-//      s[i] = 1;
-
-//    while(true)
-//    {
-//      rect_t rect  = rect_t(m_ext_rect.lc()+s,m_ext_rect.uc()-s);
-
-//      int N = num_cells2(rect);
-
-//      for( int i = thid; i < N; i += g_num_threads)
-//      {
-//        c = i_to_c2(rect,i);
-
-//        ASSERT(getCellDim(c) == dim);
-
-//        int f_ct   = getCellFacets(c,f);
-
-//        setCellMaxFacet(c,*std::max_element(f,f+f_ct,cmp_ftor));
-//      }
-
-//      if(!next_permutation(s.rbegin(),s.rend()))
-//        break;
-//    }
-    ASSERT(false&&"impl broken here");
-  }
-
-  void  dataset_t::pairCellsWithinEst_thd(int tid, cellid_list_t *ccells)
-  {
-    ASSERT(false&&"impl broken here");
-//    int N = num_cells2(m_rect);
-
-//    for(int i = tid; i < N; i += g_num_threads)
-//    {
-//      cellid_t c = i_to_c2(m_rect,i);
-
-//      cellid_t est_arr[40];
-
-//      uint est_ct = getCellEst(c,est_arr);
-
-//      std::sort(est_arr,est_arr+est_ct,cmp_ftor);
-
-//      for(int j = 0; j < est_ct; ++j)
-//      {
-//        cellid_t p = est_arr[j];
-
-//        if(j+1 < est_ct)
-//        {
-//          cellid_t q = est_arr[j+1];
-
-//          bool is_adj        = areCellsIncident(p,q);
-//          bool is_same_bndry = (isTrueBoundryCell(p) == isTrueBoundryCell(q));
-
-//          if(is_adj && is_same_bndry)
-//          {
-//            pairCells(p,q);
-//            ++j;
-//            continue;
-//          }
-//        }
-
-//        if(m_rect.contains(p))
-//        {
-//          markCellCritical(p);
-//          ccells->push_back(p);
-//        }
-//      }
-//    }
-  }
-
-
-  void  dataset_t::markBoundry_thd(int tid, rect_t bnd, cellid_list_t *ccells)
-  {
-    int N = num_cells(bnd);
-
-    cellid_t bnd_nrm = bnd.get_normal();
-
-    for(int i = tid ; i < N; i += g_num_threads)
-    {
-      cellid_t c = i_to_c(bnd,i);
-
-      if(!isCellPaired(c))
-        continue;
-
-      cellid_t p = getCellPairId(c);
-
-      if((bnd_nrm != (c-p)) && (bnd_nrm != (p-c)))
-        continue;
-
-      markCellCritical(c);
-      ccells->push_back(c);
-
-      if(!m_rect.contains(p))
-        continue;
-
-      markCellCritical(p);
-      ccells->push_back(p);
-    }
-  }
-
-  void  dataset_t::setupCPs(mscomplex_ptr_t msgraph, cellid_list_t *ccells, int offset)
-  {
-    for(int i = 0 ; i < (int)ccells->size();++i)
-    {
-      cellid_t c = ccells->at(i);
-
-      cellid_t v = get_cell_vert(c);
-
-      msgraph->set_critpt(offset++,c,getCellDim(c),get_cell_fn(c),v);
-
-      if(!isCellPaired(c))
-        continue;
-
-      cellid_t p = getCellPairId(c);
-
-      if(isPairOrientationCorrect(c,p))
-        continue;
-
-      if(!m_rect.contains(p))
-        continue;
-
-      ASSERT(ccells->at(i-1) == p);
-
-      msgraph->pair_cps(offset-1,offset-2);
-    }
-    ccells->clear();
-  }
-
   template<int dim,eGDIR dir>
   inline bool is_required_cp(const mscomplex_t& msc,int i)
   {
@@ -530,231 +396,235 @@ namespace grid
         && (!msc.is_paired(i) || msc.index(msc.pair_idx(i)) == pdim);
   }
 
-  template<typename T>
-  class producer_consumer_t:boost::noncopyable
+  /// \brief A thread safe class to connect two critical cells in the mscomplex
+  class mscomplex_connector_t
   {
+    std::map<cellid_t,int> id_cp_map;
+    mscomplex_ptr_t        msc;
 
   public:
-    std::queue<T>        m_queue;
-    boost::mutex                  m_mutex;
-    boost::condition_variable_any m_cond;
-
-  public:
-
-    void put(const T & t)
+    void init()
     {
-      boost::mutex::scoped_lock scoped_lock(m_mutex);
-
-      m_queue.push(t);
-
-      m_cond.notify_one();
+      #pragma omp critical(mscomplex_connector_critical_section)
+      {
+        for(int i = 0 ; i < msc->get_num_critpts(); ++i)
+          id_cp_map.insert(make_pair(msc->cellid(i),i));
+      }
     }
 
-    T get()
+
+  public:
+
+    mscomplex_connector_t(mscomplex_ptr_t msc):msc(msc){}
+
+
+    void connect_cells(cellid_t c1,cellid_t c2, int m)
     {
-      boost::mutex::scoped_lock scoped_lock(m_mutex);
+      int i = id_cp_map.at(c1);
+      int j = id_cp_map.at(c2);
 
-      while (m_queue.empty())
-        m_cond.wait(m_mutex);
+      #pragma omp critical(mscomplex_connector_critical_section)
+      {
+//        if (id_cp_map.size() == 0)
+//          init();
 
-      T t = m_queue.front();
-
-      m_queue.pop();
-
-      return t;
+        msc->connect_cps(i,j,m);
+      }
     }
   };
 
-  typedef producer_consumer_t<cellid_list_ptr_t> cp_conn_que_t;
 
-  void  compute_saddle_connections( dataset_t &ds,cp_id_producer_t &prd,cp_conn_que_t &que)
+  template<int dim,eGDIR dir,typename range_t>
+  inline void mark_reachable(const range_t &rng,dataset_ptr_t ds)
   {
-    for(BOOST_AUTO(it,prd.next()); prd.is_valid(it); it = prd.next())
+    cellid_t cets[40];
+
+    cellid_list_t stk(boost::begin(rng),boost::end(rng));
+
+    while(stk.size() != 0 )
     {
-      que.put(compute_inc_pairs<2>(*it,ds));
-    }
-  }
+      cellid_t c = stk.back(); stk.pop_back();
 
-  template<int dim,typename T>
-  void extract_extrema_connections(T b,T e,dataset_t &ds,cp_conn_que_t &que)
-  {
-    const eGDIR sad_dir = (dim == 1)?(GDIR_DES):(GDIR_ASC);
-    const eGDIR ex_dir  = (dim == 1)?(GDIR_ASC):(GDIR_DES);
+      ASSERT(ds->getCellDim(c) == dim);
 
-    cellid_list_ptr_t clist(new cellid_list_t);
+      ds->visitCell(c);
 
-    for(;b != e; ++b)
-    {
-      cellid_t c = *b,e1,e2;
-
-      get_adj_extrema<sad_dir>(c,e1,e2);
-
-      if(ds.m_rect.contains(e1))
+      for(cellid_t * b = cets, *e = cets + ds->get_cets<dir>(c,cets);b!=e;++b)
       {
-        e1 = i_to_c2(ds.get_extrema_rect<ex_dir>(),ds.owner_extrema<ex_dir>()(e1/2));
-        clist->push_back(c);
-        clist->push_back(e1);
-      }
-
-      if(ds.m_rect.contains(e2))
-      {
-        e2 = i_to_c2(ds.get_extrema_rect<ex_dir>(),ds.owner_extrema<ex_dir>()(e2/2));
-        clist->push_back(c);
-        clist->push_back(e2);
-      }
-    }
-
-    que.put(clist);
-  }
-
-  void  store_connections( mscomplex_t &msc,cp_conn_que_t &que,int n)
-  {
-    map<cellid_t,int> id_cp_map;
-
-    for( int i = 0 ; i < msc.get_num_critpts(); ++i)
-      id_cp_map[msc.cellid(i)] = i;
-
-
-    while( n-- > 0)
-    {
-      cellid_list_ptr_t ptr =  que.get();
-      cellid_list_t &inc_pairs=*ptr;
-
-      for(int i = 0 ; i < (int)inc_pairs.size(); i +=2)
-      {
-        cellid_t u = inc_pairs[i],v = inc_pairs[i+1];
-
-        ASSERT(id_cp_map.count(u) ==1);
-        ASSERT(id_cp_map.count(v) ==1);
-
-        msc.connect_cps(id_cp_map[u],id_cp_map[v]);
+        if(!ds->isCellCritical(*b))
+        {
+          cellid_t p = ds->getCellPairId(*b);
+          if(ds->getCellDim(p) == dim && !ds->isCellVisited(p))
+          {
+            stk.push_back(p);
+          }
+        }
       }
     }
   }
 
-//  void check_order(const dataset_t & ds)
-//  {
-//    cellid_t f[40];
+  template <int dim,eGDIR dir>
+  inline bool cellid_int_pair_cmp(dataset_ptr_t ds, cellid_int_pair_t c1,cellid_int_pair_t c2)
+  {return ds->compare_cells_pp_<dir,dim>(c1.first,c2.first);}
 
-//    for(dataset_t::iterator b = ds.begin(),e = ds.end(); b !=e ; ++b)
-//    {
-//      cellid_t c= *b;
+  template <int dim,eGDIR dir>
+  inline void compute_inc_pairs_pq
+  (cellid_t s, dataset_ptr_t ds, mscomplex_connector_t &msc_connector)
+  {
+    const int pdim = (dir == DES)?(dim - 1):(dim + 1);
+    const bool no_vcheck =
+        ((dim==1) && (dir==DES)) || (dim==0) ||
+        ((dim==2) && (dir==ASC)) || (dim==3);
 
-//      int n_gtr = 0;
+    BOOST_AUTO(cmp_dim , bind(cellid_int_pair_cmp< dim, dir>,ds,_1,_2));
+    BOOST_AUTO(cmp_pdim, bind(cellid_int_pair_cmp<pdim, dir>,ds,_1,_2));
 
-//      for(cellid_t *f_b = f,*f_e = f+ ds.getCellFacets(c,f); f_b != f_e; ++f_b)
-//      {
-//        if(ds.compare_cells<-1>(c,*f_b))
-//          n_gtr++;
-//      }
+    priority_queue<cellid_int_pair_t,cellid_int_pair_list_t,typeof(cmp_dim) >     pq(cmp_dim );
+    priority_queue<cellid_int_pair_t,cellid_int_pair_list_t,typeof(cmp_pdim)> inc_pq(cmp_pdim);
 
-//      try{ASSERT(n_gtr <= 1);}catch(assertion_error e)
-//      {
-//        cout<<SVAR(c)<<endl;
-//        cout<<SVAR(ds.get_cell_vert(c))<<endl;
-//        for(cellid_t *f_b = f,*f_e = f+ ds.getCellEst(ds.get_cell_vert(c),f); f_b != f_e; ++f_b)
-//        {
-//          cout<<*f_b<<"\t"<<(int)ds.m_cell_order(*f_b);
+    cellid_t f[40];
 
-//          if(ds.compare_cells<-1>(c,*f_b))
-//            cout<<"*";
+    pq.push(make_pair(s,1));
 
-//          cout<<"\t"<<get_cell_dim(*f_b);
+    while(pq.size() != 0 )
+    {
+      cellid_t c = pq.top().first;
 
-//          if(get_cell_dim(*f_b) != 0 )
-//            cout<<"\t"<<ds.getCellMaxFacetId(*f_b);
+      ASSERT(ds->getCellDim(c) == dim);
 
-//          cout<<endl;
+      int n = 0 ;
 
-//        }
-//        throw;
-//      }
+      do {n += pq.top().second; pq.pop();}
+      while(pq.size() != 0 && pq.top().first == c);
 
-//      int n_lsr = 0;
+      for(cellid_t *b = f,*e = f + ds->get_cets<dir>(c,f);b != e; ++b)
+      {
+        if(ds->isCellCritical(*b))
+        {
+          ASSERT(ds->getCellDim(*b) == pdim);
+          inc_pq.push(make_pair(*b,n));
+        }
+        else
+        {
+          cellid_t p = ds->getCellPairId(*b);
 
-//      for(cellid_t *f_b = f,*f_e = f+ ds.getCellCofacets(c,f); f_b != f_e; ++f_b)
-//      {
-//        if(ds.compare_cells<-1>(*f_b,c))
-//          n_lsr++;
-//      }
+          if (p != c && (no_vcheck||ds->isCellVisited(*b)) && ds->getCellDim(p) == dim )
+          {
+            pq.push(make_pair(p,n));
+          }
+        }
+      }
+    }
 
-//      ASSERT(n_lsr <= 1);
+    while(inc_pq.size() != 0 )
+    {
+      cellid_t p = inc_pq.top().first;
 
-//      if(ds.isCellPaired(c))
-//      {
-//        cellid_t p = ds.getCellPairId(c);
+      ASSERT(ds->getCellDim(p) == pdim);
 
-//        if(get_cell_dim(c) < get_cell_dim(p))
-//        {
-//          ASSERT(ds.m_cell_order(c) > ds.m_cell_order(p));
-//        }
-//      }
-//    }
-//  }
+      int n = 0 ;
+
+      do {n += inc_pq.top().second; inc_pq.pop();}
+      while(inc_pq.size() != 0 && inc_pq.top().first == p);
+
+      msc_connector.connect_cells(s,p,n);
+    }
+  }
+
+  void computeSaddleConnections(mscomplex_ptr_t msc,dataset_ptr_t ds,
+                                mscomplex_connector_t &msc_connector)
+  {
+    BOOST_AUTO(cps_1asc,msc->cpno_range()|
+               ba::filtered(bind(is_required_cp<1,GDIR_ASC>,boost::cref(*msc),_1))|
+               ba::transformed(bind(&mscomplex_t::cellid,boost::cref(msc),_1)));
+
+    mark_reachable<1,GDIR_ASC,typeof(cps_1asc)>(cps_1asc,ds);
+
+
+    cellid_list_t cps_2des;
+
+    br::copy(msc->cpno_range()|
+             ba::filtered(bind(is_required_cp<2,GDIR_DES>,boost::cref(*msc),_1))|
+             ba::transformed(bind(&mscomplex_t::cellid,boost::cref(msc),_1)),
+             std::back_inserter(cps_2des));
+
+    #pragma omp parallel for
+    for(int i = 0 ; i < cps_2des.size(); ++i)
+    {
+      compute_inc_pairs_pq<2,DES>(cps_2des[i],ds,msc_connector);
+    }
+  }
+
+  template<eGDIR ex_dir>
+  void computeExtremaConnections(mscomplex_ptr_t msc,dataset_ptr_t ds,
+                                 mscomplex_connector_t &mscomplex_connector)
+  {
+    const int   sad_dim = (ex_dir == DES)?(2):(1);
+    const int   ex_dim  = (ex_dir == DES)?(3):(0);
+    const eGDIR sad_dir = (ex_dir == DES)?(ASC):(DES);
+
+    cellid_list_t sad_cps;
+
+    br::copy(msc->cpno_range()|
+             ba::filtered(bind(is_required_cp<sad_dim,sad_dir>,boost::cref(*msc),_1))|
+             ba::transformed(bind(&mscomplex_t::cellid,boost::cref(msc),_1)),
+             std::back_inserter(sad_cps));
+
+    #pragma omp parallel for
+    for(int i = 0 ; i < sad_cps.size(); ++i)
+    {
+      cellid_t c = sad_cps[i],e1,e2;
+
+      get_adj_extrema<sad_dim>(c,e1,e2);
+
+      if(ds->m_rect.contains(e1))
+      {
+        e1 = i_to_c2(ds->get_extrema_rect<ex_dir>(),ds->owner_extrema<ex_dir>()(e1/2));
+        mscomplex_connector.connect_cells(c,e1,1);
+      }
+
+      if(ds->m_rect.contains(e2))
+      {
+        e2 = i_to_c2(ds->get_extrema_rect<ex_dir>(),ds->owner_extrema<ex_dir>()(e2/2));
+        mscomplex_connector.connect_cells(c,e2,1);
+      }
+    }
+  }
+
 
 
   void  dataset_t::computeMsGraph(mscomplex_ptr_t msc)
   {
-#ifdef BUILD_EXEC_OPENCL
     opencl::worker w;
     w.assign_gradient(shared_from_this(),msc);
-#else
-      #error "please write code"
-#endif
 
-    mscomplex_t::filter_t f_2des = bind(is_required_cp<2,GDIR_DES>,boost::cref(*msc),_1);
+    mscomplex_connector_t msc_connector(msc);
 
-    mscomplex_t::filter_t f_2asc = bind(is_required_cp<2,GDIR_ASC>,boost::cref(*msc),_1);
-    mscomplex_t::filter_t f_1des = bind(is_required_cp<1,GDIR_DES>,boost::cref(*msc),_1);
-
-    mark_reachable<1,GDIR_ASC>
-        (msc->cpno_range()
-         |ba::filtered(bind(is_required_cp<1,GDIR_ASC>,boost::cref(*msc),_1))
-         |ba::transformed(bind(&mscomplex_t::cellid,boost::cref(msc),_1)),*this);
-
+    #pragma omp sections
     {
-      cp_id_producer_t prd(msc,f_2des);
+      #pragma omp section
+      {msc_connector.init();}
 
-      cp_conn_que_t que;
+      #pragma omp section
+      {computeSaddleConnections(msc,shared_from_this(),msc_connector);}
 
-      boost::thread_group group;
-
-      group.create_thread(bind(store_connections,boost::ref(*msc),boost::ref(que),prd.count()+2));
-
-      for(int tid = 0 ; tid < g_num_threads; ++tid)
-        group.create_thread(bind(compute_saddle_connections,boost::ref(*this),boost::ref(prd),boost::ref(que)));
-
-
-#ifdef BUILD_EXEC_OPENCL
-      w.owner_extrema(shared_from_this());
-#else
-      #error "please write code"
-#endif
-
-      extract_extrema_connections<2>
-          (msc->cp_id_fbegin(f_2asc),msc->cp_id_fend(f_2asc),*this,que);
-
-      extract_extrema_connections<1>
-          (msc->cp_id_fbegin(f_1des),msc->cp_id_fend(f_1des),*this,que);
-
-//      store_connections(*msc,que,n+2);
-
-      group.join_all();
+      #pragma omp section
+      {
+        w.owner_extrema(shared_from_this());
+        computeExtremaConnections<DES>(msc,shared_from_this(),msc_connector);
+        computeExtremaConnections<ASC>(msc,shared_from_this(),msc_connector);
+      }
     }
   }
 
   void dataset_t::compute_owner_grad()
   {
-#ifdef BUILD_EXEC_OPENCL
     opencl::assign_gradient_and_owner_extrema(shared_from_this());
-#else
-    #error "please write code"
-#endif
   }
 
-  typedef tr1::tuple<cellid_t,cellid_list_ptr_t,cellid_list_ptr_t> cp_mfold_qitem_t;
+//  typedef tr1::tuple<cellid_t,cellid_list_ptr_t,cellid_list_ptr_t> cp_mfold_qitem_t;
 
-  typedef producer_consumer_t<cp_mfold_qitem_t> cp_mfold_que_t;
+//  typedef producer_consumer_t<cp_mfold_qitem_t> cp_mfold_que_t;
 
   inline cellid_t cellid_of_pair(mscomplex_t &msc,int i)
   {return msc.cellid(msc.pair_idx(i));}
@@ -788,58 +658,58 @@ namespace grid
     return mfold;
   }
 
-  void compute_saddle_manifold(dataset_t &ds, mscomplex_t &msc, cp_producer_t &prd,cp_mfold_que_t &que)
-  {
-    BOOST_AUTO(des2_cmp,boost::bind(&dataset_t::compare_cells_pp<2>,&ds,_1,_2));
-    BOOST_AUTO(asc2_cmp,boost::bind(&dataset_t::compare_cells_pp<2>,&ds,_2,_1));
-    BOOST_AUTO(des1_cmp,boost::bind(&dataset_t::compare_cells_pp<1>,&ds,_1,_2));
-    BOOST_AUTO(asc1_cmp,boost::bind(&dataset_t::compare_cells_pp<1>,&ds,_2,_1));
+//  void compute_saddle_manifold(dataset_t &ds, mscomplex_t &msc, cp_producer_t &prd,cp_mfold_que_t &que)
+//  {
+//    BOOST_AUTO(des2_cmp,boost::bind(&dataset_t::compare_cells_pp<2>,&ds,_1,_2));
+//    BOOST_AUTO(asc2_cmp,boost::bind(&dataset_t::compare_cells_pp<2>,&ds,_2,_1));
+//    BOOST_AUTO(des1_cmp,boost::bind(&dataset_t::compare_cells_pp<1>,&ds,_1,_2));
+//    BOOST_AUTO(asc1_cmp,boost::bind(&dataset_t::compare_cells_pp<1>,&ds,_2,_1));
 
 
-    for(BOOST_AUTO(it,prd.next()); prd.is_valid(it); it = prd.next())
-    {
-      int i = *it,dim = msc.index(i);
+//    for(BOOST_AUTO(it,prd.next()); prd.is_valid(it); it = prd.next())
+//    {
+//      int i = *it,dim = msc.index(i);
 
-      cellid_list_ptr_t des,asc;
+//      cellid_list_ptr_t des,asc;
 
-      if(dim == 1)
-      {
-        des = compute_mfold<1,GDIR_DES>(ds,msc,i,des1_cmp);
-        asc = compute_mfold<1,GDIR_ASC>(ds,msc,i,asc1_cmp);
-      }
-      else
-      {
-        des = compute_mfold<2,GDIR_DES>(ds,msc,i,des2_cmp);
-        asc = compute_mfold<2,GDIR_ASC>(ds,msc,i,asc2_cmp);
-      }
+//      if(dim == 1)
+//      {
+//        des = compute_mfold<1,GDIR_DES>(ds,msc,i,des1_cmp);
+//        asc = compute_mfold<1,GDIR_ASC>(ds,msc,i,asc1_cmp);
+//      }
+//      else
+//      {
+//        des = compute_mfold<2,GDIR_DES>(ds,msc,i,des2_cmp);
+//        asc = compute_mfold<2,GDIR_ASC>(ds,msc,i,asc2_cmp);
+//      }
 
-      que.put(tr1::make_tuple(msc.cellid(i),des,asc));
-    }
-  }
+//      que.put(tr1::make_tuple(msc.cellid(i),des,asc));
+//    }
+//  }
 
-  void store_mfold(std::ostream &os,cellid_list_t &cps,int_list_t &offsets, cp_mfold_que_t &que,int n)
-  {
-    int offset = 0;
+//  void store_mfold(std::ostream &os,cellid_list_t &cps,int_list_t &offsets, cp_mfold_que_t &que,int n)
+//  {
+//    int offset = 0;
 
-    offsets.push_back(offset);
+//    offsets.push_back(offset);
 
-    while(n-- > 0)
-    {
-      cp_mfold_qitem_t qitem = que.get();
+//    while(n-- > 0)
+//    {
+//      cp_mfold_qitem_t qitem = que.get();
 
-      BOOST_AUTO(c,tr1::get<0>(qitem));
-      BOOST_AUTO(des,tr1::get<1>(qitem));
-      BOOST_AUTO(asc,tr1::get<2>(qitem));
+//      BOOST_AUTO(c,tr1::get<0>(qitem));
+//      BOOST_AUTO(des,tr1::get<1>(qitem));
+//      BOOST_AUTO(asc,tr1::get<2>(qitem));
 
-      offset += des->size(); offsets.push_back(offset);
-      offset += asc->size(); offsets.push_back(offset);
+//      offset += des->size(); offsets.push_back(offset);
+//      offset += asc->size(); offsets.push_back(offset);
 
-      os.write((char*)(void*)des->data(),des->size()*sizeof(cellid_t));
-      os.write((char*)(void*)asc->data(),asc->size()*sizeof(cellid_t));
+//      os.write((char*)(void*)des->data(),des->size()*sizeof(cellid_t));
+//      os.write((char*)(void*)asc->data(),asc->size()*sizeof(cellid_t));
 
-      cps.push_back(c);
-    }
-  }
+//      cps.push_back(c);
+//    }
+//  }
 
   int get_header_size(int num_cps)
   {
@@ -882,53 +752,43 @@ namespace grid
     return msc.is_unpaired_saddle(i);
   }
 
-  void save_saddle_mfolds(std::ostream &os,dataset_t &ds,mscomplex_t &msc)
-  {
-    mscomplex_t::filter_t fltr = bind(need_saddle_mfold,boost::cref(msc),_1);
+//  void save_saddle_mfolds(std::ostream &os,dataset_t &ds,mscomplex_t &msc)
+//  {
+//    mscomplex_t::filter_t fltr = bind(need_saddle_mfold,boost::cref(msc),_1);
 
-    cp_producer_t prd(msc.shared_from_this(),fltr);
+//    cp_producer_t prd(msc.shared_from_this(),fltr);
 
-    int num_cps = prd.count();
+//    int num_cps = prd.count();
 
-    cp_mfold_que_t que;
+//    cp_mfold_que_t que;
 
-    boost::thread_group group;
+//    boost::thread_group group;
 
-    for(int tid = 0 ; tid < g_num_threads; ++tid)
-      group.create_thread(bind(compute_saddle_manifold,boost::ref(ds),
-                               boost::ref(msc),boost::ref(prd),boost::ref(que)));
-//      compute_saddle_manifold(ds,msc,prd,que);
+//    for(int tid = 0 ; tid < g_num_threads; ++tid)
+//      group.create_thread(bind(compute_saddle_manifold,boost::ref(ds),
+//                               boost::ref(msc),boost::ref(prd),boost::ref(que)));
+////      compute_saddle_manifold(ds,msc,prd,que);
 
-    os.seekp(get_header_size(num_cps),ios::beg);
+//    os.seekp(get_header_size(num_cps),ios::beg);
 
-    cellid_list_t cps;
-    int_list_t    offsets;
+//    cellid_list_t cps;
+//    int_list_t    offsets;
 
-    store_mfold(os,cps,offsets,que,num_cps);
+//    store_mfold(os,cps,offsets,que,num_cps);
 
-    write_header(os,ds,offsets,cps);
+//    write_header(os,ds,offsets,cps);
 
-    group.join_all();//redundant
-  }
+//    group.join_all();//redundant
+//  }
 
   void  dataset_t::saveManifolds(mscomplex_ptr_t msc,const std::string &bn)
   {
-    std::ofstream fs((bn+".mfold.bin").c_str());
-    ensure(fs.is_open(),"unable to open file");
-    boost::thread_group group;
-    group.create_thread(bind(save_saddle_mfolds,boost::ref(fs),boost::ref(*this),boost::ref(*msc)));
+//    std::ofstream fs((bn+".mfold.bin").c_str());
+//    ensure(fs.is_open(),"unable to open file");
+//    boost::thread_group group;
+//    group.create_thread(bind(save_saddle_mfolds,boost::ref(fs),boost::ref(*this),boost::ref(*msc)));
 
-#ifdef BUILD_EXEC_OPENCL
     opencl::update_to_surv_extrema(shared_from_this(),msc);
-#else
-    {
-      cp_producer_ptr_t prd(new cp_producer_t(msc,cp_producer_t::extrema_filter));
-      boost::thread_group group;
-      for(int tid = 0 ; tid < g_num_threads; ++tid)
-        group.create_thread(bind(dataset_t::mark_extrema_owner_thd,msc,prd));
-      group.join_all();
-    }
-#endif
 
     {
       int ex_num = num_cells2(rect_t(m_rect.lc()+1,m_rect.uc()-1));
@@ -946,7 +806,7 @@ namespace grid
       fs.close();
     }
 
-    group.join_all();
+//    group.join_all();
   }
 
   template<int dim,eGDIR dir,typename cmp_t,typename Titer>

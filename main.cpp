@@ -20,11 +20,6 @@ using namespace grid;
 
 namespace bpo = boost::program_options ;
 
-#ifdef BUILD_EXEC_CUDA
-extern "C" void init_cuda();
-#endif
-
-#ifdef BUILD_EXEC_OPENCL
 namespace grid
 {
   namespace opencl
@@ -32,9 +27,6 @@ namespace grid
     void init();
   }
 }
-
-#endif
-
 
 int main(int ac , char **av)
 {
@@ -87,13 +79,7 @@ int main(int ac , char **av)
     return 1;
   }
 
-#ifdef BUILD_EXEC_CUDA
-  init_cuda();
-#endif
-
-#ifdef BUILD_EXEC_OPENCL
-    opencl::init();
-#endif
+  opencl::init();
 
   if(levels == cellid_t::zero)
   {

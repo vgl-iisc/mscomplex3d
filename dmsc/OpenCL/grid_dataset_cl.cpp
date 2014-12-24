@@ -4,8 +4,6 @@
 #include <fstream>
 #include <stdexcept>
 
-#include <boost/thread/thread.hpp>
-
 #include <cpputils.h>
 #include <config.h>
 
@@ -696,30 +694,6 @@ namespace grid
       __owner_extrema(rct,ext,dom,min_rect,flag_img,ds->m_owner_minima.data());
     }
 
-    void __setup_cp_no_thd(mscomplex_ptr_t msc,int tid,int num_thds,int *h_surv_cp_no)
-    {
-      for ( int i = tid; i < msc->get_num_critpts();i+=num_thds)
-      {
-        try
-        {
-          h_surv_cp_no[i] = (msc->is_extrema(i))?(msc->surv_extrema(i)):(-1);
-        }
-        catch(assertion_error e)
-        {
-          e.PUSHVAR(msc->cp_info(i));
-          e.PUSHVAR(msc->cp_conn(i));
-
-          if(msc->is_paired(i))
-          {
-            e.PUSHVAR(msc->cp_info(msc->pair_idx(i)));
-            e.PUSHVAR(msc->cp_conn(msc->pair_idx(i)));
-          }
-
-          throw;
-        }
-      }
-    }
-
     void __update_to_surv_extrema
       ( cell_pair_t rct,
         cell_pair_t ext,
@@ -759,13 +733,9 @@ namespace grid
 
       int_list_t h_surv_cp_no(num_cps);
 
-      {
-        boost::thread_group group;
-        for(int tid = 0 ; tid < g_num_threads; ++tid)
-          group.create_thread(bind(__setup_cp_no_thd,msc,tid,g_num_threads,h_surv_cp_no.data()));
-//          __setup_cp_no_thd(msc,tid,g_num_threads,h_surv_cp_no.data());
-        group.join_all();
-      }
+      #pragma omp parallel for
+      for(int i = 0; i < num_cps;++i)
+        h_surv_cp_no[i] = (msc->is_extrema(i))?(msc->surv_extrema(i)):(-1);
 
       cell_pair_t rct = to_cell_pair(ds->m_rect);
       cell_pair_t ext = to_cell_pair(ds->m_ext_rect);

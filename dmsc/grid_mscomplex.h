@@ -25,7 +25,6 @@
 #include <map>
 
 #include <boost/noncopyable.hpp>
-#include <boost/thread/mutex.hpp>
 #include <boost/function.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/iterator/filter_iterator.hpp>
@@ -233,90 +232,6 @@ namespace grid
 
   inline mscomplex_t::cp_id_fiterator mscomplex_t::cp_id_fend(mscomplex_t::filter_t f) const
   {return cp_id_fiterator(shared_from_this(),fend(f));}
-
-  template<typename Titer>
-  class producer_t:boost::noncopyable
-  {
-  protected:
-    Titer          m_begin;
-    Titer          m_end;
-    boost::mutex   m_mutex;
-
-    producer_t(){};
-
-  public:
-
-    typedef Titer iterator;
-
-    producer_t(Titer begin,Titer end)
-    {
-      boost::mutex::scoped_lock scoped_lock(m_mutex);
-
-      m_begin = begin;
-      m_end   = end;
-    }
-
-    Titer next()
-    {
-      boost::mutex::scoped_lock scoped_lock(m_mutex);
-
-      Titer ret = m_begin;
-
-      if(m_begin != m_end)
-        ++m_begin;
-
-      return ret;
-    }
-
-    inline bool is_valid(const Titer it)
-    {
-      return (it != m_end);
-    }
-  };
-
-  class cp_id_producer_t:public producer_t<mscomplex_t::cp_id_fiterator>
-  {
-  public:
-
-    cp_id_producer_t(mscomplex_const_ptr_t msc, mscomplex_t::filter_t f)
-    {
-      boost::mutex::scoped_lock scoped_lock(m_mutex);
-
-      m_begin = msc->cp_id_fbegin(f);
-      m_end   = msc->cp_id_fend(f);
-    }
-
-    inline int count()
-    {
-      return std::count(m_begin,m_end);
-    }
-  };
-
-  class cp_producer_t:public producer_t<mscomplex_t::fiterator_t>
-  {
-  public:
-    cp_producer_t(mscomplex_const_ptr_t msc, mscomplex_t::memb_filter_t f)
-    {
-      boost::mutex::scoped_lock scoped_lock(m_mutex);
-
-      m_begin = msc->fbegin(f);
-      m_end   = msc->fend(f);
-    }
-
-    cp_producer_t(mscomplex_const_ptr_t msc, mscomplex_t::filter_t f)
-    {
-      boost::mutex::scoped_lock scoped_lock(m_mutex);
-
-      m_begin = msc->fbegin(f);
-      m_end   = msc->fend(f);
-    }
-
-    inline int count()
-    {
-      return std::count(m_begin,m_end);
-    }
-  };
-
 
   inline int  mscomplex_t::get_num_critpts() const
   {

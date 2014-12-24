@@ -8,10 +8,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 find_package(OpenCL REQUIRED)
 
-find_package(Boost 1.48 COMPONENTS program_options thread system REQUIRED)
+find_package(OpenMP REQUIRED)
 
-set(NUM_PARALLEL_TASKS 4 CACHE STRING
-      "number of tasks to do in parallel")
+find_package(Boost 1.48 COMPONENTS program_options system REQUIRED)
 
 set(OPENCL_NUM_WORK_ITEMS_PER_GROUP 256 CACHE STRING
       "number of work items in an opencl workgroup" )
@@ -19,16 +18,9 @@ set(OPENCL_NUM_WORK_ITEMS_PER_GROUP 256 CACHE STRING
 set(OPENCL_NUM_WORK_GROUPS 32 CACHE STRING
       "number of work items in an opencl workgroup")
 
-option(BUILD_EXEC_TBB "build using thread building blocks" OFF)
-
-if(BUILD_EXEC_TBB)
-  find_package(tbb REQUIRED)
-endif(BUILD_EXEC_TBB)
-
 include_directories(
   ${Boost_INCLUDE_DIRS}
   ${OPENCL_INCLUDE_DIRS}
-  ${tbb_INCLUDE_DIR}
 
   ${CMAKE_CURRENT_BINARY_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/
@@ -109,11 +101,16 @@ set(BUILD_EXEC_OPENCL 1)
 
 configure_file(${PROJECT_SOURCE_DIR}/config.h.in ${PROJECT_BINARY_DIR}/config.h)
 
+if(OPENMP_FOUND)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif()
+
 add_executable(${PROJECT_NAME}  ${${PROJECT_NAME}_SRCS})
 
 target_link_libraries(${PROJECT_NAME}
   ${Boost_LIBRARIES}
-  ${tbb_LIBRARY}
   ${OPENCL_LIBRARIES}
 )
 

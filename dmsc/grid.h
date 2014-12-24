@@ -13,7 +13,6 @@
 namespace grid
 {
   const uint gc_grid_dim = 3;
-  const int g_num_threads = NUM_PARALLEL_TASKS;
 
   typedef int16_t                                         cell_coord_t;
   typedef u_int8_t                                        cell_flag_t;
@@ -35,6 +34,9 @@ namespace grid
   typedef boost::shared_ptr<cellid_list_t>                cellid_list_ptr_t;
 
   typedef boost::multi_array<int,gc_grid_dim>             int_marray_t;
+  typedef std::pair<cellid_t,int>                         cellid_int_pair_t;
+  typedef std::vector<cellid_int_pair_t>                  cellid_int_pair_list_t;
+
 
   enum eGDIR  {DES=0,ASC,GDIR_CT};
 
