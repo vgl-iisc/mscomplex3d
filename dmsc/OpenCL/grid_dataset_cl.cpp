@@ -4,7 +4,7 @@
 #include <fstream>
 #include <stdexcept>
 
-#include <cpputils.h>
+#include <utl.h>
 #include <config.h>
 
 #include<grid_dataset_cl.h>
@@ -47,7 +47,7 @@ cl::KernelFunctor s_update_to_surv_cp_no;
 
 using namespace std;
 
-namespace utls
+namespace utl
 {
   template <> inline std::string to_string (const unsigned char & t)
   {
@@ -206,10 +206,10 @@ namespace grid
       const string s2("@OPENCL_NUM_WORK_GROUPS@");
 
       headerCode.replace(headerCode.find(s1),s1.size(),
-                         utls::to_string(OPENCL_NUM_WORK_ITEMS_PER_GROUP));
+                         utl::to_string(OPENCL_NUM_WORK_ITEMS_PER_GROUP));
 
       headerCode.replace(headerCode.find(s2),s2.size(),
-                         utls::to_string(OPENCL_NUM_WORK_GROUPS));
+                         utl::to_string(OPENCL_NUM_WORK_GROUPS));
 
       try
       {
@@ -484,8 +484,7 @@ namespace grid
       }
       catch(cl::Error err)
       {
-        std::cerr<<_FFL<<std::endl;
-        std::cerr<< "ERROR: "<< err.what()<< "("<< err.err()<< ")"<< std::endl;
+        ENSURES(false)<<"ERROR: "<< err.what()<< "("<< err.err()<< ")"<< std::endl;
         throw;
       }
     }
@@ -527,8 +526,7 @@ namespace grid
       }
       catch(cl::Error err)
       {
-        std::cerr<<_FFL<<std::endl;
-        std::cerr<< "ERROR: "<< err.what()<< "("<< err.err()<< ")"<< std::endl;
+        ENSURES(false)<< "ERROR: "<< err.what()<< "("<< err.err()<< ")"<< std::endl;
         throw;
       }
     }
@@ -585,8 +583,7 @@ namespace grid
       }
       catch(cl::Error err)
       {
-        std::cerr<<_FFL<<std::endl;
-        std::cerr<< "ERROR: "<< err.what()<< "("<< err.err()<< ")"<< std::endl;
+        ENSURES(false)<< "ERROR: "<< err.what()<< "("<< err.err()<< ")"<< std::endl;
         throw;
       }
     }
@@ -655,8 +652,7 @@ namespace grid
       }
       catch(cl::Error err)
       {
-        std::cerr<<_FFL<<std::endl;
-        std::cerr<< "ERROR: "<< err.what()<< "("<< err.err()<< ")"<< std::endl;
+        ENSURES(false)<< "ERROR: "<< err.what()<< "("<< err.err()<< ")"<< std::endl;
         throw;
       }
     }
@@ -721,8 +717,7 @@ namespace grid
       }
       catch(cl::Error err)
       {
-        std::cerr<<_FFL<<std::endl;
-        std::cerr<< "ERROR: "<< err.what()<< "("<< err.err()<< ")"<< std::endl;
+        ENSURES(false)<< "ERROR: "<< err.what()<< "("<< err.err()<< ")"<< std::endl;
         throw;
       }
     }
@@ -756,8 +751,7 @@ namespace grid
       }
       catch(cl::Error err)
       {
-        std::cerr<<_FFL<<std::endl;
-        std::cerr<< "ERROR: "<< err.what()<< "("<< err.err()<< ")"<< std::endl;
+        ENSURES(false)<< "ERROR: "<< err.what()<< "("<< err.err()<< ")"<< std::endl;
         throw;
       }
 

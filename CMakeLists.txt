@@ -25,7 +25,6 @@ include_directories(
   ${CMAKE_CURRENT_BINARY_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/
   ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/OpenCL
-  ${CMAKE_CURRENT_SOURCE_DIR}/utls/include
 )
 
 # generate a headerfile/sourcefile containing the shader source code as strings
@@ -64,15 +63,11 @@ files_to_c_variables(${${PROJECT_NAME}_OPENCL_SRCS})
 
 set(${PROJECT_NAME}_SRCS ${${PROJECT_NAME}_SRCS}
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/utls/include/cpputils.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/utls/src/cpputils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/utl.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/utl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/aabb.h
+	${CMAKE_CURRENT_SOURCE_DIR}/dmsc/n_vector.h
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/utls/include/n_vector.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/utls/src/n_vector.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/utls/include/aabb.h
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/utls/include/timer.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/utls/src/timer.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid.cpp
@@ -136,7 +131,7 @@ install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX})
 #
 #   endif(BUILD_EXEC_CUDA)
 
-option(BUILD_VTK_VIEWER "build the mscomplex viewer" ON)
+option(BUILD_VTK_VIEWER "build the mscomplex viewer" OFF)
 
 if(BUILD_VTK_VIEWER)
 include(vtk_viewer/vtk_viewer.cmake)

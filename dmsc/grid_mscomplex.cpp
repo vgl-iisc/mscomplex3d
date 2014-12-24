@@ -25,7 +25,7 @@ namespace grid
   {
     std::stringstream ss;
 
-    ss<<utls::to_string(msc->cellid(e[0]))<<"----"<<utls::to_string(msc->cellid(e[0]));
+    ss<<utl::to_string(msc->cellid(e[0]))<<"----"<<utl::to_string(msc->cellid(e[0]));
 
     return ss.str();
   }
@@ -62,71 +62,43 @@ namespace grid
 
   void mscomplex_t::connect_cps(int p, int q,int m)
   {
-    try
+    order_pr_by_cp_index(*this,p,q);
+
+    ASSERT(index(p) == index(q)+1);
+
+    // if a d-cp hits a d+-1 cp and the d+-1 cp is paired
+    // then the connection is useful iff the dimension of the pair is d
+
+    ASSERT(!(is_paired(p) && index(pair_idx(p))!= index(q)));
+    ASSERT(!(is_paired(q) && index(pair_idx(q))!= index(p)));
+
+    if( m_des_conn[p].count(q) == 0)
     {
-      order_pr_by_cp_index(*this,p,q);
-
-      ASSERT(index(p) == index(q)+1);
-
-      // if a d-cp hits a d+-1 cp and the d+-1 cp is paired
-      // then the connection is useful iff the dimension of the pair is d
-
-      ASSERT(!(is_paired(p) && index(pair_idx(p))!= index(q)));
-      ASSERT(!(is_paired(q) && index(pair_idx(q))!= index(p)));
-
-      if( m_des_conn[p].count(q) == 0)
-      {
-        ASSERT(m_asc_conn[q].count(p) == 0);
-        m_des_conn[p][q] = 0;
-        m_asc_conn[q][p] = 0;
-      }
-
-      ASSERT(m_des_conn[p][q] == m_asc_conn[q][p]);
-
-      m_des_conn[p][q] += m;
-      m_asc_conn[q][p] += m;
+      ASSERT(m_asc_conn[q].count(p) == 0);
+      m_des_conn[p][q] = 0;
+      m_asc_conn[q][p] = 0;
     }
-    catch(assertion_error e)
-    {
-      e.push(_FFL);
 
-      e.push(SVAR(cp_info(p)));
-      if(is_paired(p))
-        e.push(SVAR(cp_info(pair_idx(p))));
+    ASSERT(m_des_conn[p][q] == m_asc_conn[q][p]);
 
-      e.push(SVAR(cp_info(q)));
-      if(is_paired(q))
-        e.push(SVAR(cp_info(pair_idx(q))));
-
-
-      throw;
-    }
+    m_des_conn[p][q] += m;
+    m_asc_conn[q][p] += m;
   }
 
   void mscomplex_t::dir_connect_cps(int p, int q,int m)
   {
-    try
-    {
-      ASSERT(is_paired(p) != is_paired(q));
-      ASSERT(abs(index(p)-index(q)) == 1);
+    ASSERT(is_paired(p) != is_paired(q));
+    ASSERT(abs(index(p)-index(q)) == 1);
 
-      if(is_paired(q))
-        std::swap(p,q);
+    if(is_paired(q))
+      std::swap(p,q);
 
-      eGDIR dir = (index(p) > index(q))?(DES):(ASC);
+    eGDIR dir = (index(p) > index(q))?(DES):(ASC);
 
-      if(m_conn[dir][p].count(q) == 0)
-        m_conn[dir][p][q] =0;
+    if(m_conn[dir][p].count(q) == 0)
+      m_conn[dir][p][q] =0;
 
-      m_conn[dir][p][q] += m;
-    }
-    catch(assertion_error e)
-    {
-      e.push(_FFL);
-      e.push(SVAR(cp_info(p)));
-      e.push(SVAR(cp_info(q)));
-      throw;
-    }
+    m_conn[dir][p][q] += m;
   }
 
   void mscomplex_t::pair_cps(int p, int q)
@@ -143,127 +115,89 @@ namespace grid
   {
     order_pr_by_cp_index(*this,p,q);
 
-    try
+    ASSERT(index(p) == index(q)+1);
+    ASSERT(pair_idx(p) == q);
+    ASSERT(pair_idx(q) == p);
+    ASSERT(is_canceled(p) == false);
+    ASSERT(is_canceled(q) == false);
+    ASSERT(m_des_conn[p].count(q) == 1);
+    ASSERT(m_asc_conn[q].count(p) == 1);
+    ASSERT(m_des_conn[p][q] == 1);
+    ASSERT(m_asc_conn[q][p] == 1);
+
+    m_des_conn[p].erase(q);
+    m_asc_conn[q].erase(p);
+
+    // cps in lower of u except l
+    BOOST_FOREACH(int_int_t i,m_des_conn[p])
+        BOOST_FOREACH(int_int_t j,m_asc_conn[q])
     {
-      ASSERT(index(p) == index(q)+1);
-      ASSERT(pair_idx(p) == q);
-      ASSERT(pair_idx(q) == p);
-      ASSERT(is_canceled(p) == false);
-      ASSERT(is_canceled(q) == false);
-      ASSERT(m_des_conn[p].count(q) == 1);
-      ASSERT(m_asc_conn[q].count(p) == 1);
-      ASSERT(m_des_conn[p][q] == 1);
-      ASSERT(m_asc_conn[q][p] == 1);
+      int u = i.first;
+      int v = j.first;
+      int m = i.second*j.second;
 
-      m_des_conn[p].erase(q);
-      m_asc_conn[q].erase(p);
+      ASSERT(is_canceled(u) == false);
+      ASSERT(is_canceled(v) == false);
 
-      // cps in lower of u except l
-      BOOST_FOREACH(int_int_t i,m_des_conn[p])
-      BOOST_FOREACH(int_int_t j,m_asc_conn[q])
-      {
-        int u = i.first;
-        int v = j.first;
-        int m = i.second*j.second;
-
-        ASSERT(is_canceled(u) == false);
-        ASSERT(is_canceled(v) == false);
-
-        connect_cps(u,v,m);
-      }
-
-      br::for_each(m_des_conn[p]|ba::map_keys,bind(conn_eraser<ASC>,ref(*this),_1,p));
-      br::for_each(m_asc_conn[p]|ba::map_keys,bind(conn_eraser<DES>,ref(*this),_1,p));
-      br::for_each(m_des_conn[q]|ba::map_keys,bind(conn_eraser<ASC>,ref(*this),_1,q));
-      br::for_each(m_asc_conn[q]|ba::map_keys,bind(conn_eraser<DES>,ref(*this),_1,q));
-
-      set_is_canceled(p,true);
-      set_is_canceled(q,true);
-
-      m_asc_conn[p].clear();
-      m_des_conn[q].clear();
+      connect_cps(u,v,m);
     }
-    catch (assertion_error ex)
-    {
-      ex.push(_FFL).push(SVAR(cp_info(p))).push(SVAR(cp_info(q)));
-      throw;
-    }
+
+    br::for_each(m_des_conn[p]|ba::map_keys,bind(conn_eraser<ASC>,ref(*this),_1,p));
+    br::for_each(m_asc_conn[p]|ba::map_keys,bind(conn_eraser<DES>,ref(*this),_1,p));
+    br::for_each(m_des_conn[q]|ba::map_keys,bind(conn_eraser<ASC>,ref(*this),_1,q));
+    br::for_each(m_asc_conn[q]|ba::map_keys,bind(conn_eraser<DES>,ref(*this),_1,q));
+
+    set_is_canceled(p,true);
+    set_is_canceled(q,true);
+
+    m_asc_conn[p].clear();
+    m_des_conn[q].clear();
   }
 
   void mscomplex_t::uncancel_pair(int p, int q)
   {
     order_pr_by_cp_index(*this,p,q);
 
-    try
+    ASSERT(is_canceled(p) == true && is_canceled(q) == true);
+    ASSERT(index(p) == index(q)+1);
+    ASSERT(pair_idx(p) == q && pair_idx(q) == p);
+
+    set_is_canceled(p,false);
+    set_is_canceled(q,false);
+
+    for(int d = 0 ; d <2 ; ++d)
     {
-      ASSERT(is_canceled(p) == true && is_canceled(q) == true);
-      ASSERT(index(p) == index(q)+1);
-      ASSERT(pair_idx(p) == q && pair_idx(q) == p);
+      int ed = (d == 0)?(p):(q);
 
-      set_is_canceled(p,false);
-      set_is_canceled(q,false);
+      conn_t old_conn(m_conn[d][ed].begin(),m_conn[d][ed].end());
 
-      for(int d = 0 ; d <2 ; ++d)
+      m_conn[d][ed].clear();
+
+      BOOST_FOREACH(int_int_t i,old_conn)
       {
-        int ed = (d == 0)?(p):(q);
+        int c = i.first;
+        int m = i.second;
 
-        conn_t old_conn(m_conn[d][ed].begin(),m_conn[d][ed].end());
-
-        m_conn[d][ed].clear();
-
-        BOOST_FOREACH(int_int_t i,old_conn)
+        if(is_paired(c) == false)
         {
-          int c = i.first;
-          int m = i.second;
+          dir_connect_cps(ed,c,m);
+          continue;
+        }
 
-          if(is_paired(c) == false)
-          {
-            dir_connect_cps(ed,c,m);
-            continue;
-          }
+        int r = pair_idx(c);
 
-          int r = pair_idx(c);
+        if(index(ed) != index(r))
+          continue;
 
-          if(index(ed) != index(r))
-            continue;
+        ASSERT(is_canceled(c) ==false && is_canceled(r) ==false);
+        ASSERT(abs(index(c) - index(r)) == 1);
+        ASSERT(pair_idx(r) == int(c) && pair_idx(c) ==  r);
 
-          try
-          {
-            ASSERT(is_canceled(c) ==false && is_canceled(r) ==false);
-            ASSERT(abs(index(c) - index(r)) == 1);
-            ASSERT(pair_idx(r) == int(c) && pair_idx(c) ==  r);
-          }
-          catch (assertion_error ex)
-          {
-            ex.push(_FFL).push(SVAR(cp_info(r))).push(SVAR(cp_info(c)));
-            ex.push(SVAR(cp_info(ed)));
-            throw;
-          }
-
-          BOOST_FOREACH(int_int_t j,m_conn[d][r])
-          {
-            try{dir_connect_cps(ed,j.first,j.second*m);}
-            catch(assertion_error ex)
-            {
-              ex.push(_FFL)
-                  .push("failed to connect ed to *j via pair (*i,r)")
-                  .push(SVAR(cp_info(ed)))
-                  .push(SVAR(cp_info(i.first)))
-                  .push(SVAR(cp_info(r)))
-                  .push(SVAR(cp_info(j.first)));
-
-              if(is_paired(j.first))
-                ex.push(SVAR(cp_info(pair_idx(j.first))));
-              throw;
-            }
-          }
+        BOOST_FOREACH(int_int_t j,m_conn[d][r])
+        {
+          dir_connect_cps(ed,j.first,j.second*m);
         }
       }
-    }
-    catch (assertion_error ex)
-    {
-      ex.push(_FFL).push(SVAR(cp_info(p))).push(SVAR(cp_info(q)));
-      throw;
     }
   }
 
@@ -411,6 +345,10 @@ namespace grid
     return (is_epsilon_persistent(msc,e) || get_persistence(msc,e) < t);
   }
 
+  template<typename T>
+  inline void set_vec_value(std::vector<T> & vec, int i,const T& v){vec[i] = v;}
+
+
   inline void make_is_inc_ext(const mscomplex_t &msc, vector<bool> &inc_on_ext)
   {
     inc_on_ext.resize(msc.get_num_critpts(),false);
@@ -418,7 +356,7 @@ namespace grid
     using boost::ref;
     using boost::cref;
 
-    BOOST_AUTO(ftor,bind(&utls::set_vec_value<bool>,ref(inc_on_ext),_1,true));
+    BOOST_AUTO(ftor,bind(&set_vec_value<bool>,ref(inc_on_ext),_1,true));
 
     for(int i = 0 ;i < msc.get_num_critpts();++i)
     {
@@ -591,8 +529,8 @@ namespace grid
       os<<(int)m_des_conn[i].size()<<" ";
       os<<(int)m_asc_conn[i].size()<<" ";
 
-      br::transform(m_des_conn[i],ostream_iterator<string>(os," "),utls::to_string<int,int>);
-      br::transform(m_asc_conn[i],ostream_iterator<string>(os," "),utls::to_string<int,int>);
+      br::transform(m_des_conn[i],ostream_iterator<string>(os," "),utl::to_string<int,int>);
+      br::transform(m_asc_conn[i],ostream_iterator<string>(os," "),utl::to_string<int,int>);
 
       os<<endl;
     }
@@ -899,16 +837,7 @@ namespace grid
       int expect_cct = (ic[i])?(0):(1);
       int actual_cct = cset.count(cl[i]);
 
-      try{ASSERT(expect_cct == actual_cct);}
-      catch(assertion_error e)
-      {
-        e.PUSHVAR(i);
-        e.PUSHVAR(expect_cct).PUSHVAR(actual_cct);
-        e.PUSHVAR(cl[i]).PUSHVAR((bool)ic[i]);
-        e.PUSHVAR(((pi[i] != -1)?(cl[pi[i]]):(cellid_t(-1,-1,-1))));
-        e.PUSHVAR(r1).PUSHVAR(r2).PUSHVAR(r1.intersection(r2));
-        throw;
-      }
+      ASSERT(expect_cct == actual_cct);
     }
 
     return true;
@@ -1164,9 +1093,9 @@ namespace grid
         else
         {
           int s_a = new_adj.size();
-          copy_if(a,b,back_inserter(new_adj),surv_ftor);
+          br::copy(make_pair(a,b)|ba::filtered(surv_ftor), back_inserter(new_adj));
           int s_b = new_adj.size();
-          copy_if(b,c,back_inserter(new_adj),surv_ftor);
+          br::copy(make_pair(b,c)|ba::filtered(surv_ftor), back_inserter(new_adj));
           int s_c = new_adj.size();
 
           nconn[2*i]   = s_b - s_a;
@@ -1385,7 +1314,7 @@ namespace grid
   {
     std::fstream os(fn.c_str(),std::ios::out);
 
-    ensure(os.is_open(),"failed to open file");
+    ENSURE(os.is_open(),"failed to open file");
 
     store_ascii(os);
 

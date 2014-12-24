@@ -26,8 +26,7 @@
 #include <boost/multi_array.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include <timer.h>
-#include <cpputils.h>
+#include <utl.h>
 
 #include <grid_dataset.h>
 #include <grid_mscomplex.h>
@@ -95,7 +94,7 @@ namespace grid
 
 
     std::ifstream ifs(m_filename.c_str(),std::ios::in|std::ios::binary);
-    ensure(ifs.is_open(),"unable to open file");
+    ENSURE(ifs.is_open(),"unable to open file");
 
     int xy_size = m_size[0]*m_size[1];
     int xy_ct   = two_power(m_levels[0])*two_power(m_levels[1]);
@@ -122,7 +121,7 @@ namespace grid
     {
       string filename = m_pieces[pc_i]->bn(m_basename)+".raw";
       ofstream_ptr_t p(new ofstream(filename.c_str(),ios::binary));
-      ensure(p->is_open(),"unable to open piece file");
+      ENSURE(p->is_open(),"unable to open piece file");
       xy_files.push_back(p);
     }
 
@@ -140,7 +139,7 @@ namespace grid
         {
           string filename = m_pieces[pc_i]->bn(m_basename)+".raw";
           ofstream_ptr_t p(new ofstream(filename.c_str(),ios::binary));
-          ensure(p->is_open(),"unable to open piece file");
+          ENSURE(p->is_open(),"unable to open piece file");
           xy_files.push_back(p);
         }
       }
@@ -206,7 +205,7 @@ namespace grid
       msc->store(dp->bn(m_basename)+".msgraph.bin");
 //      ds->store(dp->bn(m_basename)+".dataset.bin");
 
-      cout<<g_timer.getElapsedTimeInMilliSec()<<"\t:processed piece "<<pc_i
+      cout<<g_timer.elapsed()<<"\t:processed piece "<<pc_i
           <<endl;
     }
 
@@ -226,7 +225,7 @@ namespace grid
 
 //      for(j--; j >= 0 ; j--)
 //      {
-//        cout<<g_timer.getElapsedTimeInMilliSec()<<"\t:simplified piece "<<pc_i-j
+//        cout<<g_timer.elapsed()<<"\t:simplified piece "<<pc_i-j
 //            <<"\t num_canc = "<<rets[j]<<endl;
 //      }
     }
@@ -256,7 +255,7 @@ namespace grid
 
         msc.store(dp->bn(m_basename)+".msgraph.bin");
 
-        cout<<g_timer.getElapsedTimeInMilliSec()
+        cout<<g_timer.elapsed()
             <<"\t:merged ("<<(n+i)*2-1<<","<<(n+i)*2<<") -->"<<n+i-1
             <<"\t num_mrg_canc = "<<num_mrg_canc
             <<"\t num_canc = "<<num_c
@@ -285,7 +284,7 @@ namespace grid
         msc.unmerge_save(dp1->bn(m_basename)+".msgraph.bin",
                          dp2->bn(m_basename)+".msgraph.bin");
 
-        cout<<g_timer.getElapsedTimeInMilliSec()
+        cout<<g_timer.elapsed()
             <<"\t:unmerged "<<n+i-1<<" --> ("<<(n+i)*2-1<<","<<(n+i)*2<<")"
             <<endl;
       }
@@ -319,7 +318,7 @@ namespace grid
 //      ds->load(dp->bn(m_basename)+".dataset.bin");
       ds->saveManifolds(msc,dp->bn(m_basename));
 
-      cout<<g_timer.getElapsedTimeInMilliSec()<<"\t:processed piece"<<i<<endl;
+      cout<<g_timer.elapsed()<<"\t:processed piece"<<i<<endl;
     }
   }
 
@@ -330,32 +329,32 @@ namespace grid
 
   void data_manager_t::work()
   {
-    g_timer.start();
+    g_timer.restart();
 
     cout<<"===================================="<<endl;
     cout<<"         Starting Processing        "<<endl;
     cout<<"------------------------------------"<<endl;
 
     createPieces();
-    cout<<"create pieces done ------- "<<g_timer.getElapsedTimeInMilliSec()<<endl;
+    cout<<"create pieces done ------- "<<g_timer.elapsed()<<endl;
 
     split_dataset();
-    cout<<"split dataset done ------- "<<g_timer.getElapsedTimeInMilliSec()<<endl;
+    cout<<"split dataset done ------- "<<g_timer.elapsed()<<endl;
 
     compute_subdomain_msgraphs();
-    cout<<"subdomain msgraph done --- "<<g_timer.getElapsedTimeInMilliSec()<<endl;
+    cout<<"subdomain msgraph done --- "<<g_timer.elapsed()<<endl;
 
     merge_up_subdomain_msgraphs();
-    cout<<"merge up done ------------ "<<g_timer.getElapsedTimeInMilliSec()<<endl;
+    cout<<"merge up done ------------ "<<g_timer.elapsed()<<endl;
 
     merge_down_subdomain_msgraphs();
-    cout<<"merge down done ---------- "<<g_timer.getElapsedTimeInMilliSec()<<endl;
+    cout<<"merge down done ---------- "<<g_timer.elapsed()<<endl;
 
     save_mfolds();
-    cout<<"save mfolds done --------- "<<g_timer.getElapsedTimeInMilliSec()<<endl;
+    cout<<"save mfolds done --------- "<<g_timer.elapsed()<<endl;
 
     destoryPieces();
-    cout<<"destroy pieces done ------ "<<g_timer.getElapsedTimeInMilliSec()<<endl;
+    cout<<"destroy pieces done ------ "<<g_timer.elapsed()<<endl;
 
     cout<<"------------------------------------"<<endl;
     cout<<"        Finished Processing         "<<endl;
@@ -388,7 +387,7 @@ namespace grid
 
   void compute_mscomplex_basic(std::string filename, cellid_t size, double simp_tresh)
   {
-    g_timer.start();
+    g_timer.restart();
 
     cout<<"===================================="<<endl;
     cout<<"         Starting Processing        "<<endl;
@@ -406,23 +405,23 @@ namespace grid
       basename = basename.substr(0,ext_pos);
 
     dataset->init(filename);
-    cout<<"data read ---------------- "<<g_timer.getElapsedTimeInMilliSec()<<endl;
+    cout<<"data read ---------------- "<<g_timer.elapsed()<<endl;
 
     dataset->computeMsGraph(msgraph);
-    cout<<"msgraph done ------------- "<<g_timer.getElapsedTimeInMilliSec()<<endl;
+    cout<<"msgraph done ------------- "<<g_timer.elapsed()<<endl;
 
     if(simp_tresh >=0)
     {
     msgraph->simplify(simp_tresh,-1);
     msgraph->store(basename+".graph.bin",false);
     msgraph->un_simplify();
-    cout<<"simplification done ------ "<<g_timer.getElapsedTimeInMilliSec()<<endl;
+    cout<<"simplification done ------ "<<g_timer.elapsed()<<endl;
     }
 
     msgraph->invert_for_collection();
     dataset->saveManifolds(msgraph,basename);
 //    dataset->saveConnectingOneManifolds(msgraph,basename);
-    cout<<"write msmfolds done ------ "<<g_timer.getElapsedTimeInMilliSec()<<endl;
+    cout<<"write msmfolds done ------ "<<g_timer.elapsed()<<endl;
 
     cout<<"------------------------------------"<<endl;
     cout<<"        Finished Processing         "<<endl;
@@ -443,6 +442,6 @@ namespace grid
 
   std::string octtree_piece_t::bn(const std::string& basename)
   {
-    return basename+"."+utls::to_string(m_ext_prct);
+    return basename+"."+utl::to_string(m_ext_prct);
   }
 }

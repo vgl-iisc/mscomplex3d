@@ -90,13 +90,13 @@ namespace grid
     std::fill_n(m_cell_flags.data(),num_cells,0);
 
     ifstream ifs(filename.c_str(),ios::in|ios::binary);
-    ensure(ifs.is_open(),"unable to open file");
+    ENSURE(ifs.is_open(),"unable to open file");
 
     ifs.read((char*)(void*)m_vert_fns.data(),sizeof(cell_fn_t)*num_pts);
-    ensure(ifs.fail()==false,"failed to read some data");
+    ENSURE(ifs.fail()==false,"failed to read some data");
 
     ifs.seekg(0,ios::end);
-    ensure(uint(ifs.tellg())==num_pts*sizeof(cell_fn_t),"file/piece size mismatch");
+    ENSURE(uint(ifs.tellg())==num_pts*sizeof(cell_fn_t),"file/piece size mismatch");
 
     ifs.close();
 
@@ -248,7 +248,7 @@ namespace grid
 
     uint pos = 0;
 
-    cellid_t i,l = (c+cellid_t::one)&(cellid_t::one);
+    cellid_t i,l = (c+cellid_t(1,1,1))&(cellid_t(1,1,1));
 
     for(i[0] = -(l[0]) ; i[0] <= (l[0]) ;i[0]+=1)
     {
@@ -784,7 +784,7 @@ namespace grid
   void  dataset_t::saveManifolds(mscomplex_ptr_t msc,const std::string &bn)
   {
 //    std::ofstream fs((bn+".mfold.bin").c_str());
-//    ensure(fs.is_open(),"unable to open file");
+//    ENSURE(fs.is_open(),"unable to open file");
 //    boost::thread_group group;
 //    group.create_thread(bind(save_saddle_mfolds,boost::ref(fs),boost::ref(*this),boost::ref(*msc)));
 
@@ -793,7 +793,7 @@ namespace grid
     {
       int ex_num = num_cells2(rect_t(m_rect.lc()+1,m_rect.uc()-1));
       std::ofstream fs((bn+".max.raw").c_str());
-      ensure(fs.is_open(),"unable to open file");
+      ENSURE(fs.is_open(),"unable to open file");
       fs.write((char*)(void*)m_owner_maxima.data(),sizeof(int)*ex_num);
       fs.close();
     }
@@ -801,7 +801,7 @@ namespace grid
     {
       int ex_num = num_cells2(m_rect);
       std::ofstream fs((bn+".min.raw").c_str());
-      ensure(fs.is_open(),"unable to open file");
+      ENSURE(fs.is_open(),"unable to open file");
       fs.write((char*)(void*)m_owner_minima.data(),sizeof(int)*ex_num);
       fs.close();
     }
@@ -1086,7 +1086,7 @@ namespace grid
   void dataset_t::log_pairs(const std::string &s)
   {
     std::ofstream fs(s.c_str());
-    ensure(fs.is_open(),"unable to open file");
+    ENSURE(fs.is_open(),"unable to open file");
     log_pairs(fs);
     fs.close();
   }
@@ -1094,7 +1094,7 @@ namespace grid
   void dataset_t::log_pair_visits(const std::string &s)
   {
     std::ofstream fs(s.c_str());
-    ensure(fs.is_open(),"unable to open file");
+    ENSURE(fs.is_open(),"unable to open file");
     log_pair_visits(fs);
     fs.close();
   }
@@ -1102,7 +1102,7 @@ namespace grid
   void dataset_t::log_visits(const std::string &s)
   {
     std::ofstream fs(s.c_str());
-    ensure(fs.is_open(),"unable to open file");
+    ENSURE(fs.is_open(),"unable to open file");
     log_visits(fs);
     fs.close();
   }

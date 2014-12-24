@@ -240,65 +240,57 @@ namespace grid
 
   inline const char& mscomplex_t::index(int i) const
   {
-    try{ASSERT(is_in_range(i,0,(int)m_cp_index.size()));}
-    catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
+    ASSERTS(is_in_range(i,0,(int)m_cp_index.size()))<<STRMVAR(i);
 
     return m_cp_index[i];
   }
 
   inline const int& mscomplex_t::pair_idx(int i) const
   {
-    try{ASSERT(is_in_range(i,0,(int)m_cp_pair_idx.size()));
-    ASSERT(is_in_range(m_cp_pair_idx[i],0,(int)m_cp_pair_idx.size()));}
-    catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
+    ASSERTS(is_in_range(i,0,(int)m_cp_pair_idx.size()))<<STRMVAR(i);
+    ASSERTS(is_in_range(m_cp_pair_idx[i],0,(int)m_cp_pair_idx.size()))<<STRMVAR(i);
 
     return m_cp_pair_idx[i];
   }
 
   inline bool mscomplex_t::is_paired(int i) const
   {
-    try{ASSERT(is_in_range(i,0,(int)m_cp_pair_idx.size()));}
-    catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
+    ASSERTS(is_in_range(i,0,(int)m_cp_pair_idx.size()))<<STRMVAR(i);
 
     return (m_cp_pair_idx[i] != -1);
   }
 
   inline void mscomplex_t::set_is_canceled(int i,bool c)
   {
-    try{ASSERT(is_in_range(i,0,(int)m_cp_is_cancelled.size()));}
-    catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
+    ASSERTS(is_in_range(i,0,(int)m_cp_is_cancelled.size()))<<STRMVAR(i);
 
     m_cp_is_cancelled[i] = c;
   }
 
   inline bool mscomplex_t::is_canceled(int i) const
   {
-    try{ASSERT(is_in_range(i,0,(int)m_cp_is_cancelled.size()));}
-    catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
+    ASSERTS(is_in_range(i,0,(int)m_cp_is_cancelled.size()))<<STRMVAR(i);
 
     return m_cp_is_cancelled[i];
   }
 
   inline const cellid_t& mscomplex_t::cellid(int i) const
   {
-    try{ASSERT(is_in_range(i,0,(int)m_cp_cellid.size()));}
-    catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
+    ASSERTS(is_in_range(i,0,(int)m_cp_cellid.size()))<<STRMVAR(i);
 
     return m_cp_cellid[i];
   }
 
   inline const cellid_t& mscomplex_t::vertid(int i) const
   {
-    try{ASSERT(is_in_range(i,0,(int)m_cp_vertid.size()));}
-    catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
+    ASSERTS(is_in_range(i,0,(int)m_cp_vertid.size()))<<STRMVAR(i);
 
     return m_cp_vertid[i];
   }
 
   inline const cell_fn_t& mscomplex_t::fn(int i) const
   {
-    try{ASSERT(is_in_range(i,0,(int)m_cp_fn.size()));}
-    catch(assertion_error e){e.push(_FFL).push(SVAR(i));throw;}
+    ASSERTS(is_in_range(i,0,(int)m_cp_fn.size()))<<STRMVAR(i);
 
     return m_cp_fn[i];
   }

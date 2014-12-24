@@ -2,7 +2,6 @@
 #define GRID_H_INCLUDED
 
 #include <vector>
-#include <timer.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/multi_array.hpp>
@@ -74,7 +73,7 @@ namespace grid
   {return c_to_i(r,r.uc()) + 1;}
 
   extern "C"
-  Timer g_timer;
+  utl::timer g_timer;
 
   template <typename T>
   inline std::ostream& log_range(T b,T e,std::ostream &os = std::cout,char sep = ' ')
@@ -102,7 +101,5 @@ template<typename _IIter>
     return val;
   }
 }
-
-#define _FFL            (std::string("\n")+FILEFUNCLINE)
 
 #endif
