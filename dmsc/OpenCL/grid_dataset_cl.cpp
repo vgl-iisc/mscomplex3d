@@ -259,14 +259,16 @@ namespace grid
 
         s_queue = cl::CommandQueue(s_context, devices[0]);
 
-        cout << "====================================" << endl;
-        cout << "    OpenCL platform/device Info     " << endl;
-        cout << "------------------------------------" << endl;
-        cout << "PlatformName   = " << platforms[0].getInfo<CL_PLATFORM_NAME>() << endl;
-        cout << "PlatformVendor = " << platforms[0].getInfo<CL_PLATFORM_VENDOR>() << endl;
-        cout << "DeviceName     = " << devices[0].getInfo<CL_DEVICE_NAME>() << endl;
-        cout << "DeviceVendor   = " << devices[0].getInfo<CL_DEVICE_VENDOR>() << endl;
-        cout << "====================================" << endl;
+        LOG(info)
+            << "====================================" << endl
+            << "    OpenCL platform/device Info     " << endl
+            << "------------------------------------" << endl
+            << "PlatformName   = " << platforms[0].getInfo<CL_PLATFORM_NAME>() << endl
+            << "PlatformVendor = " << platforms[0].getInfo<CL_PLATFORM_VENDOR>() << endl
+            << "DeviceName     = " << devices[0].getInfo<CL_DEVICE_NAME>() << endl
+            << "DeviceVendor   = " << devices[0].getInfo<CL_DEVICE_VENDOR>() << endl
+            << "====================================" << endl
+            << endl;
       }
       catch (cl::Error err)
       {

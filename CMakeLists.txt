@@ -10,7 +10,7 @@ find_package(OpenCL REQUIRED)
 
 find_package(OpenMP REQUIRED)
 
-find_package(Boost 1.48 COMPONENTS program_options system REQUIRED)
+find_package(Boost 1.48 COMPONENTS program_options system date_time REQUIRED)
 
 set(OPENCL_NUM_WORK_ITEMS_PER_GROUP 256 CACHE STRING
       "number of work items in an opencl workgroup" )

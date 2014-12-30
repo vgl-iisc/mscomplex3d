@@ -74,8 +74,8 @@ int main(int ac , char **av)
   }
   catch(bpo::required_option e)
   {
-    cout<<e.what()<<endl;
-    cout<<desc<<endl;
+    LOG(fatal) <<e.what()<<endl;
+    LOG(fatal) <<desc<<endl;
     return 1;
   }
 

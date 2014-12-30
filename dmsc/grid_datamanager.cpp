@@ -389,9 +389,9 @@ namespace grid
   {
     g_timer.restart();
 
-    cout<<"===================================="<<endl;
-    cout<<"         Starting Processing        "<<endl;
-    cout<<"------------------------------------"<<endl;
+    LOG(info) <<"===================================="<<endl
+              <<"         Starting Processing        "<<endl
+              <<"------------------------------------"<<endl;
 
     rect_t d(cellid_t::zero,(size-cellid_t::one)*2);
     dataset_ptr_t   dataset(new dataset_t(d,d,d));
@@ -405,27 +405,27 @@ namespace grid
       basename = basename.substr(0,ext_pos);
 
     dataset->init(filename);
-    cout<<"data read ---------------- "<<g_timer.elapsed()<<endl;
+    LOG(info) <<"data read ---------------- "<<g_timer.elapsed()<<endl;
 
     dataset->computeMsGraph(msgraph);
-    cout<<"msgraph done ------------- "<<g_timer.elapsed()<<endl;
+    LOG(info) <<"msgraph done ------------- "<<g_timer.elapsed()<<endl;
 
     if(simp_tresh >=0)
     {
-    msgraph->simplify(simp_tresh,-1);
-    msgraph->store(basename+".graph.bin",false);
-    msgraph->un_simplify();
-    cout<<"simplification done ------ "<<g_timer.elapsed()<<endl;
+      msgraph->simplify(simp_tresh,-1);
+      msgraph->store(basename+".graph.bin",false);
+      msgraph->un_simplify();
+    LOG(info) <<"simplification done ------ "<<g_timer.elapsed()<<endl;
     }
 
     msgraph->invert_for_collection();
     dataset->saveManifolds(msgraph,basename);
 //    dataset->saveConnectingOneManifolds(msgraph,basename);
-    cout<<"write msmfolds done ------ "<<g_timer.elapsed()<<endl;
+    LOG(info) <<"write msmfolds done ------ "<<g_timer.elapsed()<<endl;
 
-    cout<<"------------------------------------"<<endl;
-    cout<<"        Finished Processing         "<<endl;
-    cout<<"===================================="<<endl;
+    LOG(info) <<"------------------------------------"<<endl
+              <<"        Finished Processing         "<<endl
+              <<"===================================="<<endl;
   }
 
   octtree_piece_t::octtree_piece_t (rect_t p,rect_t pd,int l):

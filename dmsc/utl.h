@@ -161,18 +161,19 @@ class logger
   inline bool isOpen(severity_level severity)
   {return severity >= info;}
 
-  inline void push(const std::string & log)
+  inline void push_ts(const std::string & log)
   {
     std::string tstr = boost::posix_time::to_simple_string
-        (boost::posix_time::second_clock::local_time());
+        (boost::posix_time::microsec_clock::local_time());
 
     boost::mutex::scoped_lock  lock(s_mutex);
+    std::clog << " [" <<tstr <<"]" << log;
+  }
 
-    std::clog << " [" <<tstr <<"]"
-              << " [" <<boost::this_thread::get_id()<<"]"
-              << std::endl
-              << log
-              << std::endl;
+  inline void push(const std::string & log)
+  {
+    boost::mutex::scoped_lock  lock(s_mutex);
+    std::clog << log;
   }
 
   static inline logger& get() {return s_logger;}
@@ -208,11 +209,19 @@ template<class _T1, class _T2> struct pair:public std::pair<_T1,_T2>
 
 /*---------------------------------------------------------------------------*/
 
-#define LOG_MACRO(lev)  \
+#define LOG(lev)  \
   if(utl::logger::get().isOpen(utl::logger::lev))\
   for(utl::detail::pair<bool,std::stringstream> __utl_lm_v__(true); \
       __utl_lm_v__.first ;__utl_lm_v__.first=false,\
   utl::logger::get().push(__utl_lm_v__.second.str())) __utl_lm_v__.second
+
+/*---------------------------------------------------------------------------*/
+
+#define LOG_TS(lev)  \
+  if(utl::logger::get().isOpen(utl::logger::lev))\
+  for(utl::detail::pair<bool,std::stringstream> __utl_lm_v__(true); \
+      __utl_lm_v__.first ;__utl_lm_v__.first=false,\
+  utl::logger::get().push_ts(__utl_lm_v__.second.str())) __utl_lm_v__.second
 
 /*---------------------------------------------------------------------------*/
 
@@ -291,7 +300,7 @@ template<class _T1, class _T2> struct pair:public std::pair<_T1,_T2>
     <<"at ("<<__FILE__<<","<<__func__<<","<<__LINE__<<") \n "
 #else  //ifndef NDEBUG
 #define ASSERTS(cond)\
-if(!(cond)) \
+if(false) \
 std::stringstream()
 #endif // ifndef NDEBUG
 #endif // ifndef ASSERT
