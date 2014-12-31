@@ -66,15 +66,17 @@ set(${PROJECT_NAME}_SRCS ${${PROJECT_NAME}_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/utl.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/utl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/aabb.h
-	${CMAKE_CURRENT_SOURCE_DIR}/dmsc/n_vector.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/n_vector.h
 
 
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_dataset.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_dataset_bfs.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_dataset.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_dataset_inl.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_dataset_base.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_dataset_algs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_dataset_outcore.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_mscomplex.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_mscomplex.cpp
@@ -84,15 +86,12 @@ set(${PROJECT_NAME}_SRCS ${${PROJECT_NAME}_SRCS}
 
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/OpenCL/grid_dataset_cl.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/OpenCL/grid_dataset_cl.cpp
-
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/OpenCL/cl.hpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
 
     ${${PROJECT_NAME}_OPENCL_SRCS}
 )
-
-set(BUILD_EXEC_OPENCL 1)
 
 configure_file(${PROJECT_SOURCE_DIR}/config.h.in ${PROJECT_BINARY_DIR}/config.h)
 

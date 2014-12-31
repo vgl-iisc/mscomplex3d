@@ -4,6 +4,13 @@
 #include <fstream>
 #include <stdexcept>
 
+#define __CL_ENABLE_EXCEPTIONS
+#if defined(__APPLE__) || defined(__MACOSX)
+#include <OpenCL/cl.hpp>
+#else
+#include <cl.hpp>
+#endif
+
 #include <utl.h>
 #include <config.h>
 
@@ -590,6 +597,9 @@ namespace grid
       }
     }
 
+    worker::worker():flag_img(new cl::Image3D){}
+
+
     void worker::assign_gradient(dataset_ptr_t ds, mscomplex_ptr_t msc)
     {
       cl::Image3D  func_img;
@@ -597,18 +607,18 @@ namespace grid
       cell_pair_t ext = to_cell_pair(ds->m_ext_rect);
       cell_pair_t dom = to_cell_pair(ds->m_domain_rect);
 
-      __assign_gradient(rct,ext,dom,func_img,flag_img,
+      __assign_gradient(rct,ext,dom,func_img,*flag_img,
                         ds->m_vert_fns.data(),ds->m_cell_flags.data());
 
 
       cl::Buffer cp_offset_buf;
       int          num_cps;
 
-      __count_and_scan_cps(rct,ext,dom,flag_img,cp_offset_buf,num_cps);
+      __count_and_scan_cps(rct,ext,dom,*flag_img,cp_offset_buf,num_cps);
 
       msc->resize(num_cps);
 
-      __save_cps(rct,ext,dom,func_img,flag_img,cp_offset_buf,num_cps,
+      __save_cps(rct,ext,dom,func_img,*flag_img,cp_offset_buf,num_cps,
                  msc->m_cp_cellid.data(),msc->m_cp_vertid.data(),
                  msc->m_cp_pair_idx.data(),msc->m_cp_index.data(),
                  msc->m_cp_fn.data());
@@ -667,8 +677,8 @@ namespace grid
       cell_pair_t max_rect = to_cell_pair(ds->get_extrema_rect<GDIR_DES>());
       cell_pair_t min_rect = to_cell_pair(ds->get_extrema_rect<GDIR_ASC>());
 
-      __owner_extrema(rct,ext,dom,max_rect,flag_img,ds->m_owner_maxima.data());
-      __owner_extrema(rct,ext,dom,min_rect,flag_img,ds->m_owner_minima.data());
+      __owner_extrema(rct,ext,dom,max_rect,*flag_img,ds->m_owner_maxima.data());
+      __owner_extrema(rct,ext,dom,min_rect,*flag_img,ds->m_owner_minima.data());
     }
 
     void assign_gradient_and_owner_extrema(dataset_ptr_t ds)
