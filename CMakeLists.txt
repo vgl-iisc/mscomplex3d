@@ -81,8 +81,8 @@ set(${PROJECT_NAME}_SRCS ${${PROJECT_NAME}_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_mscomplex.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_mscomplex.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_datamanager.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_datamanager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_outcore.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_outcore.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/OpenCL/grid_dataset_cl.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/OpenCL/grid_dataset_cl.cpp

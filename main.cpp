@@ -1,19 +1,10 @@
-#include <exception>
-#include <string>
+#include <boost/program_options.hpp>
 
 #include <config.h>
 
-#ifdef BUILD_EXEC_GUI
-#include <grid_viewer_mainwindow.h>
-#endif
-
-#include <grid_datamanager.h>
-#include <utl.h>
-
-#include <boost/program_options.hpp>
-
-#include <stdexcept>
-#include <iostream>
+#include <grid_dataset.h>
+#include <grid_mscomplex.h>
+#include <grid_outcore.h>
 
 using namespace std;
 using namespace grid;
@@ -28,6 +19,50 @@ namespace grid
   }
 }
 
+void compute_mscomplex_basic(std::string filename, cellid_t size, double simp_tresh)
+{
+  g_timer.restart();
+
+  LOG(info) <<"===================================="<<endl
+            <<"         Starting Processing        "<<endl
+            <<"------------------------------------"<<endl;
+
+  rect_t d(cellid_t::zero,(size-cellid_t::one)*2);
+  dataset_ptr_t   dataset(new dataset_t(d,d,d));
+  mscomplex_ptr_t msgraph(new mscomplex_t(d,d,d));
+
+  string basename(filename);
+
+  int ext_pos = basename.size() -4;
+
+  if(ext_pos >=0 && basename.substr(ext_pos,4) == ".raw")
+    basename = basename.substr(0,ext_pos);
+
+  dataset->init(filename);
+  LOG(info) <<"data read ---------------- "<<g_timer.elapsed()<<endl;
+
+  dataset->computeMsGraph(msgraph);
+  LOG(info) <<"msgraph done ------------- "<<g_timer.elapsed()<<endl;
+
+  if(simp_tresh >=0)
+  {
+    msgraph->simplify(simp_tresh,-1);
+    msgraph->store(basename+".graph.bin",false);
+    msgraph->un_simplify();
+  LOG(info) <<"simplification done ------ "<<g_timer.elapsed()<<endl;
+  }
+
+  msgraph->invert_for_collection();
+  dataset->saveManifolds(msgraph,basename);
+//    dataset->saveConnectingOneManifolds(msgraph,basename);
+  LOG(info) <<"write msmfolds done ------ "<<g_timer.elapsed()<<endl;
+
+  LOG(info) <<"------------------------------------"<<endl
+            <<"        Finished Processing         "<<endl
+            <<"===================================="<<endl;
+}
+
+
 int main(int ac , char **av)
 {
   string         filename;
@@ -35,10 +70,6 @@ int main(int ac , char **av)
   double         simp_tresh;
   cellid_t       levels;
   bool           incr_simp;
-
-#ifdef BUILD_EXEC_GUI
-  bool           gui;
-#endif
 
   bpo::options_description desc("Allowed options");
   desc.add_options()
@@ -55,9 +86,6 @@ int main(int ac , char **av)
        "Incrementally simplify the MS complex\n"\
        "simp-tresh is increased in steps of t (-t option) till 1\n"\
        "Results for each step are stored")
-#ifdef BUILD_EXEC_GUI
-      ("gui,g",bpo::value<bool>(&gui)->default_value(false),"show gui")
-#endif
       ;
 
   bpo::variables_map vm;
@@ -91,19 +119,4 @@ int main(int ac , char **av)
 
     gdm->work();
   }
-
-#ifdef BUILD_EXEC_GUI
-  if(gui)
-  {
-    QApplication application(ac,av);
-
-    viewer_mainwindow gvmw(gdm);
-
-    gvmw.setWindowTitle("ms complex vis");
-
-    gvmw.show();
-
-    application.exec();
-  }
-#endif
 }

@@ -88,9 +88,6 @@ namespace grid
 
     void destoryPieces();
   };
-
-  void compute_mscomplex_basic(std::string filename, cellid_t size, double simp_tresh);
-
 }
 
 #endif
