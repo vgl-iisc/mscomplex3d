@@ -29,21 +29,6 @@
 
 namespace grid
 {
-struct critpt_t;
-
-typedef std::vector<cell_fn_t>     cp_fn_list_t;
-typedef n_vector_t<int,2>          int_pair_t;
-typedef std::vector<int_pair_t>    int_pair_list_t;
-typedef std::map<cellid_t,uint>    id_cp_map_t;
-typedef std::vector<critpt_t >     critpt_list_t;
-
-typedef std::pair<int,int>         int_int_t;
-typedef std::vector<int_int_t>     int_int_list_t;
-
-
-typedef std::map<int,int>                 conn_t;
-typedef std::vector<conn_t>               conn_list_t;
-
 class mscomplex_t:public boost::enable_shared_from_this<mscomplex_t>
 {
 public:
@@ -99,14 +84,9 @@ public:
   template <int i>
   inline bool      is_index_i_cp(int cp)          const;
 
-
-
   // iterator range to go over the set of critical points
   typedef boost::counting_iterator<int> iterator_t;
   inline boost::iterator_range<iterator_t> cpno_range() const;
-
-
-public:
 
   // functions to create a mscomplex from a dataset
   void  resize(int i);
@@ -122,6 +102,11 @@ public:
   void collect_mfolds(eGDIR dir, int dim, dataset_ptr_t ds);
   void collect_mfolds(dataset_ptr_t ds);
 
+  // misc functions
+  inline std::string info() const;
+  inline std::string cp_info (int cp_no) const;
+  std::string        cp_conn (int cp_no) const;
+
   // simplification related things used during outcore processing
   void dir_connect_cps(int p , int q,int m=1);
   void un_simplify();
@@ -134,10 +119,6 @@ public:
   int  load_merge(const std::string &f1,const std::string &f2);
   void unmerge_save(const std::string &f1,const std::string &f2);
 
-  // misc functions
-  inline std::string info() const;
-  inline std::string cp_info (int cp_no) const;
-  std::string cp_conn (int cp_no) const;
 };
 
 inline void order_pr_by_cp_index(const mscomplex_t &msc,int &p,int &q);

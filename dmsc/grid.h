@@ -39,6 +39,14 @@ namespace grid
   typedef cellid_list_t                                   mfold_t;
   typedef std::vector<mfold_t>                            mfold_list_t;
 
+  typedef n_vector_t<int,2>                               int_pair_t;
+  typedef std::vector<int_pair_t>                         int_pair_list_t;
+
+  typedef std::pair<int,int>                              int_int_t;
+  typedef std::vector<int_int_t>                          int_int_list_t;
+
+  typedef std::map<int,int>                               conn_t;
+  typedef std::vector<conn_t>                             conn_list_t;
 
   enum eGDIR  {DES=0,ASC,GDIR_CT};
 
@@ -52,10 +60,6 @@ namespace grid
   typedef boost::shared_ptr<dataset_t>            dataset_ptr_t;
   typedef boost::shared_ptr<mscomplex_t>          mscomplex_ptr_t;
   typedef boost::shared_ptr<data_manager_t>       data_manager_ptr_t;
-
-  typedef boost::shared_ptr<const dataset_t>      dataset_const_ptr_t;
-  typedef boost::shared_ptr<const mscomplex_t>    mscomplex_const_ptr_t;
-  typedef boost::shared_ptr<const data_manager_t> data_manager_const_ptr_t;
 
   inline int c_to_i(const rect_t &r,cellid_t c)
   {
@@ -77,13 +81,6 @@ namespace grid
 
   extern "C"
   utl::timer g_timer;
-
-  template <typename T>
-  inline std::ostream& log_range(T b,T e,std::ostream &os = std::cout,char sep = ' ')
-  {
-    for (;b!=e;++b) os<<*b<<sep;
-    return os;
-  }
 
   inline int get_cell_dim ( cellid_t c )
   {return ( c[0]&0x01 ) + ( c[1]&0x01 ) + ( c[2]&0x01 );}
