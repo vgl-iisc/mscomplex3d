@@ -13,31 +13,56 @@ namespace ba = boost::adaptors;
 namespace grid
 {
 
-
-void mscomplex_t::pair_cps(int p, int q)
-{
-  m_cp_pair_idx[p] = q;
-  m_cp_pair_idx[q] = p;
-}
+/*===========================================================================*/
 
 void mscomplex_t::cancel_pair ( int p, int q)
 {
   order_pr_by_cp_index(*this,p,q);
 
+  ENSURE(m_canc_pos == m_canc_list.size(),
+         "Cannot cancel pair !! Ms complex resolution is not coarsest.");
+  ENSURE(index(p) == index(q)+1,
+         "indices do not differ by 1");
+  ENSURE(m_cp_pair_idx[p] == -1 && m_cp_pair_idx[q] == -1,
+         "p/q has already been paired");
+  ENSURE(m_des_conn[p].count(q) == 1 && m_des_conn[p].count(q),
+         "p is not connected to q");
+  ENSURE(m_des_conn[p][q] == 1 && m_asc_conn[q][p] == 1,
+         "p and q are multiply connected");
+
+//  m_cp_cancno[p] = m_canc_list.size();
+//  m_cp_cancno[q] = m_canc_list.size();
+  m_canc_list.push_back(int_pair_t(p,q));
+
+  cancel_pair();
+}
+
+/*---------------------------------------------------------------------------*/
+
+void mscomplex_t::cancel_pair ()
+{
+  ENSURE(is_in_range(m_canc_pos,0,m_canc_list.size()),
+         "invalid cancellation position");
+
+  int p = m_canc_list[m_canc_pos][0];
+  int q = m_canc_list[m_canc_pos][1];
+
+  m_canc_pos++;
+
   ASSERT(index(p) == index(q)+1);
-  ASSERT(pair_idx(p) == q);
-  ASSERT(pair_idx(q) == p);
-  ASSERT(is_canceled(p) == false);
-  ASSERT(is_canceled(q) == false);
+  ASSERT(m_cp_pair_idx[p] == -1);
+  ASSERT(m_cp_pair_idx[q] == -1);
   ASSERT(m_des_conn[p].count(q) == 1);
   ASSERT(m_asc_conn[q].count(p) == 1);
   ASSERT(m_des_conn[p][q] == 1);
   ASSERT(m_asc_conn[q][p] == 1);
 
+  m_cp_pair_idx[p] = q;
+  m_cp_pair_idx[q] = p;
+
   m_des_conn[p].erase(q);
   m_asc_conn[q].erase(p);
 
-  // cps in lower of u except l
   BOOST_FOREACH(int_int_t i,m_des_conn[p])
       BOOST_FOREACH(int_int_t j,m_asc_conn[q])
   {
@@ -51,10 +76,10 @@ void mscomplex_t::cancel_pair ( int p, int q)
     connect_cps(u,v,m);
   }
 
-  BOOST_FOREACH(conn_t::value_type pr,m_des_conn[p]) m_asc_conn[pr.first].erase(p);
-  BOOST_FOREACH(conn_t::value_type pr,m_asc_conn[p]) m_des_conn[pr.first].erase(p);
-  BOOST_FOREACH(conn_t::value_type pr,m_des_conn[q]) m_asc_conn[pr.first].erase(q);
-  BOOST_FOREACH(conn_t::value_type pr,m_asc_conn[q]) m_des_conn[pr.first].erase(q);
+  BOOST_FOREACH(int_int_t pr,m_des_conn[p]) m_asc_conn[pr.first].erase(p);
+  BOOST_FOREACH(int_int_t pr,m_asc_conn[p]) m_des_conn[pr.first].erase(p);
+  BOOST_FOREACH(int_int_t pr,m_des_conn[q]) m_asc_conn[pr.first].erase(q);
+  BOOST_FOREACH(int_int_t pr,m_asc_conn[q]) m_des_conn[pr.first].erase(q);
 
   m_cp_is_cancelled[p] =true;
   m_cp_is_cancelled[q] =true;
@@ -63,6 +88,7 @@ void mscomplex_t::cancel_pair ( int p, int q)
   m_des_conn[q].clear();
 }
 
+/*---------------------------------------------------------------------------*/
 
 inline bool is_valid_canc_edge
 (const mscomplex_t &msc,const std::vector<bool> &is_inc_ext, int_pair_t e )
@@ -92,57 +118,10 @@ inline bool is_valid_canc_edge
   return true;
 }
 
-inline bool is_epsilon_persistent(const mscomplex_t &msc,int_pair_t e )
+/*---------------------------------------------------------------------------*/
+
+inline bool persistence_lt(const mscomplex_t &msc,int_pair_t p0,int_pair_t p1)
 {
-  return (msc.vertid(e[0]) == msc.vertid(e[1]));
-}
-
-inline int get_num_new_edges(const mscomplex_t &msc, int_pair_t pr)
-{
-  order_pr_by_cp_index(msc,pr[0],pr[1]);
-
-  int pd = msc.m_conn[GDIR_DES][pr[0]].size();
-  int pa = msc.m_conn[GDIR_ASC][pr[0]].size();
-
-  int qd = msc.m_conn[GDIR_DES][pr[1]].size();
-  int qa = msc.m_conn[GDIR_ASC][pr[1]].size();
-
-  return (pd - 1)*(qa - 1) - (pd + qd + pa +qa -1);
-}
-
-inline bool fast_persistence_lt
-(const mscomplex_t &msc, int_pair_t p0, int_pair_t p1)
-{
-  bool eps_p0 = is_epsilon_persistent(msc,p0);
-  bool eps_p1 = is_epsilon_persistent(msc,p1);
-
-  if( eps_p0 != eps_p1)
-    return eps_p0;
-
-  return (get_num_new_edges(msc,p0) < get_num_new_edges(msc,p1));
-}
-
-inline cell_fn_t get_persistence(const mscomplex_t & msc,int_pair_t e)
-{
-  return std::abs(msc.fn(e[0]) - msc.fn(e[1]));
-}
-
-inline bool persistence_lt(const mscomplex_t &msc, int_pair_t p0, int_pair_t p1)
-{/*
-    bool eps_p0 = is_epsilon_persistent(msc,p0);
-    bool eps_p1 = is_epsilon_persistent(msc,p1);
-
-    if( eps_p0 != eps_p1)
-      return eps_p0;
-
-    cell_fn_t d0 = get_persistence(msc,p0);
-    cell_fn_t d1 = get_persistence(msc,p1);
-
-    if(d0 != d1)
-      return d0 < d1;
-
-    return p0 < p1;*/
-
   order_pr_by_cp_index(msc,p0[0],p0[1]);
   order_pr_by_cp_index(msc,p1[0],p1[1]);
 
@@ -191,14 +170,22 @@ inline bool persistence_lt(const mscomplex_t &msc, int_pair_t p0, int_pair_t p1)
   return c01 < c11;
 }
 
+/*---------------------------------------------------------------------------*/
+
 inline bool is_in_treshold(const mscomplex_t & msc,int_pair_t e,cell_fn_t t)
 {
-  return (is_epsilon_persistent(msc,e) || get_persistence(msc,e) < t);
+  bool   is_epsilon_persistent = (msc.vertid(e[0]) == msc.vertid(e[1]));
+  bool   is_pers_lt_t          = std::abs(msc.fn(e[0]) - msc.fn(e[1])) < t;
+
+  return (is_epsilon_persistent || is_pers_lt_t);
 }
+
+/*---------------------------------------------------------------------------*/
 
 template<typename T>
 inline void set_vec_value(std::vector<T> & vec, int i,const T& v){vec[i] = v;}
 
+/*---------------------------------------------------------------------------*/
 
 inline void make_is_inc_ext(const mscomplex_t &msc, vector<bool> &inc_on_ext)
 {
@@ -215,7 +202,8 @@ inline void make_is_inc_ext(const mscomplex_t &msc, vector<bool> &inc_on_ext)
 
     cellid_t c = msc.cellid(i);
 
-    if( !msc.is_paired(i) && msc.m_rect.boundryCount(c) == msc.m_ext_rect.boundryCount(c))
+    if( !msc.is_paired(i) && msc.m_rect.boundryCount(c) ==
+        msc.m_ext_rect.boundryCount(c))
       continue;
 
     inc_on_ext[i] = true;
@@ -225,19 +213,26 @@ inline void make_is_inc_ext(const mscomplex_t &msc, vector<bool> &inc_on_ext)
   }
 }
 
-inline void update_is_inc_ext(const mscomplex_t &msc, vector<bool> &is_inc_on_ext,int_pair_t pr)
+/*---------------------------------------------------------------------------*/
+
+inline void update_is_inc_ext
+(const mscomplex_t &msc, vector<bool> &is_inc_on_ext,int_pair_t pr)
 {
   int p = pr[0],q = pr[1];
 
   cellid_t c_p = msc.cellid(p);
   cellid_t c_q = msc.cellid(q);
 
-  if(msc.is_paired(p) || msc.m_rect.boundryCount(c_p) != msc.m_ext_rect.boundryCount(c_p))
+  if(msc.is_paired(p) || msc.m_rect.boundryCount(c_p) !=
+     msc.m_ext_rect.boundryCount(c_p))
     is_inc_on_ext[q] = true;
 
-  if(msc.is_paired(q) || msc.m_rect.boundryCount(c_q) != msc.m_ext_rect.boundryCount(c_q))
+  if(msc.is_paired(q) || msc.m_rect.boundryCount(c_q) !=
+     msc.m_ext_rect.boundryCount(c_q))
     is_inc_on_ext[p] = true;
 }
+
+/*---------------------------------------------------------------------------*/
 
 void mscomplex_t::simplify(double f_tresh, double f_range)
 {
@@ -260,7 +255,8 @@ void mscomplex_t::simplify(double f_tresh, double f_range)
     {
       int_pair_t pr(i,j.first);
 
-      if(is_valid_canc_edge(*this,is_inc_ext,pr) && is_in_treshold(*this,pr,f_tresh))
+      if(is_valid_canc_edge(*this,is_inc_ext,pr) &&
+         is_in_treshold(*this,pr,f_tresh))
         pq.push(pr);
     }
   }
@@ -278,23 +274,22 @@ void mscomplex_t::simplify(double f_tresh, double f_range)
 
     order_pr_by_cp_index(*this,p,q);
 
-    pair_cps(p,q);
-
     cancel_pair(p,q);
 
-    m_canc_list.push_back(pr);
-
     BOOST_FOREACH(int_int_t i,m_des_conn[p])
-        BOOST_FOREACH(int_int_t j,m_asc_conn[q])
+    BOOST_FOREACH(int_int_t j,m_asc_conn[q])
     {
       int_pair_t npr(i.first,j.first);
 
       update_is_inc_ext(*this,is_inc_ext,npr);
 
-      if(is_valid_canc_edge(*this,is_inc_ext,npr) && is_in_treshold(*this,npr,f_tresh))
+      if(is_valid_canc_edge(*this,is_inc_ext,npr) &&
+         is_in_treshold(*this,npr,f_tresh))
         pq.push(npr);
-
     }
   }
 }
+
+/*===========================================================================*/
+
 }

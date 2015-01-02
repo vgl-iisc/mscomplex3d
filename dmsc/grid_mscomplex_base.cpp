@@ -9,14 +9,23 @@ namespace ba = boost::adaptors;
 
 namespace grid
 {
+
+/*===========================================================================*/
+
 mscomplex_t::mscomplex_t()
-  :m_des_conn(m_conn[0]),m_asc_conn(m_conn[1]){}
+  :m_des_conn(m_conn[0]),m_asc_conn(m_conn[1]),m_canc_pos(0){}
+
+/*---------------------------------------------------------------------------*/
 
 mscomplex_t::mscomplex_t(rect_t r,rect_t e,rect_t d)
   :m_rect(r),m_ext_rect(e),m_domain_rect(d),
-    m_des_conn(m_conn[0]),m_asc_conn(m_conn[1]){}
+    m_des_conn(m_conn[0]),m_asc_conn(m_conn[1]),m_canc_pos(0){}
+
+/*---------------------------------------------------------------------------*/
 
 mscomplex_t::~mscomplex_t(){clear();}
+
+/*---------------------------------------------------------------------------*/
 
 void mscomplex_t::set_critpt(int i,cellid_t c,char idx,cell_fn_t f,cellid_t v)
 {
@@ -25,6 +34,8 @@ void mscomplex_t::set_critpt(int i,cellid_t c,char idx,cell_fn_t f,cellid_t v)
   m_cp_index[i]  = idx;
   m_cp_fn[i]     = f;
 }
+
+/*---------------------------------------------------------------------------*/
 
 void  mscomplex_t::resize(int i)
 {
@@ -37,6 +48,8 @@ void  mscomplex_t::resize(int i)
   m_des_conn.resize(i);
   m_asc_conn.resize(i);
 }
+
+/*---------------------------------------------------------------------------*/
 
 void mscomplex_t::connect_cps(int p, int q,int m)
 {
@@ -63,6 +76,8 @@ void mscomplex_t::connect_cps(int p, int q,int m)
   m_asc_conn[q][p] += m;
 }
 
+/*---------------------------------------------------------------------------*/
+
 void mscomplex_t::clear()
 {
   m_cp_cellid.clear();
@@ -74,6 +89,8 @@ void mscomplex_t::clear()
   m_des_conn.clear();
   m_asc_conn.clear();
 }
+
+/*---------------------------------------------------------------------------*/
 
 std::string mscomplex_t::cp_conn (int i) const
 {
@@ -93,5 +110,7 @@ std::string mscomplex_t::cp_conn (int i) const
 
   return ss.str();
 }
+
+/*===========================================================================*/
 
 }

@@ -51,6 +51,7 @@ public:
   rect_t        m_rect;
   rect_t        m_ext_rect;
   rect_t        m_domain_rect;
+  int           m_canc_pos;
 
   cellid_list_t   m_cp_cellid;
   cellid_list_t   m_cp_vertid;
@@ -104,7 +105,7 @@ public:
   void  connect_cps(int p, int q,int m=1);
 
   // simplification related stuff
-  void pair_cps(int p , int q);
+  void cancel_pair();
   void cancel_pair(int p, int q);
   void simplify(double simplification_treshold,double f_range);
 
