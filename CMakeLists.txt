@@ -79,7 +79,10 @@ set(${PROJECT_NAME}_SRCS ${${PROJECT_NAME}_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_dataset_outcore.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_mscomplex.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_mscomplex.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_mscomplex_inl.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_mscomplex_base.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_mscomplex_algs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_mscomplex_outcore.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_outcore.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dmsc/grid_outcore.cpp

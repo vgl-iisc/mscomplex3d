@@ -11,13 +11,7 @@ using namespace grid;
 
 namespace bpo = boost::program_options ;
 
-namespace grid
-{
-  namespace opencl
-  {
-    void init();
-  }
-}
+namespace grid{namespace opencl{void init();}}
 
 void compute_mscomplex_basic(std::string filename, cellid_t size, double simp_tresh)
 {
@@ -47,7 +41,7 @@ void compute_mscomplex_basic(std::string filename, cellid_t size, double simp_tr
   if(simp_tresh >=0)
   {
     msgraph->simplify(simp_tresh,-1);
-    msgraph->store(basename+".graph.bin",false);
+    msgraph->save(basename+".graph.bin",false);
     msgraph->un_simplify();
   LOG(info) <<"simplification done ------ "<<g_timer.elapsed()<<endl;
   }

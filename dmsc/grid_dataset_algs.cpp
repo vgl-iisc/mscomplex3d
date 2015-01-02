@@ -1,6 +1,6 @@
-
 #define static_assert BOOST_STATIC_ASSERT
 
+#include <boost/range/adaptors.hpp>
 
 #include <grid_dataset.h>
 #include <grid_mscomplex.h>

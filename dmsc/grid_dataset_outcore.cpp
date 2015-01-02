@@ -4,6 +4,7 @@
 #include <grid_mscomplex.h>
 
 #include <boost/range.hpp>
+#include <boost/range/adaptors.hpp>
 #include <iostream>
 
 namespace br=boost::range;

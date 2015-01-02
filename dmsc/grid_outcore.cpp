@@ -202,7 +202,7 @@ namespace grid
       ds->init(dp->bn(m_basename)+".raw");
       ds->computeMsGraph(msc);
 
-      msc->store(dp->bn(m_basename)+".msgraph.bin");
+      msc->save(dp->bn(m_basename)+".msgraph.bin");
 //      ds->store(dp->bn(m_basename)+".dataset.bin");
 
       cout<<g_timer.elapsed()<<"\t:processed piece "<<pc_i
@@ -221,7 +221,7 @@ namespace grid
 
       msc->load(f);
       msc->simplify(t,r);
-      msc->store(f);
+      msc->save(f);
 
 //      for(j--; j >= 0 ; j--)
 //      {
@@ -253,7 +253,7 @@ namespace grid
 
         int num_c = msc.m_canc_list.size();
 
-        msc.store(dp->bn(m_basename)+".msgraph.bin");
+        msc.save(dp->bn(m_basename)+".msgraph.bin");
 
         cout<<g_timer.elapsed()
             <<"\t:merged ("<<(n+i)*2-1<<","<<(n+i)*2<<") -->"<<n+i-1

@@ -21,362 +21,124 @@
 #ifndef __GRID_MSCOMPLEX_H_INCLUDED_
 #define __GRID_MSCOMPLEX_H_INCLUDED_
 
-#include <set>
-#include <map>
-
-#include <boost/noncopyable.hpp>
-#include <boost/function.hpp>
 #include <boost/enable_shared_from_this.hpp>
-#include <boost/iterator/filter_iterator.hpp>
 #include <boost/iterator/counting_iterator.hpp>
-#include <boost/iterator/transform_iterator.hpp>
-#include <boost/functional.hpp>
-#include <boost/bind.hpp>
 #include <boost/range/iterator_range.hpp>
-#include <boost/range/adaptors.hpp>
-#include <boost/range/algorithm.hpp>
-
 
 #include <grid.h>
 
 namespace grid
 {
-  struct critpt_t;
+struct critpt_t;
+
+typedef std::vector<cell_fn_t>     cp_fn_list_t;
+typedef n_vector_t<int,2>          int_pair_t;
+typedef std::vector<int_pair_t>    int_pair_list_t;
+typedef std::map<cellid_t,uint>    id_cp_map_t;
+typedef std::vector<critpt_t >     critpt_list_t;
+
+typedef std::pair<int,int>         int_int_t;
+typedef std::vector<int_int_t>     int_int_list_t;
+
+
+typedef std::map<int,int>                 conn_t;
+typedef std::vector<conn_t>               conn_list_t;
+
+class mscomplex_t:public boost::enable_shared_from_this<mscomplex_t>
+{
+public:
+
+  rect_t        m_rect;
+  rect_t        m_ext_rect;
+  rect_t        m_domain_rect;
+
+  cellid_list_t   m_cp_cellid;
+  cellid_list_t   m_cp_vertid;
+  int_list_t      m_cp_pair_idx;
+  char_list_t     m_cp_index;
+  bool_list_t     m_cp_is_cancelled;
+  cell_fn_list_t  m_cp_fn;
+
+  int_pair_list_t m_canc_list;
+
+  conn_list_t   m_conn[GDIR_CT];
+  conn_list_t  &m_des_conn;
+  conn_list_t  &m_asc_conn;
+
+public:
+
+  mscomplex_t();
+  mscomplex_t(rect_t r,rect_t e,rect_t d);
+  ~mscomplex_t();
+  void clear();
+
+  // mscomplex basic query functions
+  inline int       get_num_critpts()              const;
+  inline int       pair_idx(int i)                const;
+  inline cellid_t  cellid(int i)                  const;
+  inline cellid_t  vertid(int i)                  const;
+  inline char      index(int i)                   const;
+  inline cell_fn_t fn(int i)                      const;
+  inline int       surv_extrema(int i)            const;
+  inline bool      is_paired(int i)               const;
+  inline bool      is_extrema(int i)              const;
+  inline bool      is_saddle(int i)               const;
+  inline bool      is_canceled(int i)             const;
+  inline bool      is_unpaired_saddle(int i)      const;
+  inline bool      is_unpaired_two_saddle(int i)  const;
+  inline bool      is_unpaired_one_saddle(int i)  const;
+  inline cell_fn_t fn_min()                       const; // O(#cp) complexity
+  inline cell_fn_t fn_max()                       const; // O(#cp) complexity
+
+
+  // iterator range to go over the set of critical points
+  typedef boost::counting_iterator<int> iterator_t;
+  inline boost::iterator_range<iterator_t> cpno_range() const;
+
+
+public:
+
+  // functions to create a mscomplex from a dataset
+  void  resize(int i);
+  void  set_critpt(int i,cellid_t c,char idx,cell_fn_t f,cellid_t vert_cell);
+  void  connect_cps(int p, int q,int m=1);
+
+  // simplification related stuff
+  void pair_cps(int p , int q);
+  void cancel_pair(int p, int q);
+  void simplify(double simplification_treshold,double f_range);
+
+
+  // simplification related things used during outcore processing
+  void dir_connect_cps(int p , int q,int m=1);
+  void un_simplify();
+  void invert_for_collection();
+  void uncancel_pair( int p, int q);
+
+  // functions to enable outcore merging and merge history traversal etc.
+  void merge_up  (const mscomplex_t& ,const mscomplex_t& ,const rect_t&);
+  void merge_down(mscomplex_t& ,mscomplex_t& ,const rect_t&);
+
+  void save(std::ostream &os,bool purge_data=true);
+  void load(std::istream &is);
+  int  load_merge(std::istream &is1,std::istream &is2);
+  void unmerge_save(std::iostream &is1,std::iostream &is2);
+
+  inline void save(const std::string &f,bool purge_data=true);
+  inline void load(const std::string &f);
+  inline int  load_merge(const std::string &f1,const std::string &f2);
+  inline void unmerge_save(const std::string &f1,const std::string &f2);
+
+
+  // misc functions
+  inline std::string info() const;
+  inline std::string cp_info (int cp_no) const;
+  std::string cp_conn (int cp_no) const;
+};
 
-  typedef std::vector<cell_fn_t>     cp_fn_list_t;
-  typedef n_vector_t<int,2>          int_pair_t;
-  typedef std::vector<int_pair_t>    int_pair_list_t;
-  typedef std::map<cellid_t,uint>    id_cp_map_t;
-  typedef std::vector<critpt_t >     critpt_list_t;
-
-  typedef std::pair<int,int>         int_int_t;
-  typedef std::vector<int_int_t>     int_int_list_t;
-
-
-  typedef std::map<int,int>                 conn_t;
-  typedef std::vector<conn_t>               conn_list_t;
-
-  class mscomplex_t:public boost::enable_shared_from_this<mscomplex_t>
-  {
-  public:
-
-    rect_t        m_rect;
-    rect_t        m_ext_rect;
-    rect_t        m_domain_rect;
-
-    cellid_list_t   m_cp_cellid;
-    cellid_list_t   m_cp_vertid;
-    int_list_t      m_cp_pair_idx;
-    char_list_t     m_cp_index;
-    bool_list_t     m_cp_is_cancelled;
-    cell_fn_list_t  m_cp_fn;
-
-    int_pair_list_t m_canc_list;
-
-    conn_list_t   m_conn[GDIR_CT];
-    conn_list_t  &m_des_conn;
-    conn_list_t  &m_asc_conn;
-
-  public:
-
-    mscomplex_t();
-    mscomplex_t(rect_t r,rect_t e,rect_t d);
-    ~mscomplex_t();
-
-    inline int  get_num_critpts() const;
-    void  resize(int i);
-
-    void set_critpt(int i,cellid_t c,char idx,cell_fn_t f,cellid_t vert_cell);
-
-    void connect_cps(int p, int q,int m=1);
-    void dir_connect_cps(int p , int q,int m=1);
-    void pair_cps(int p , int q);
-
-//    inline int& pair_idx(int i);
-    inline const int& pair_idx(int i) const;
-    inline bool is_paired(int i) const;
-
-    inline void set_is_canceled(int i,bool b);
-    inline bool is_canceled(int i) const;
-
-    inline const cellid_t& cellid(int i) const;
-    inline const cellid_t& vertid(int i) const;
-    inline const char& index(int i) const;
-    inline const cell_fn_t& fn(int i) const;
-
-    inline int surv_extrema(int i) const;
-    inline bool is_extrema(int i) const;
-    inline bool is_saddle(int i) const;
-
-    inline bool is_unpaired_saddle(int i) const;
-    inline bool is_unpaired_two_saddle(int i) const;
-    inline bool is_unpaired_one_saddle(int i) const;
-
-  public:
-
-    void simplify(double simplification_treshold,double f_range);
-    void un_simplify();
-
-    void invert_for_collection();
-
-    void cancel_pair(int p, int q);
-    void uncancel_pair( int p, int q);
-
-    void clear();
-
-    void merge_up  (const mscomplex_t& ,const mscomplex_t& ,const rect_t&);
-    void merge_down(mscomplex_t& ,mscomplex_t& ,const rect_t&);
-
-    void store_ascii(std::ostream & os) const;
-    void store_ascii(const std::string & fn) const;
-
-    void store(std::ostream &os,bool purge_data=true);
-    void load(std::istream &is);
-
-    inline void store(const std::string &f,bool purge_data=true)
-    {std::fstream fs(f.c_str(),std::ios::out|std::ios::binary);store(fs,purge_data);}
-    void load(const std::string &f)
-    {std::fstream fs(f.c_str(),std::ios::in|std::ios::binary);load(fs);}
-
-    int load_merge(std::istream &is1,std::istream &is2);
-
-    inline int load_merge(const std::string &f1,const std::string &f2)
-    {std::fstream fs1(f1.c_str(),std::ios::in|std::ios::binary);
-     std::fstream fs2(f2.c_str(),std::ios::in|std::ios::binary);
-     return load_merge(fs1,fs2);}
-
-    void unmerge_save(std::iostream &is1,std::iostream &is2);
-
-    inline void unmerge_save(const std::string &f1,const std::string &f2)
-    {std::fstream fs1(f1.c_str(),std::ios::in|std::ios::out|std::ios::binary);
-     std::fstream fs2(f2.c_str(),std::ios::in|std::ios::out|std::ios::binary);
-     unmerge_save(fs1,fs2);}
-
-
-    inline std::string cp_info (int cp_no) const;
-           std::string cp_conn (int cp_no) const;
-
-    typedef boost::counting_iterator<int> iterator_t;
-    typedef boost::function<bool (int)> filter_t;
-    typedef bool (mscomplex_t::*memb_filter_t)(int) const;
-    typedef boost::filter_iterator<filter_t,iterator_t> fiterator_t;
-    template <typename it_t>            class cp_id_iterator;
-    typedef cp_id_iterator<fiterator_t> cp_id_fiterator;
-
-    inline boost::iterator_range<iterator_t> cpno_range() const
-    {return boost::make_iterator_range(iterator_t(0),iterator_t(get_num_critpts()));}
-
-    inline iterator_t begin() const;
-    inline iterator_t end() const;
-
-    inline fiterator_t fbegin(filter_t f) const;
-    inline fiterator_t fend(filter_t f) const;
-
-    inline fiterator_t fbegin(memb_filter_t f) const;
-    inline fiterator_t fend(memb_filter_t f) const;
-
-    inline cp_id_fiterator cp_id_fbegin(filter_t f) const;
-    inline cp_id_fiterator cp_id_fend(filter_t f) const;
-
-    inline mscomplex_ptr_t make_copy()const;
-
-    inline cell_fn_t fn_min() const;
-    inline cell_fn_t fn_max() const;
-  };
-
-  inline void order_pr_by_cp_index(const mscomplex_t &msc,int &p,int &q)
-  {if(msc.index(p) < msc.index(q))std::swap(p,q);}
-
-  template <typename it_t>
-  class mscomplex_t::cp_id_iterator:public std::iterator
-      <std::bidirectional_iterator_tag,cellid_t,int,cellid_t,cellid_t>
-  {
-  public:
-    cp_id_iterator(){}
-
-    cp_id_iterator(mscomplex_const_ptr_t msc,it_t i):m_msc(msc),m_i(i){};
-    mscomplex_const_ptr_t m_msc;
-    it_t m_i;
-
-    inline cp_id_iterator& operator++(){++m_i; return *this;}
-    inline cp_id_iterator& operator--(){--m_i; return *this;}
-    inline reference operator*() const {return m_msc->cellid(*m_i);}
-
-    inline bool operator== (const cp_id_iterator &rhs) const
-    {return (m_i == rhs.m_i);}
-
-    inline bool operator!= (const cp_id_iterator &rhs) const
-    {return !(*this == rhs);}
-  };
-
-  inline mscomplex_t::iterator_t mscomplex_t::begin() const
-  {return iterator_t(0);}
-
-  inline mscomplex_t::iterator_t mscomplex_t::end() const
-  {return iterator_t(get_num_critpts());}
-
-  inline mscomplex_t::fiterator_t mscomplex_t::fbegin(mscomplex_t::filter_t f) const
-  {return boost::make_filter_iterator(f,begin(),end());}
-
-  inline mscomplex_t::fiterator_t mscomplex_t::fend(mscomplex_t::filter_t f) const
-  {return boost::make_filter_iterator(f,end(),end());}
-
-  inline mscomplex_t::fiterator_t mscomplex_t::fbegin(mscomplex_t::memb_filter_t f) const
-  {return fbegin(boost::bind(f,this,_1));}
-
-  inline mscomplex_t::fiterator_t mscomplex_t::fend(mscomplex_t::memb_filter_t f) const
-  {return fend(boost::bind(f,this,_1));}
-
-  inline mscomplex_t::cp_id_fiterator mscomplex_t::cp_id_fbegin(mscomplex_t::filter_t f) const
-  {return cp_id_fiterator(shared_from_this(),fbegin(f));}
-
-  inline mscomplex_t::cp_id_fiterator mscomplex_t::cp_id_fend(mscomplex_t::filter_t f) const
-  {return cp_id_fiterator(shared_from_this(),fend(f));}
-
-  inline int  mscomplex_t::get_num_critpts() const
-  {
-    return m_cp_cellid.size();
-  }
-
-  inline const char& mscomplex_t::index(int i) const
-  {
-    ASSERTS(is_in_range(i,0,(int)m_cp_index.size()))<<STRMVAR(i);
-
-    return m_cp_index[i];
-  }
-
-  inline const int& mscomplex_t::pair_idx(int i) const
-  {
-    ASSERTS(is_in_range(i,0,(int)m_cp_pair_idx.size()))<<STRMVAR(i);
-    ASSERTS(is_in_range(m_cp_pair_idx[i],0,(int)m_cp_pair_idx.size()))<<STRMVAR(i);
-
-    return m_cp_pair_idx[i];
-  }
-
-  inline bool mscomplex_t::is_paired(int i) const
-  {
-    ASSERTS(is_in_range(i,0,(int)m_cp_pair_idx.size()))<<STRMVAR(i);
-
-    return (m_cp_pair_idx[i] != -1);
-  }
-
-  inline void mscomplex_t::set_is_canceled(int i,bool c)
-  {
-    ASSERTS(is_in_range(i,0,(int)m_cp_is_cancelled.size()))<<STRMVAR(i);
-
-    m_cp_is_cancelled[i] = c;
-  }
-
-  inline bool mscomplex_t::is_canceled(int i) const
-  {
-    ASSERTS(is_in_range(i,0,(int)m_cp_is_cancelled.size()))<<STRMVAR(i);
-
-    return m_cp_is_cancelled[i];
-  }
-
-  inline const cellid_t& mscomplex_t::cellid(int i) const
-  {
-    ASSERTS(is_in_range(i,0,(int)m_cp_cellid.size()))<<STRMVAR(i);
-
-    return m_cp_cellid[i];
-  }
-
-  inline const cellid_t& mscomplex_t::vertid(int i) const
-  {
-    ASSERTS(is_in_range(i,0,(int)m_cp_vertid.size()))<<STRMVAR(i);
-
-    return m_cp_vertid[i];
-  }
-
-  inline const cell_fn_t& mscomplex_t::fn(int i) const
-  {
-    ASSERTS(is_in_range(i,0,(int)m_cp_fn.size()))<<STRMVAR(i);
-
-    return m_cp_fn[i];
-  }
-
-  inline bool mscomplex_t::is_extrema(int i) const
-  {
-    return (index(i) == 0 || index(i) == 3);
-  }
-
-  inline bool mscomplex_t::is_saddle(int i) const
-  {
-    return (index(i) == 1 || index(i) == 2);
-  }
-
-  inline bool mscomplex_t::is_unpaired_saddle(int i) const
-  {
-    return (is_saddle(i) &&(is_paired(i) == false));
-  }
-
-  inline bool mscomplex_t::is_unpaired_two_saddle(int i) const
-  {return ((index(i) == 2) &&(is_paired(i) == false));}
-
-  inline bool mscomplex_t::is_unpaired_one_saddle(int i) const
-  {return ((index(i) == 1) &&(is_paired(i) == false));}
-
-  inline int mscomplex_t::surv_extrema(int i) const
-  {
-    ASSERT(is_extrema(i));
-
-    if(is_paired(i) == false)
-      return i;
-
-    eGDIR dir = (index(i) == 3)?(ASC):(DES);
-
-    ASSERT(m_conn[dir][pair_idx(i)].size() == 1);
-
-    int j = m_conn[dir][pair_idx(i)].begin()->first;
-
-    ASSERT(!is_paired(j));
-
-    return j;
-  }
-
-  inline cell_fn_t mscomplex_t::fn_min() const
-  {return *boost::range::min_element(m_cp_fn);}
-
-  inline cell_fn_t mscomplex_t::fn_max() const
-  {return *boost::range::max_element(m_cp_fn);
-  }
-
-
-  inline mscomplex_ptr_t mscomplex_t::make_copy()const
-  {
-    mscomplex_ptr_t msc = mscomplex_ptr_t(new mscomplex_t(m_rect,m_ext_rect,m_domain_rect));
-
-    msc->m_cp_cellid       = m_cp_cellid;
-    msc->m_cp_vertid       = m_cp_vertid;
-    msc->m_cp_pair_idx     = m_cp_pair_idx;
-    msc->m_cp_index        = m_cp_index;
-    msc->m_cp_is_cancelled = m_cp_is_cancelled;
-    msc->m_cp_fn           = m_cp_fn;
-
-    msc->m_canc_list       = m_canc_list;
-
-    msc->m_conn[0]         = m_conn[0];
-    msc->m_conn[1]         = m_conn[1];
-
-    return msc;
-  }
-
-  inline std::string mscomplex_t::cp_info (int cp_no) const
-  {
-    std::stringstream ss;
-
-    ss<<std::endl;
-    ss<<"cp_no        ::"<<cp_no<<std::endl;
-    ss<<"cellid       ::"<<cellid(cp_no)<<std::endl;
-//    ss<<"vert cell    ::"<<vertid(cp_no)<<std::endl;
-    ss<<"index        ::"<<(int)index(cp_no)<<std::endl;
-//      ss<<"fn           ::"<<fn(cp_no)<<std::endl;
-//    ss<<"is_cancelled ::"<<is_canceled(cp_no)<<std::endl;
-//    ss<<"is_paired    ::"<<is_paired(cp_no)<<std::endl;
-    ss<<"pair_idx     ::"<<pair_idx(cp_no)<<std::endl;
-    return ss.str();
-  }
+inline void order_pr_by_cp_index(const mscomplex_t &msc,int &p,int &q);
 }
 
+#include <grid_mscomplex_inl.h>
 
 #endif
