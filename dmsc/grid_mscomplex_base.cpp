@@ -12,14 +12,16 @@ namespace grid
 
 /*===========================================================================*/
 
-mscomplex_t::mscomplex_t()
-  :m_des_conn(m_conn[0]),m_asc_conn(m_conn[1]),m_canc_pos(0){}
+mscomplex_t::mscomplex_t():
+  m_des_mfolds(m_mfolds[0]),m_asc_mfolds(m_mfolds[1]),
+  m_des_conn(m_conn[0]),m_asc_conn(m_conn[1]),m_canc_pos(0){}
 
 /*---------------------------------------------------------------------------*/
 
-mscomplex_t::mscomplex_t(rect_t r,rect_t e,rect_t d)
-  :m_rect(r),m_ext_rect(e),m_domain_rect(d),
-    m_des_conn(m_conn[0]),m_asc_conn(m_conn[1]),m_canc_pos(0){}
+mscomplex_t::mscomplex_t(rect_t r,rect_t e,rect_t d):
+  m_rect(r),m_ext_rect(e),m_domain_rect(d),
+  m_des_mfolds(m_mfolds[0]),m_asc_mfolds(m_mfolds[1]),
+  m_des_conn(m_conn[0]),m_asc_conn(m_conn[1]),m_canc_pos(0){}
 
 /*---------------------------------------------------------------------------*/
 

@@ -22,8 +22,8 @@ void compute_mscomplex_basic(std::string filename, cellid_t size, double simp_tr
             <<"------------------------------------"<<endl;
 
   rect_t d(cellid_t::zero,(size-cellid_t::one)*2);
-  dataset_ptr_t   dataset(new dataset_t(d,d,d));
-  mscomplex_ptr_t msgraph(new mscomplex_t(d,d,d));
+  dataset_ptr_t   ds (new dataset_t(d,d,d));
+  mscomplex_ptr_t msc(new mscomplex_t(d,d,d));
 
   string basename(filename);
 
@@ -32,23 +32,21 @@ void compute_mscomplex_basic(std::string filename, cellid_t size, double simp_tr
   if(ext_pos >=0 && basename.substr(ext_pos,4) == ".raw")
     basename = basename.substr(0,ext_pos);
 
-  dataset->init(filename);
+  ds->init(filename);
   LOG(info) <<"data read ---------------- "<<g_timer.elapsed()<<endl;
 
-  dataset->computeMsGraph(msgraph);
+  ds->computeMsGraph(msc);
   LOG(info) <<"msgraph done ------------- "<<g_timer.elapsed()<<endl;
 
   if(simp_tresh >=0)
   {
-    msgraph->simplify(simp_tresh,-1);
-    msgraph->save(basename+".graph.bin",false);
-    msgraph->un_simplify();
-  LOG(info) <<"simplification done ------ "<<g_timer.elapsed()<<endl;
+    msc->simplify(simp_tresh,-1);
+    LOG(info) <<"simplification done ------ "<<g_timer.elapsed()<<endl;
   }
+  msc->collect_mfolds(ds);
 
-  msgraph->invert_for_collection();
-  dataset->saveManifolds(msgraph,basename);
-//    dataset->saveConnectingOneManifolds(msgraph,basename);
+  msc->save(basename+".msc.bin",false);
+
   LOG(info) <<"write msmfolds done ------ "<<g_timer.elapsed()<<endl;
 
   LOG(info) <<"------------------------------------"<<endl

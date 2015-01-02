@@ -180,8 +180,47 @@ template <> inline bool dataset_t::compare_cells_pp_<GDIR_ASC,2>
 template <> inline bool dataset_t::compare_cells_pp_<GDIR_ASC,3>
 (cellid_t c1, cellid_t c2) const  {return compare_cells_pp<3>(c2,c1);}
 
-/*---------------------------------------------------------------------------*/
+/*===========================================================================*/
 
+
+
+/*===========================================================================*/
+
+template <eGDIR dir,typename rng_t>
+inline void dataset_t::get_mfold(mfold_t &mfold,rng_t rng)
+{
+  std::stack<cellid_t> stk;
+
+  BOOST_AUTO(b,boost::begin(rng));
+  BOOST_AUTO(e,boost::end(rng));
+
+  int dim = getCellDim(*b);
+
+  while ( b!= e) stk.push(*b++);
+
+  cellid_t f[20],*fe,*fb;
+
+  while(!stk.empty())
+  {
+    cellid_t c = stk.top(); stk.pop();
+
+    ASSERT(getCellDim(c) == dim);
+
+    mfold.push_back(c);
+
+    fb = f; fe = f + get_cets<dir>(c,f);
+
+    for (; fb != fe; ++fb )
+      if( isCellPaired(*fb))
+      {
+        cellid_t p = getCellPairId(*fb);
+        if(p != c && getCellDim(p) == dim)
+          stk.push(p);
+      }
+  }
+}
+
+/*===========================================================================*/
 
 }
 

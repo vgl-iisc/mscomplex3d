@@ -142,8 +142,10 @@ inline void bin_read(std::istream &is, const T &v)
 {is.read((char*)(void*)&v,sizeof(T));}
 
 
-void mscomplex_t::save(std::ostream &os, bool purge_data)
+void mscomplex_t::save(const std::string &f, bool purge_data)
 {
+  std::fstream os(f.c_str(),std::ios::out|std::ios::binary);
+
   int N = get_num_critpts();
 
   bin_write(os,N);
@@ -184,8 +186,10 @@ void mscomplex_t::save(std::ostream &os, bool purge_data)
   bin_write_vec(os,m_canc_list,purge_data);
 }
 
-void mscomplex_t::load(std::istream &is)
+void mscomplex_t::load(const std::string &f)
 {
+  std::fstream is(f.c_str(),std::ios::in|std::ios::binary);
+
   clear();
 
   int N,NC;
@@ -572,11 +576,14 @@ inline void copy_from_streams
   copy_adj_info<false>(msc,idx_map2,nconn2,adj2,ixn,cl2);
 }
 
-int mscomplex_t::load_merge(std::istream &is1,std::istream &is2)
+int mscomplex_t::load_merge(const string &f1, const string &f2)
 {
   rect_t        ixn;
   int_marray_t  ixn_idx;
   cellid_t      ixn_dir;
+
+  std::fstream is1(f1.c_str(),std::ios::in|std::ios::binary);
+  std::fstream is2(f2.c_str(),std::ios::in|std::ios::binary);
 
   copy_from_streams(*this,is1,is2,ixn,ixn_idx,ixn_dir);
 
@@ -847,8 +854,11 @@ void copy_into_stream
   bin_write_vec(io,cancl);
 }
 
-void mscomplex_t::unmerge_save(std::iostream &is1, std::iostream &is2)
+void mscomplex_t::unmerge_save(const string &f1, const string &f2)
 {
+  std::fstream is1(f1.c_str(),std::ios::in|std::ios::out|std::ios::binary);
+  std::fstream is2(f2.c_str(),std::ios::in|std::ios::out|std::ios::binary);
+
   rect_t        ixn;
   int_marray_t  ixn_idx;
   cellid_t      ixn_dir;

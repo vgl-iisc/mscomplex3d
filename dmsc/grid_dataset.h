@@ -25,6 +25,7 @@
 #include <vector>
 #include <queue>
 #include <fstream>
+#include <stack>
 
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/function.hpp>
@@ -55,7 +56,6 @@ public:
   typedef boost::multi_array<cellid_t,gc_grid_dim>        cellid_array_t;
   typedef boost::multi_array<cell_flag_t,gc_grid_dim>     cellflag_array_t;
   typedef boost::multi_array<cell_fn_t,gc_grid_dim>       varray_t;
-  typedef cellid_list_t                                   mfold_t;
 
 
 public:
@@ -133,6 +133,9 @@ public:
 
   // core work algorithms
   void  computeMsGraph(mscomplex_ptr_t msgraph);
+  template <eGDIR dir,typename rng_t>
+  inline void get_mfold(mfold_t &mfold,rng_t rng);
+
 
   // additional work algorithms for out of core processing
   void  compute_owner_grad();

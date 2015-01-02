@@ -36,6 +36,9 @@ namespace grid
   typedef std::pair<cellid_t,int>                         cellid_int_pair_t;
   typedef std::vector<cellid_int_pair_t>                  cellid_int_pair_list_t;
 
+  typedef cellid_list_t                                   mfold_t;
+  typedef std::vector<mfold_t>                            mfold_list_t;
+
 
   enum eGDIR  {DES=0,ASC,GDIR_CT};
 

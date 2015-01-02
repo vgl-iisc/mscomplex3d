@@ -66,6 +66,11 @@ public:
   conn_list_t  &m_des_conn;
   conn_list_t  &m_asc_conn;
 
+  mfold_list_t  m_mfolds[GDIR_CT];
+  mfold_list_t &m_des_mfolds;
+  mfold_list_t &m_asc_mfolds;
+
+
 public:
 
   mscomplex_t();
@@ -82,14 +87,18 @@ public:
   inline cell_fn_t fn(int i)                      const;
   inline int       surv_extrema(int i)            const;
   inline bool      is_paired(int i)               const;
+  inline bool      is_not_paired(int i)           const;
   inline bool      is_extrema(int i)              const;
   inline bool      is_saddle(int i)               const;
   inline bool      is_canceled(int i)             const;
   inline bool      is_unpaired_saddle(int i)      const;
   inline bool      is_unpaired_two_saddle(int i)  const;
-  inline bool      is_unpaired_one_saddle(int i)  const;
+  inline bool      is_unpaired_one_saddle(int i)  const;  
   inline cell_fn_t fn_min()                       const; // O(#cp) complexity
-  inline cell_fn_t fn_max()                       const; // O(#cp) complexity
+  inline cell_fn_t fn_max()                       const; // O(#cp) complexity  
+  template <int i>
+  inline bool      is_index_i_cp(int cp)          const;
+
 
 
   // iterator range to go over the set of critical points
@@ -109,6 +118,9 @@ public:
   void cancel_pair(int p, int q);
   void simplify(double simplification_treshold,double f_range);
 
+  // geometry collection related stuff
+  void collect_mfolds(eGDIR dir, int dim, dataset_ptr_t ds);
+  void collect_mfolds(dataset_ptr_t ds);
 
   // simplification related things used during outcore processing
   void dir_connect_cps(int p , int q,int m=1);
@@ -117,19 +129,10 @@ public:
   void uncancel_pair( int p, int q);
 
   // functions to enable outcore merging and merge history traversal etc.
-  void merge_up  (const mscomplex_t& ,const mscomplex_t& ,const rect_t&);
-  void merge_down(mscomplex_t& ,mscomplex_t& ,const rect_t&);
-
-  void save(std::ostream &os,bool purge_data=true);
-  void load(std::istream &is);
-  int  load_merge(std::istream &is1,std::istream &is2);
-  void unmerge_save(std::iostream &is1,std::iostream &is2);
-
-  inline void save(const std::string &f,bool purge_data=true);
-  inline void load(const std::string &f);
-  inline int  load_merge(const std::string &f1,const std::string &f2);
-  inline void unmerge_save(const std::string &f1,const std::string &f2);
-
+  void save(const std::string &f, bool purge_data=true);
+  void load(const std::string &f);
+  int  load_merge(const std::string &f1,const std::string &f2);
+  void unmerge_save(const std::string &f1,const std::string &f2);
 
   // misc functions
   inline std::string info() const;

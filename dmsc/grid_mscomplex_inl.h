@@ -19,7 +19,7 @@ inline int  mscomplex_t::get_num_critpts() const
 
 inline char mscomplex_t::index(int i) const
 {
-  ASSERTS(is_in_range(i,0,(int)m_cp_index.size()))<<STRMVAR(i);
+  ASSERTV(is_in_range(i,0,(int)m_cp_index.size()),i);
   return m_cp_index[i];
 }
 
@@ -27,8 +27,8 @@ inline char mscomplex_t::index(int i) const
 
 inline int mscomplex_t::pair_idx(int i) const
 {
-  ASSERTS(is_in_range(i,0,(int)m_cp_pair_idx.size()))<<STRMVAR(i);
-  ASSERTS(is_in_range(m_cp_pair_idx[i],0,(int)m_cp_pair_idx.size()))<<STRMVAR(i);
+  ASSERTV(is_in_range(i,0,(int)m_cp_pair_idx.size()),i);
+  ASSERTV(is_in_range(m_cp_pair_idx[i],0,(int)m_cp_pair_idx.size()),i);
   return m_cp_pair_idx[i];
 }
 
@@ -36,15 +36,24 @@ inline int mscomplex_t::pair_idx(int i) const
 
 inline bool mscomplex_t::is_paired(int i) const
 {
-  ASSERTS(is_in_range(i,0,(int)m_cp_pair_idx.size()))<<STRMVAR(i);
+  ASSERTV(is_in_range(i,0,(int)m_cp_pair_idx.size()),i);
   return (m_cp_pair_idx[i] != -1);
+}
+
+/*---------------------------------------------------------------------------*/
+
+inline bool mscomplex_t::is_not_paired(int i) const
+{
+  ASSERTV(is_in_range(i,0,(int)m_cp_pair_idx.size()),i);
+
+  return (m_cp_pair_idx[i] == -1);
 }
 
 /*---------------------------------------------------------------------------*/
 
 inline bool mscomplex_t::is_canceled(int i) const
 {
-  ASSERTS(is_in_range(i,0,(int)m_cp_is_cancelled.size()))<<STRMVAR(i);
+  ASSERTV(is_in_range(i,0,(int)m_cp_is_cancelled.size()),i);
   return m_cp_is_cancelled[i];
 }
 
@@ -52,7 +61,7 @@ inline bool mscomplex_t::is_canceled(int i) const
 
 inline cellid_t mscomplex_t::cellid(int i) const
 {
-  ASSERTS(is_in_range(i,0,(int)m_cp_cellid.size()))<<STRMVAR(i);
+  ASSERTV(is_in_range(i,0,(int)m_cp_cellid.size()),i);
   return m_cp_cellid[i];
 }
 
@@ -60,7 +69,7 @@ inline cellid_t mscomplex_t::cellid(int i) const
 
 inline cellid_t mscomplex_t::vertid(int i) const
 {
-  ASSERTS(is_in_range(i,0,(int)m_cp_vertid.size()))<<STRMVAR(i);
+  ASSERTV(is_in_range(i,0,(int)m_cp_vertid.size()),i);
   return m_cp_vertid[i];
 }
 
@@ -68,7 +77,7 @@ inline cellid_t mscomplex_t::vertid(int i) const
 
 inline cell_fn_t mscomplex_t::fn(int i) const
 {
-  ASSERTS(is_in_range(i,0,(int)m_cp_fn.size()))<<STRMVAR(i);
+  ASSERTV(is_in_range(i,0,(int)m_cp_fn.size()),i);
   return m_cp_fn[i];
 }
 
@@ -102,6 +111,11 @@ inline bool mscomplex_t::is_unpaired_two_saddle(int i) const
 
 inline bool mscomplex_t::is_unpaired_one_saddle(int i) const
 {return ((index(i) == 1) &&(is_paired(i) == false));}
+
+/*---------------------------------------------------------------------------*/
+
+template<int dim> inline bool mscomplex_t::is_index_i_cp(int i) const
+{return (index(i) == dim);}
 
 /*---------------------------------------------------------------------------*/
 
@@ -150,34 +164,6 @@ inline std::string mscomplex_t::cp_info (int cp_no) const
   ss<<"pair_idx     ::"<<pair_idx(cp_no)<<std::endl;
   return ss.str();
 }
-
-
-/*===========================================================================*/
-
-
-
-/*===========================================================================*/
-inline void mscomplex_t::save(const std::string &f,bool purge_data)
-{std::fstream fs(f.c_str(),std::ios::out|std::ios::binary);save(fs,purge_data);}
-
-/*---------------------------------------------------------------------------*/
-
-void mscomplex_t::load(const std::string &f)
-{std::fstream fs(f.c_str(),std::ios::in|std::ios::binary);load(fs);}
-
-/*---------------------------------------------------------------------------*/
-
-inline int mscomplex_t::load_merge(const std::string &f1,const std::string &f2)
-{std::fstream fs1(f1.c_str(),std::ios::in|std::ios::binary);
- std::fstream fs2(f2.c_str(),std::ios::in|std::ios::binary);
- return load_merge(fs1,fs2);}
-
-/*---------------------------------------------------------------------------*/
-
-inline void mscomplex_t::unmerge_save(const std::string &f1,const std::string &f2)
-{std::fstream fs1(f1.c_str(),std::ios::in|std::ios::out|std::ios::binary);
- std::fstream fs2(f2.c_str(),std::ios::in|std::ios::out|std::ios::binary);
- unmerge_save(fs1,fs2);}
 
 /*---------------------------------------------------------------------------*/
 
