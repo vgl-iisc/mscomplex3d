@@ -1,11 +1,11 @@
-#define static_assert BOOST_STATIC_ASSERT
-
 #include <boost/range/adaptors.hpp>
 
 #include <grid_dataset.h>
 #include <grid_mscomplex.h>
 
 #include <grid_dataset_cl.h>
+
+#define static_assert BOOST_STATIC_ASSERT
 
 using namespace std;
 namespace br = boost::range;
@@ -161,6 +161,85 @@ inline void compute_inc_pairs_pq
   }
 }
 
+/*---------------------------------------------------------------------------*/
+
+template <int dim,eGDIR dir,bool no_vcheck,typename range_t >
+inline void collect_reachable_saddle
+(mfold_t &mfold,const range_t &rng, dataset_ptr_t ds_ptr)
+{
+  const dataset_t & ds = *ds_ptr;
+
+  const int pdim = (dir == DES)?(dim - 1):(dim + 1);
+
+  BOOST_AUTO(cmp_dim , bind(cellid_int_pair_cmp< dim, dir>,ds_ptr,_1,_2));
+
+  priority_queue<cellid_int_pair_t,cellid_int_pair_list_t,typeof(cmp_dim) >
+      pq(cmp_dim);
+
+  cellid_t f[40];
+
+  while(pq.size() != 0 )
+  {
+    cellid_t c = pq.top().first;
+
+    ASSERT(ds.getCellDim(c) == dim);
+
+    int n = 0 ;
+
+    do {n += pq.top().second; pq.pop();}
+    while(pq.size() != 0 && pq.top().first == c);
+
+    mfold.push_back(c);
+
+    for(cellid_t *b = f,*e = f + ds.get_cets<dir>(c,f);b != e; ++b)
+    {
+      if(!ds.isCellCritical(*b))
+      {
+        cellid_t p = ds.getCellPairId(*b);
+
+        if (p != c && (no_vcheck||ds.isCellVisited(*b)) && ds.getCellDim(p) == dim )
+        {
+          pq.push(make_pair(p,n));
+        }
+      }
+    }
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+template <eGDIR dir,typename range_t>
+inline void collect_reachable_extrema
+(mfold_t &mfold,const range_t &rng, dataset_ptr_t ds)
+{
+  const int dim = (dir == DES)?(gc_grid_dim):(0);
+
+  cellid_t cets[40];
+
+  cellid_list_t stk(boost::begin(rng),boost::end(rng));
+
+  while(stk.size() != 0 )
+  {
+    cellid_t c = stk.back(); stk.pop_back();
+
+    ASSERT(ds->getCellDim(c) == dim);
+
+    mfold.push_back(c);
+
+    for(cellid_t * b = cets, *e = cets + ds->get_cets<dir>(c,cets);b!=e;++b)
+    {
+      if(!ds->isCellCritical(*b))
+      {
+        cellid_t p = ds->getCellPairId(*b);
+        if(ds->getCellDim(p) == dim && p!= c)
+        {
+          stk.push_back(p);
+        }
+      }
+    }
+  }
+}
+
 /*===========================================================================*/
 
 
@@ -262,6 +341,21 @@ void  dataset_t::computeMsGraph(mscomplex_ptr_t msc)
       computeExtremaConnections<ASC>(msc,shared_from_this(),msc_connector);
     }
   }
+}
+
+/*---------------------------------------------------------------------------*/
+
+void  dataset_t::getManifold
+(mfold_t &mfold,const cellid_list_t &rng,int dim,eGDIR dir)
+{
+  if(dim == 0 && dir == ASC) collect_reachable_extrema<  ASC>      (mfold,rng,shared_from_this());
+  if(dim == 1 && dir == ASC) collect_reachable_saddle <1,ASC,true> (mfold,rng,shared_from_this());
+  if(dim == 2 && dir == ASC) collect_reachable_saddle <2,ASC,true> (mfold,rng,shared_from_this());
+
+  if(dim == 1 && dir == DES) collect_reachable_saddle <1,DES,true> (mfold,rng,shared_from_this());
+  if(dim == 2 && dir == DES) collect_reachable_saddle <2,DES,true> (mfold,rng,shared_from_this());
+  if(dim == 3 && dir == DES) collect_reachable_extrema<  DES>      (mfold,rng,shared_from_this());
+
 }
 
 /*===========================================================================*/

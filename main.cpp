@@ -6,6 +6,8 @@
 #include <grid_mscomplex.h>
 #include <grid_outcore.h>
 
+#include <sys/resource.h>
+
 using namespace std;
 using namespace grid;
 
@@ -62,6 +64,18 @@ int main(int ac , char **av)
   double         simp_tresh;
   cellid_t       levels;
   bool           incr_simp;
+
+  {
+    struct rlimit rl;
+
+    long lim = 1024*1024;
+    lim *= 1024*4;
+
+    rl.rlim_cur = lim;
+    rl.rlim_max = lim;
+    setrlimit (RLIMIT_AS, &rl);
+  }
+
 
   bpo::options_description desc("Allowed options");
   desc.add_options()

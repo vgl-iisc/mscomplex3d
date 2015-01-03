@@ -133,8 +133,7 @@ public:
 
   // core work algorithms
   void  computeMsGraph(mscomplex_ptr_t msgraph);
-  template <eGDIR dir,typename rng_t>
-  inline void get_mfold(mfold_t &mfold,rng_t rng);
+  void  getManifold(mfold_t &mfold,const cellid_list_t &rng,int dim,eGDIR dir);
 
 
   // additional work algorithms for out of core processing

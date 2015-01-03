@@ -49,6 +49,8 @@ void  mscomplex_t::resize(int i)
   m_cp_fn.resize(i);
   m_des_conn.resize(i);
   m_asc_conn.resize(i);
+  m_des_mfolds.resize(i);
+  m_asc_mfolds.resize(i);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -90,6 +92,9 @@ void mscomplex_t::clear()
   m_cp_fn.clear();
   m_des_conn.clear();
   m_asc_conn.clear();
+  m_des_mfolds.clear();
+  m_asc_mfolds.clear();
+
 }
 
 /*---------------------------------------------------------------------------*/

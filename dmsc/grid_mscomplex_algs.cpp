@@ -3,7 +3,6 @@
 #include <boost/foreach.hpp>
 #include <boost/range/adaptors.hpp>
 
-
 #include <grid_dataset.h>
 #include <grid_mscomplex.h>
 
@@ -294,7 +293,7 @@ void mscomplex_t::simplify(double f_tresh, double f_range)
 
 /*---------------------------------------------------------------------------*/
 
-typedef std::map<int,int_list_t> contrib_t;
+typedef std::vector<int_list_t> contrib_list_t;
 
 template<eGDIR dir>
 int_pair_t order_pair(mscomplex_ptr_t msc,int_pair_t pr);
@@ -305,33 +304,62 @@ inline bool is_dim_pair(mscomplex_ptr_t msc,int_pair_t pr)
 
 
 template<eGDIR dir,int dim>
-void get_contrib_cps(mscomplex_ptr_t msc,contrib_t& contrib)
+void get_contrib_cps(mscomplex_ptr_t msc,contrib_list_t& scp_contrib)
 {
   const eGDIR odir = (dir == ASC)?(DES):(ASC);
   const int   odim = (dir == ASC)?(dim +1):(dim -1);
 
-  contrib_t contrib_map;
+  contrib_list_t ccp_contrib;
+  std::map<int,int> ccp_map,scp_map;
 
-  // first, obtain a sequence of cancellations so that
-  // a) each pair is ordered by dir ..
-  //    i.e if dir is DES then look at a (2,1) as (2,1) and not (1,2)
-  // b) pairs that have not yet been cancelled are removed
-  // c) pairs whose first element have index == dim
+  // Stage 1:
+  // I)   Obtain a sequence of cancellations so that
+  //      a) each pair is ordered by dir ..
+  //         i.e if dir is DES then look at a (2,1) as (2,1) and not (1,2)
+  //      b) pairs that have not yet been cancelled are removed
+  //      c) pairs whose first element have index == dim
+  //
+  // II)  Obtain a list of surviving dim-cps
+  //
+  // III) Construct separte index mappings for the relevant canceled
+  //      and surviving dim cps
+  //
+  // IV)  Allocate memory/datastructures
+  //
+  // v)   Insert each surviging cp into its own contrib. i.e. it contributes
+  //      to itself
 
-  BOOST_AUTO(canc_rng,msc->m_canc_list
+  BOOST_AUTO(ccp_rng,msc->m_canc_list
              // |ba::sliced(0,msc->m_multires_version)
              |ba::transformed(bind(order_pair<dir>,msc,_1))
              |ba::filtered(bind(is_dim_pair<dim,odim>,msc,_1))
              );
 
+  BOOST_AUTO(scp_rng, msc->cpno_range()
+             |ba::filtered(bind(&mscomplex_t::is_not_paired,msc,_1))
+             |ba::filtered(bind(&mscomplex_t::is_index_i_cp<dim>,msc,_1)));
+
+  BOOST_FOREACH(int_pair_t pr,ccp_rng)
+      ccp_map.insert(int_int_t(pr[0],ccp_map.size()));
+
+  BOOST_FOREACH(int cp,scp_rng)
+      scp_map.insert(int_int_t(cp,scp_map.size()));
+
+  ccp_contrib.resize(ccp_map.size());
+  scp_contrib.resize(scp_map.size());
+
+  BOOST_FOREACH(int_int_t scp_i,scp_map)
+    scp_contrib[scp_i.second].push_back(scp_i.first);
+
+  // Stage 2:
   // This part computes for each cancelled critical point,
   // the surviving critical points to which it contributes its
   // finest resolution geometry .
-  BOOST_FOREACH(int_pair_t pr,canc_rng|ba::reversed)
+  BOOST_FOREACH(int_pair_t pr,ccp_rng|ba::reversed)
   {
     int p = pr[0],q = pr[1];
 
-    int_list_t & pcontrib = contrib_map[p];
+    int_list_t & pcontrib = ccp_contrib[ccp_map.at(p)];
 
     // for each qa in the asc conn of q:
     BOOST_FOREACH(int qa, msc->m_conn[odir][q]|ba::map_keys)
@@ -346,7 +374,7 @@ void get_contrib_cps(mscomplex_ptr_t msc,contrib_t& contrib)
       else if(msc->index(q) == msc->index(msc->pair_idx(qa)))
       {
         // .. then foreach qaqa that qa contributes to  ..
-        BOOST_FOREACH(int qaqa,contrib_map[qa])
+        BOOST_FOREACH(int qaqa,ccp_contrib[ccp_map.at(qa)])
         {
           // .. p contributes to qaqa.
           pcontrib.push_back(qaqa);
@@ -358,46 +386,39 @@ void get_contrib_cps(mscomplex_ptr_t msc,contrib_t& contrib)
     }
   }
 
+  // Stage 3:
   // This part just reverses info computed earlier.
   // i.e each surviving critical point will have a
   // list of cancelled critical points that contribute
   // their finest res geometry to it.
 
-  BOOST_FOREACH(int_pair_t pr, canc_rng)
+  BOOST_FOREACH(int_int_t ccp_i, ccp_map)
   {
-    int p = pr[0];
+    int p = ccp_i.first;
 
-    BOOST_FOREACH(int p_, contrib_map[p])
+    BOOST_FOREACH(int p_, ccp_contrib[ccp_i.second])
     {
-      contrib[p_].push_back(p);
+      scp_contrib[scp_map.at(p_)].push_back(p);
     }
   }
 
-//   // Sanity checks.
-//   BOOST_FOREACH(contrib_t::value_type pr, contrib)
-//   {
-//     ENSURE(msc->index(pr[0]) == dim,
-//            "Computed the contribution of index != dim");
-//     ENSURE(msc->is_not_paired(pr[0]),
-//            "Computed the contribution to a cancelled cp");
-//
-//     BOOST_FOREACH(int ccp, pr[1])
-//     {
-//       ENSURE(msc->index(ccp) == dim,
-//              "other dim cp is attempting to contribute");
-//       ENSURE(msc->is_paired(ccp),
-//              "an unpaired cp is attempting to contribute");
-//       ENSURE(msc->index(msc->pair_idx(ccp)) == odim,
-//              "wrong cancellation type cp is attempting to contribute");
-//     }
-//   }
-
-  // finally add each cp to its own list of contributors
-  BOOST_FOREACH(int cp, msc->cpno_range()
-                |ba::filtered(bind(&mscomplex_t::is_not_paired,msc,_1))
-                |ba::filtered(bind(&mscomplex_t::is_index_i_cp<dim>,msc,_1)))
+  // Stage 4:
+  // Debug sanity checks
+  BOOST_FOREACH(contrib_list_t::value_type pr, scp_contrib)
   {
-    contrib[cp].push_back(cp);
+    BOOST_FOREACH(int ccp, pr)
+    {
+      ASSERTS(msc->index(ccp) == dim)
+          <<"other dim cp is attempting to contribute";
+
+      if(ccp != pr[0])
+      {
+        ASSERTS(msc->is_paired(ccp))
+            <<"an unpaired cp is attempting to contribute";
+        ASSERTS(msc->index(msc->pair_idx(ccp)) == odim)
+            <<"wrong cancellation type cp is attempting to contribute";
+      }
+    }
   }
 }
 
@@ -406,29 +427,36 @@ void get_contrib_cps(mscomplex_ptr_t msc,contrib_t& contrib)
 template <eGDIR dir, int dim>
 inline void __collect_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
 {
-  contrib_t contrib;
+  contrib_list_t contrib;
   get_contrib_cps<dir,dim>(msc,contrib);
 
-  BOOST_FOREACH(contrib_t::value_type pr,contrib)
+  #pragma omp parallel for
+  for(int i = 0 ; i < contrib.size() ; ++i)
   {
-    msc->m_mfolds[dir][pr.first].clear();
+    msc->m_mfolds[dir][contrib[i][0]].clear();
 
-    ds->get_mfold<dir>(msc->m_mfolds[dir][pr.first],
-        pr.second|ba::transformed(bind(&mscomplex_t::cellid,msc,_1)));
+    cellid_list_t contrib_cells;
 
+    br::copy(contrib[i]|ba::transformed(bind(&mscomplex_t::cellid,msc,_1)),
+             back_inserter(contrib_cells));
+
+    contrib[i].clear();
+
+    ds->getManifold(msc->m_mfolds[dir][contrib[i][0]],contrib_cells,dim,dir);
   }
-
-//  msc->m_merge_dag->build<dir,dim>(msc);
 }
 
 /* -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - */
 
 void mscomplex_t::collect_mfolds(eGDIR dir, int dim, dataset_ptr_t ds)
-{
-  if(dir == ASC && dim == 1 ) __collect_mfolds<ASC,1>(shared_from_this(),ds);
-  if(dir == DES && dim == 1 ) __collect_mfolds<DES,1>(shared_from_this(),ds);
-  if(dir == ASC && dim == 2 ) __collect_mfolds<ASC,2>(shared_from_this(),ds);
-  if(dir == DES && dim == 2 ) __collect_mfolds<DES,2>(shared_from_this(),ds);
+{  
+  if(dir == ASC && dim == 0 )__collect_mfolds<ASC,0>(shared_from_this(),ds);
+  if(dir == ASC && dim == 1 )__collect_mfolds<ASC,1>(shared_from_this(),ds);
+  if(dir == ASC && dim == 2 )__collect_mfolds<ASC,2>(shared_from_this(),ds);
+
+  if(dir == DES && dim == 1 )__collect_mfolds<DES,1>(shared_from_this(),ds);
+  if(dir == DES && dim == 2 )__collect_mfolds<DES,2>(shared_from_this(),ds);
+  if(dir == DES && dim == 3 )__collect_mfolds<DES,3>(shared_from_this(),ds);
 }
 
 
@@ -436,8 +464,11 @@ void mscomplex_t::collect_mfolds(dataset_ptr_t ds)
 {
   __collect_mfolds<ASC,0>(shared_from_this(),ds);
   __collect_mfolds<ASC,1>(shared_from_this(),ds);
+  __collect_mfolds<ASC,2>(shared_from_this(),ds);
+
   __collect_mfolds<DES,1>(shared_from_this(),ds);
   __collect_mfolds<DES,2>(shared_from_this(),ds);
+  __collect_mfolds<DES,3>(shared_from_this(),ds);
 }
 
 /*---------------------------------------------------------------------------*/

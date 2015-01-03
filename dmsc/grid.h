@@ -44,6 +44,7 @@ namespace grid
 
   typedef std::pair<int,int>                              int_int_t;
   typedef std::vector<int_int_t>                          int_int_list_t;
+  typedef std::map<int,int>                               int_int_map_t;
 
   typedef std::map<int,int>                               conn_t;
   typedef std::vector<conn_t>                             conn_list_t;
