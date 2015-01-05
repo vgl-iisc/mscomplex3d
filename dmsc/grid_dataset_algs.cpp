@@ -324,13 +324,13 @@ void  dataset_t::computeMsGraph(mscomplex_ptr_t msc)
   opencl::worker w;
   w.assign_gradient(shared_from_this(),msc);
 
+  LOG(info) <<"gradient done ------------ "<<g_timer.elapsed()<<endl;
+
   mscomplex_connector_t msc_connector(msc);
+  msc_connector.init();
 
   #pragma omp sections
   {
-    #pragma omp section
-    {msc_connector.init();}
-
     #pragma omp section
     {computeSaddleConnections(msc,shared_from_this(),msc_connector);}
 
@@ -355,7 +355,6 @@ void  dataset_t::getManifold
   if(dim == 1 && dir == DES) collect_reachable_saddle <1,DES,true> (mfold,rng,shared_from_this());
   if(dim == 2 && dir == DES) collect_reachable_saddle <2,DES,true> (mfold,rng,shared_from_this());
   if(dim == 3 && dir == DES) collect_reachable_extrema<  DES>      (mfold,rng,shared_from_this());
-
 }
 
 /*===========================================================================*/
