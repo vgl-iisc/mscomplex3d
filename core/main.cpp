@@ -63,7 +63,6 @@ int main(int ac , char **av)
   cellid_t       size;
   double         simp_tresh;
   cellid_t       levels;
-  bool           incr_simp;
 
   {
     struct rlimit rl;
@@ -88,10 +87,6 @@ int main(int ac , char **av)
        "number of subdivision levels in each dim .. entered as [x,y,z]")
       ("simp-tresh,t",bpo::value<double>(&simp_tresh)->default_value(0.0),
        "simplification treshold")
-      ("incr-simp,i", bpo::value<bool>(&incr_simp)->default_value(false),
-       "Incrementally simplify the MS complex\n"\
-       "simp-tresh is increased in steps of t (-t option) till 1\n"\
-       "Results for each step are stored")
       ;
 
   bpo::variables_map vm;

@@ -7,7 +7,6 @@
 #include <boost/multi_array.hpp>
 
 #include <aabb.h>
-#include <config.h>
 
 namespace grid
 {
