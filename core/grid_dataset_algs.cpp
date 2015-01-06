@@ -324,8 +324,6 @@ void  dataset_t::computeMsGraph(mscomplex_ptr_t msc)
   opencl::worker w;
   w.assign_gradient(shared_from_this(),msc);
 
-  LOG(info) <<"gradient done ------------ "<<g_timer.elapsed()<<endl;
-
   mscomplex_connector_t msc_connector(msc);
   msc_connector.init();
 

@@ -13,11 +13,18 @@ using namespace grid;
 
 namespace bpo = boost::program_options ;
 
-namespace grid{namespace opencl{void init();}}
+namespace grid{
+namespace opencl{
+void init();
+std::string get_info();
+}
+}
 
 void compute_mscomplex_basic(std::string filename, cellid_t size, double simp_tresh)
 {
   g_timer.restart();
+
+  LOG(info) << opencl::get_info();
 
   LOG(info) <<"===================================="<<endl
             <<"         Starting Processing        "<<endl

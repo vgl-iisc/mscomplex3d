@@ -22,6 +22,8 @@ const int WI_SIZE = OPENCL_NUM_WORK_ITEMS_PER_GROUP;
 const int WG_NUM  = OPENCL_NUM_WORK_GROUPS;
 const int WG_SIZE = WG_NUM*WI_SIZE;
 
+cl::Platform      s_platform;
+cl::Device        s_device;
 cl::Context       s_context;
 cl::CommandQueue  s_queue;
 
@@ -50,7 +52,10 @@ cl::KernelFunctor s_init_update_to_surv_cp_no;
 cl::KernelFunctor s_update_to_surv_cp_no;
 
 
-#include <grid_dataset_cl_sources.h>
+extern const char *GRID_DATASET_CLH;
+extern const char *GRID_DATASET_ASSIGNGRADIENT_CL;
+extern const char *GRID_DATASET_MARKANDCOLLECT_CL;
+extern const char *GRID_DATASET_OWNEREXTREMA_CL;
 
 using namespace std;
 
@@ -196,6 +201,23 @@ namespace grid
       log_buffer<T>(buf_cpu.data(),n,xrepeat,yrepeat,os);
     }
 
+    std::string get_info()
+    {
+      std::stringstream ss;
+
+      ss << "====================================" << endl
+         << "    OpenCL platform/device Info     " << endl
+         << "------------------------------------" << endl
+         << "PlatformName   = " << s_platform.getInfo<CL_PLATFORM_NAME>() << endl
+         << "PlatformVendor = " << s_platform.getInfo<CL_PLATFORM_VENDOR>() << endl
+         << "DeviceName     = " << s_device.getInfo<CL_DEVICE_NAME>() << endl
+         << "DeviceVendor   = " << s_device.getInfo<CL_DEVICE_VENDOR>() << endl
+         << "====================================" << endl;
+
+      return ss.str();
+    }
+
+
     void init(void)
     {
       std::vector<cl::Device> devices;
@@ -253,29 +275,19 @@ namespace grid
         std::pair<int,int> selectedPlatformDevicePair = availablePlatformDeviceIDs[
             (selectedPlatformDeviceID_GPU != -1)?(selectedPlatformDeviceID_GPU):(0)];
 
-        platforms[0] = platforms[selectedPlatformDevicePair.first];
-        platforms.resize(1);
+        s_platform = platforms[selectedPlatformDevicePair.first];
 
         cl_context_properties properties[] =
-           { CL_CONTEXT_PLATFORM, (cl_context_properties)(platforms[0])(), 0};
+           { CL_CONTEXT_PLATFORM, (cl_context_properties)(s_platform)(), 0};
         s_context = cl::Context(CL_DEVICE_TYPE_ALL, properties);
 
         devices    = s_context.getInfo<CL_CONTEXT_DEVICES>();
         devices[0] = devices[selectedPlatformDevicePair.second];
         devices.resize(1);
+        s_device   = devices[0];
 
-        s_queue = cl::CommandQueue(s_context, devices[0]);
+        s_queue = cl::CommandQueue(s_context, s_device);
 
-        LOG(info)
-            << "====================================" << endl
-            << "    OpenCL platform/device Info     " << endl
-            << "------------------------------------" << endl
-            << "PlatformName   = " << platforms[0].getInfo<CL_PLATFORM_NAME>() << endl
-            << "PlatformVendor = " << platforms[0].getInfo<CL_PLATFORM_VENDOR>() << endl
-            << "DeviceName     = " << devices[0].getInfo<CL_DEVICE_NAME>() << endl
-            << "DeviceVendor   = " << devices[0].getInfo<CL_DEVICE_VENDOR>() << endl
-            << "====================================" << endl
-            << endl;
       }
       catch (cl::Error err)
       {
