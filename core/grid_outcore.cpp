@@ -220,7 +220,7 @@ namespace grid
       cell_fn_t r= m_f_range;
 
       msc->load(f);
-      msc->simplify(t,r);
+      msc->simplify_pers_outcore(t,r);
       msc->save(f);
 
 //      for(j--; j >= 0 ; j--)
@@ -249,7 +249,7 @@ namespace grid
         msc.load_merge(dp1->bn(m_basename)+".msgraph.bin",
                        dp2->bn(m_basename)+".msgraph.bin");
 
-        msc.simplify(m_simp_tresh,m_f_range);
+        msc.simplify_pers_outcore(m_simp_tresh,m_f_range);
 
         int num_c = msc.m_canc_list.size();
 

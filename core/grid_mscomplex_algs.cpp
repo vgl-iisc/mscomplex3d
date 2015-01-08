@@ -2,6 +2,7 @@
 
 #include <boost/foreach.hpp>
 #include <boost/range/adaptors.hpp>
+#include <boost/range/algorithm.hpp>
 
 #include <grid_dataset.h>
 #include <grid_mscomplex.h>
@@ -92,7 +93,7 @@ void mscomplex_t::cancel_pair ()
 /*---------------------------------------------------------------------------*/
 
 inline bool is_valid_canc_edge
-(const mscomplex_t &msc,const std::vector<bool> &is_inc_ext, int_pair_t e )
+(const mscomplex_t &msc, int_pair_t e,cell_fn_t thr )
 {
   order_pr_by_cp_index(msc,e[0],e[1]);
 
@@ -100,9 +101,6 @@ inline bool is_valid_canc_edge
     return false;
 
   if(msc.is_paired(e[0]) || msc.is_paired(e[1]))
-    return false;
-
-  if(is_inc_ext[e[0]] && is_inc_ext[e[1]])
     return false;
 
   if(msc.m_domain_rect.isOnBoundry(msc.cellid(e[0])) !=
@@ -116,25 +114,28 @@ inline bool is_valid_canc_edge
   if(msc.m_des_conn[e[0]][e[1]] != 1)
     return false;
 
-  return true;
+  bool   is_epsilon_persistent = (msc.vertid(e[0]) == msc.vertid(e[1]));
+  bool   is_pers_lt_t          = std::abs(msc.fn(e[0]) - msc.fn(e[1])) < thr;
+
+  return (is_epsilon_persistent || is_pers_lt_t);
 }
 
 /*---------------------------------------------------------------------------*/
 
-inline bool persistence_lt(const mscomplex_t &msc,int_pair_t p0,int_pair_t p1)
+bool mscomplex_t::persistence_cmp(int_pair_t p0,int_pair_t p1) const
 {
-  order_pr_by_cp_index(msc,p0[0],p0[1]);
-  order_pr_by_cp_index(msc,p1[0],p1[1]);
+  order_pr_by_cp_index(*this,p0[0],p0[1]);
+  order_pr_by_cp_index(*this,p1[0],p1[1]);
 
-  cellid_t v00 = msc.vertid(p0[0]);
-  cellid_t v01 = msc.vertid(p0[1]);
-  cellid_t v10 = msc.vertid(p1[0]);
-  cellid_t v11 = msc.vertid(p1[1]);
+  cellid_t v00 = vertid(p0[0]);
+  cellid_t v01 = vertid(p0[1]);
+  cellid_t v10 = vertid(p1[0]);
+  cellid_t v11 = vertid(p1[1]);
 
-  cellid_t c00 = msc.cellid(p0[0]);
-  cellid_t c01 = msc.cellid(p0[1]);
-  cellid_t c10 = msc.cellid(p1[0]);
-  cellid_t c11 = msc.cellid(p1[1]);
+  cellid_t c00 = cellid(p0[0]);
+  cellid_t c01 = cellid(p0[1]);
+  cellid_t c10 = cellid(p1[0]);
+  cellid_t c11 = cellid(p1[1]);
 
   if( (v00 == v01 ) != (v10 == v11))
     return (v00 == v01 );
@@ -154,10 +155,10 @@ inline bool persistence_lt(const mscomplex_t &msc,int_pair_t p0,int_pair_t p1)
     }
   }
 
-  cell_fn_t f00 = msc.fn(p0[0]);
-  cell_fn_t f01 = msc.fn(p0[1]);
-  cell_fn_t f10 = msc.fn(p1[0]);
-  cell_fn_t f11 = msc.fn(p1[1]);
+  cell_fn_t f00 = fn(p0[0]);
+  cell_fn_t f01 = fn(p0[1]);
+  cell_fn_t f10 = fn(p1[0]);
+  cell_fn_t f11 = fn(p1[1]);
 
   cell_fn_t d1 = std::abs(f01-f00);
   cell_fn_t d2 = std::abs(f11-f10);
@@ -173,82 +174,14 @@ inline bool persistence_lt(const mscomplex_t &msc,int_pair_t p0,int_pair_t p1)
 
 /*---------------------------------------------------------------------------*/
 
-inline bool is_in_treshold(const mscomplex_t & msc,int_pair_t e,cell_fn_t t)
+void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
 {
-  bool   is_epsilon_persistent = (msc.vertid(e[0]) == msc.vertid(e[1]));
-  bool   is_pers_lt_t          = std::abs(msc.fn(e[0]) - msc.fn(e[1])) < t;
-
-  return (is_epsilon_persistent || is_pers_lt_t);
-}
-
-/*---------------------------------------------------------------------------*/
-
-template<typename T>
-inline void set_vec_value(std::vector<T> & vec, int i,const T& v){vec[i] = v;}
-
-/*---------------------------------------------------------------------------*/
-
-inline void make_is_inc_ext(const mscomplex_t &msc, vector<bool> &inc_on_ext)
-{
-  inc_on_ext.resize(msc.get_num_critpts(),false);
-
-  using boost::ref;
-  using boost::cref;
-
-  BOOST_AUTO(ftor,bind(&set_vec_value<bool>,ref(inc_on_ext),_1,true));
-
-  for(int i = 0 ;i < msc.get_num_critpts();++i)
-  {
-    if(msc.is_canceled(i)) continue;
-
-    cellid_t c = msc.cellid(i);
-
-    if( !msc.is_paired(i) && msc.m_rect.boundryCount(c) ==
-        msc.m_ext_rect.boundryCount(c))
-      continue;
-
-    inc_on_ext[i] = true;
-
-    br::for_each(msc.m_des_conn[i]|ba::map_keys,ftor);
-    br::for_each(msc.m_asc_conn[i]|ba::map_keys,ftor);
-  }
-}
-
-/*---------------------------------------------------------------------------*/
-
-inline void update_is_inc_ext
-(const mscomplex_t &msc, vector<bool> &is_inc_on_ext,int_pair_t pr)
-{
-  int p = pr[0],q = pr[1];
-
-  cellid_t c_p = msc.cellid(p);
-  cellid_t c_q = msc.cellid(q);
-
-  if(msc.is_paired(p) || msc.m_rect.boundryCount(c_p) !=
-     msc.m_ext_rect.boundryCount(c_p))
-    is_inc_on_ext[q] = true;
-
-  if(msc.is_paired(q) || msc.m_rect.boundryCount(c_q) !=
-     msc.m_ext_rect.boundryCount(c_q))
-    is_inc_on_ext[p] = true;
-}
-
-/*---------------------------------------------------------------------------*/
-
-void mscomplex_t::simplify(double f_tresh, double f_range)
-{
-  BOOST_AUTO(cmp,bind(persistence_lt,boost::cref(*this),_2,_1));
+  BOOST_AUTO(cmp,bind(&mscomplex_t::persistence_cmp,this,_2,_1));
 
   priority_queue<int_pair_t,int_pair_list_t,typeof(cmp)> pq(cmp);
 
-  if(f_range <= 0)
-    f_range = *br::max_element(m_cp_fn) - *br::min_element(m_cp_fn);
-
-  f_tresh *= f_range;
-
-  vector<bool> is_inc_ext;
-
-  make_is_inc_ext(*this,is_inc_ext);
+  if(is_nrm)
+    thresh *= (*br::max_element(m_cp_fn) - *br::min_element(m_cp_fn));
 
   for(int i = 0 ;i < get_num_critpts();++i)
   {
@@ -256,11 +189,15 @@ void mscomplex_t::simplify(double f_tresh, double f_range)
     {
       int_pair_t pr(i,j.first);
 
-      if(is_valid_canc_edge(*this,is_inc_ext,pr) &&
-         is_in_treshold(*this,pr,f_tresh))
+      if(is_valid_canc_edge(*this,pr,thresh))
         pq.push(pr);
     }
   }
+
+  int ns_max = boost::distance(cpno_range()
+    |ba::filtered(bind(&mscomplex_t::is_index_i_cp<gc_grid_dim>,this,_1)));
+  int ns_min = boost::distance(cpno_range()
+    |ba::filtered(bind(&mscomplex_t::is_index_i_cp<0>,this,_1)));
 
   while (pq.size() !=0)
   {
@@ -268,25 +205,28 @@ void mscomplex_t::simplify(double f_tresh, double f_range)
 
     pq.pop();
 
-    if(is_valid_canc_edge(*this,is_inc_ext,pr) == false)
+    if(!is_valid_canc_edge(*this,pr,thresh))
       continue;
+
+    if (ns_max <= nmax || ns_min <= nmin)
+      break;
 
     int &p = pr[0],&q = pr[1];
 
     order_pr_by_cp_index(*this,p,q);
+
+    if(index(p) == gc_grid_dim) --ns_max;
+    if(index(q) == 0          ) --ns_min;
 
     cancel_pair(p,q);
 
     BOOST_FOREACH(int_int_t i,m_des_conn[p])
     BOOST_FOREACH(int_int_t j,m_asc_conn[q])
     {
-      int_pair_t npr(i.first,j.first);
+      int_pair_t e(i.first,j.first);
 
-      update_is_inc_ext(*this,is_inc_ext,npr);
-
-      if(is_valid_canc_edge(*this,is_inc_ext,npr) &&
-         is_in_treshold(*this,npr,f_tresh))
-        pq.push(npr);
+      if(is_valid_canc_edge(*this,e,thresh))
+        pq.push(e);
     }
   }
 }

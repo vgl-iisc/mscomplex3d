@@ -17,7 +17,7 @@ inline int  mscomplex_t::get_num_critpts() const
 
 /*---------------------------------------------------------------------------*/
 
-inline char mscomplex_t::index(int i) const
+inline int8_t mscomplex_t::index(int i) const
 {
   ASSERTV(is_in_range(i,0,(int)m_cp_index.size()),i);
   return m_cp_index[i];

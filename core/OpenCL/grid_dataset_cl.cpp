@@ -563,7 +563,7 @@ namespace grid
         cellid_t   *h_cellid,
         cellid_t   *h_vertid,
         int        *h_pair_idx,
-        char       *h_index,
+        int8_t     *h_index,
         cell_fn_t  *h_func)
     {
       try
@@ -571,7 +571,7 @@ namespace grid
         cl::Buffer cp_cellid_buf(s_context,CL_MEM_READ_WRITE,sizeof(cellid_t)*num_cps);
         cl::Buffer cp_vertid_buf(s_context,CL_MEM_READ_WRITE,sizeof(cellid_t)*num_cps);
         cl::Buffer cp_pair_idx_buf(s_context,CL_MEM_READ_WRITE,sizeof(int)*num_cps);
-        cl::Buffer cp_index_buf(s_context,CL_MEM_READ_WRITE,sizeof(char)*num_cps);
+        cl::Buffer cp_index_buf(s_context,CL_MEM_READ_WRITE,sizeof(int8_t)*num_cps);
         cl::Buffer cp_func_buf(s_context,CL_MEM_READ_WRITE,sizeof(cell_fn_t)*num_cps);
 
         s_save_cps(rct,ext,dom,func_img,flag_img,cp_offset_buf,cp_cellid_buf,
@@ -597,7 +597,7 @@ namespace grid
         s_queue.enqueueReadBuffer(cp_cellid_buf,false,0,sizeof(cellid_t)*num_cps,h_cellid);
         s_queue.enqueueReadBuffer(cp_vertid_buf,false,0,sizeof(cellid_t)*num_cps,h_vertid);
         s_queue.enqueueReadBuffer(cp_pair_idx_buf,false,0,sizeof(int)*num_cps,h_pair_idx);
-        s_queue.enqueueReadBuffer(cp_index_buf,false,0,sizeof(char)*num_cps,h_index);
+        s_queue.enqueueReadBuffer(cp_index_buf,false,0,sizeof(int8_t)*num_cps,h_index);
         s_queue.enqueueReadBuffer(cp_func_buf,false,0,sizeof(cell_fn_t)*num_cps,h_func);
 
         s_queue.finish();

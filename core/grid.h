@@ -23,9 +23,9 @@ namespace grid
   typedef aabb::aabb_t<cell_coord_t,gc_grid_dim>::range_t rect_range_t;
   typedef std::vector<cellid_t>                           cellid_list_t;
   typedef std::vector<int>                                int_list_t;
-  typedef std::vector<char>                               char_list_t;
+  typedef std::vector<int8_t>                             int8_list_t;
   typedef std::vector<cell_fn_t>                          cell_fn_list_t;
-  typedef std::vector<char>                               bool_list_t;
+  typedef std::vector<int8_t>                             bool_list_t;
   typedef std::vector<rect_t>                             rect_list_t;
 
   typedef boost::shared_ptr<int_list_t>                   int_list_ptr_t;

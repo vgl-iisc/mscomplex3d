@@ -48,14 +48,21 @@ mscomplex_pyms3d_ptr_t new_msc()
 }
 
 void mscomplex_compute_bin
-(mscomplex_pyms3d_ptr_t msc,
- cellid_t s,
- std::string bin_file,
- std::string bin_fmt="float32")
+(mscomplex_pyms3d_ptr_t msc, 
+ std::string            bin_file,
+ bp::tuple              tp)
 {
-  ENSURES(bin_fmt == "float32") <<"Only float32 is supported" <<endl;
+//  ENSURES(bin_fmt == "float32") <<"Only float32 is supported" <<endl;
 
-  rect_t r(cellid_t::zero,(s-cellid_t::one)*2);
+  int x = bp::extract<int>(tp[0]);
+  int y = bp::extract<int>(tp[1]);
+  int z = bp::extract<int>(tp[2]);
+
+  rect_t r(cellid_t::zero,(cellid_t(x,y,z)-cellid_t::one)*2);
+
+  msc->m_rect        = r;
+  msc->m_domain_rect = r;
+  msc->m_ext_rect    = r;
 
   msc->ds.reset(new dataset_t(r,r,r));
   msc->ds->init(bin_file);
@@ -93,13 +100,13 @@ bp::list mscomplex_conn(mscomplex_pyms3d_ptr_t msc, int i)
   return r;
 }
 
-bp::list mscomplex_cps(mscomplex_pyms3d_ptr_t msc)
+bp::list mscomplex_cps(mscomplex_pyms3d_ptr_t msc,int dim)
 {
   bp::list r;
 
   for(int i = 0 ; i < msc->get_num_critpts(); ++i)
-    if(msc->is_not_paired(i))
-      r.append(i);
+      if(msc->is_not_paired(i) && (dim == -1 || (msc->index(i) == dim)))
+        r.append(i);
 
   return r;
 }
@@ -132,6 +139,12 @@ bp::list mscomplex_geom(mscomplex_pyms3d_ptr_t msc, int i)
   return r;
 }
 
+template <eGDIR dir>
+int mscomplex_geom_size(mscomplex_pyms3d_ptr_t msc, int i)
+{
+  return msc->m_mfolds[dir][i].size();
+}
+
 //bp::list mscomplex_arc_geom(mscomplex_ptr_t msc, int a, int b)
 //{
 //  bp::list r;
@@ -146,7 +159,6 @@ bp::list mscomplex_geom(mscomplex_pyms3d_ptr_t msc, int i)
 
 //  return r;
 //}
-
 
 void wrap_mscomplex_t()
 {
@@ -191,19 +203,28 @@ void wrap_mscomplex_t()
            "Ascending manifold geometry of a given critical point i")
       .def("des_geom",&mscomplex_geom<DES>,
            "Descending manifold geometry of a given critical point i")
-      .def("cps",&mscomplex_cps,
-           "Returns a list of surviving critical cps")
+      .def("cps",&mscomplex_cps,(bp::arg("dim")=-1),
+           "Returns a list of surviving critical cps\n"\
+           "\n"
+           "Parameters   :\n"
+           "          dim: index of the cps. -1 signifies all. default=-1\n"
+           )
+      .def("asc_geom_size",&mscomplex_geom_size<ASC>,
+           "size(num-cells) of the ascending geometry of a cp")
+      .def("des_geom_size",&mscomplex_geom_size<DES>,
+           "size(num-cells) of the ascending geometry of a cp")
 //      .def("gen_pers_hierarchy",&mscomplex_gen_pers_pairs,
 //           "Generates the persistence hierarchy using topo simplification")
-      .def("compute_off_bin",&mscomplex_compute_bin,
-           "Compute the Mscomplex from a triagulation given in the .off format\n"\
-           "and scalar function from the given bin file in the given bin format\n"\
+      .def("compute_bin",&mscomplex_compute_bin,
+           "Compute the Mscomplex from a structured grid with scalars given \n"\
+           "in a raw/bin format \n"\
            "\n"\
            "Parameters: \n"\
-           "    off_file: the off file containing the triangulation.\n"\
-           "    bin_file: the bin file containing the scalar function.\n"\
-           "    bin_fmt: binary format .\n"\
-           "             Acceptable values = (\"float32\",\"float64\")\n"
+           "    bin_file: the bin/raw file containing the scalar function\n"\
+           "              in float32 format \n"\
+           "    size    : size of each dimension in x,y,z ordering .\n"\
+//         "    bin_fmt : binary format .\n"\
+//         "              Acceptable values = (\"float32\")\n"
            "\n"\
            "Note: This only computes the combinatorial structure\n"\
            "     Call collect_mfold(s) to extract geometry\n"
@@ -214,14 +235,21 @@ void wrap_mscomplex_t()
            "Note: This must be called only after any of the compute functions are called. \n"\
            )
 
-      .def("simplify_pers",&mscomplex_t::simplify,
+      .def("simplify_pers",&mscomplex_t::simplify_pers,
+           (bp::arg("thresh")=1.0,bp::arg("is_nrm")=true,
+            bp::arg("nmax")=0,bp::arg("nmin")=0),
            "Simplify the Morse-Smale complex using topological persistence\n"\
-           "Parameters:\n"\
-           "    tresh: persistence threshold\n"\
-//           "    is_nrm: is the threshold normalized to [0,1] or not.\n"\
-//           "            if not then thresh is in same scale as input function\n"\
-//           "    req_nmax,req_nmin: num maxima/minima that should be retained\n"\
-//           "                       set to 0 to ignore"
+           "\n"
+           "Parameters   :\n"\
+           "    tresh    : persistence threshold\n"\
+           "    is_nrm   : is the threshold normalized to [0,1] or not.\n"\
+           "               if not then thresh is in scale of input function\n"\
+           "    nmax,nmin: num maxima/minima that should be retained\n"\
+           "                       set to 0 to ignore\n"\
+           "\n"\
+           "Note         : \n"\
+           "    Any combination of the above criteria may be set\n"\
+           "    Simplification will stop when any of the criteria is reached\n"
            )
 
 

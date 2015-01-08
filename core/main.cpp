@@ -49,7 +49,7 @@ void compute_mscomplex_basic(std::string filename, cellid_t size, double simp_tr
 
   if(simp_tresh >=0)
   {
-    msc->simplify(simp_tresh,-1);
+    msc->simplify_pers(simp_tresh);
     LOG(info) <<"simplification done ------ "<<g_timer.elapsed()<<endl;
   }
   msc->collect_mfolds(ds);

@@ -40,13 +40,19 @@ public:
     int i = id_cp_map.at(c1);
     int j = id_cp_map.at(c2);
 
+    // Exceptions thrown inside critical sections cannot pass outside
+    // So this tomfoolery has to be resorted to.
+    std::string e_what;
+
     #pragma omp critical(mscomplex_connector_critical_section)
     {
       //        if (id_cp_map.size() == 0)
       //          init();
-
-      msc->connect_cps(i,j,m);
+      try{msc->connect_cps(i,j,m);}
+      catch(const std::exception &e){e_what = e.what();}
     }
+
+    ENSURES(e_what.empty()) << SVAR(c1) <<SVAR(c2);
   }
 };
 

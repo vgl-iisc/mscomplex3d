@@ -1,7 +1,8 @@
+#include <queue>
+
 #include <boost/foreach.hpp>
 #include <boost/range/algorithm.hpp>
 #include <boost/range/adaptors.hpp>
-
 
 #include <grid_mscomplex.h>
 
@@ -86,6 +87,142 @@ void mscomplex_t::un_simplify()
     uncancel_pair(p[0],p[1]);
   }
 }
+
+
+inline bool is_valid_canc_edge
+(const mscomplex_t &msc, int_pair_t e,
+ const std::vector<bool> &is_inc_ext,cell_fn_t thr )
+{
+  order_pr_by_cp_index(msc,e[0],e[1]);
+
+  if(msc.is_canceled(e[0])||msc.is_canceled(e[1]))
+    return false;
+
+  if(msc.is_paired(e[0]) || msc.is_paired(e[1]))
+    return false;
+
+  if(is_inc_ext[e[0]] && is_inc_ext[e[1]])
+    return false;
+
+  if(msc.m_domain_rect.isOnBoundry(msc.cellid(e[0])) !=
+     msc.m_domain_rect.isOnBoundry(msc.cellid(e[1])))
+    return false;
+
+  ASSERT(msc.m_des_conn[e[0]].count(e[1]) == 1);
+  ASSERT(msc.m_asc_conn[e[1]].count(e[0]) == 1);
+  ASSERT(msc.m_des_conn[e[0]][e[1]] == msc.m_asc_conn[e[1]][e[0]]);
+
+  if(msc.m_des_conn[e[0]][e[1]] != 1)
+    return false;
+
+  bool   is_epsilon_persistent = (msc.vertid(e[0]) == msc.vertid(e[1]));
+  bool   is_pers_lt_t          = std::abs(msc.fn(e[0]) - msc.fn(e[1])) < thr;
+
+  return (is_epsilon_persistent || is_pers_lt_t);
+}
+
+
+
+template<typename T>
+inline void set_vec_value(std::vector<T> & vec, int i,const T& v){vec[i] = v;}
+
+inline void make_is_inc_ext(const mscomplex_t &msc, vector<bool> &inc_on_ext)
+{
+  inc_on_ext.resize(msc.get_num_critpts(),false);
+
+  using boost::ref;
+  using boost::cref;
+
+  BOOST_AUTO(ftor,bind(&set_vec_value<bool>,ref(inc_on_ext),_1,true));
+
+  for(int i = 0 ;i < msc.get_num_critpts();++i)
+  {
+    if(msc.is_canceled(i)) continue;
+
+    cellid_t c = msc.cellid(i);
+
+    if( !msc.is_paired(i) && msc.m_rect.boundryCount(c) ==
+        msc.m_ext_rect.boundryCount(c))
+      continue;
+
+    inc_on_ext[i] = true;
+
+    br::for_each(msc.m_des_conn[i]|ba::map_keys,ftor);
+    br::for_each(msc.m_asc_conn[i]|ba::map_keys,ftor);
+  }
+}
+
+inline void update_is_inc_ext
+(const mscomplex_t &msc, vector<bool> &is_inc_on_ext,int_pair_t pr)
+{
+  int p = pr[0],q = pr[1];
+
+  cellid_t c_p = msc.cellid(p);
+  cellid_t c_q = msc.cellid(q);
+
+  if(msc.is_paired(p) || msc.m_rect.boundryCount(c_p) !=
+     msc.m_ext_rect.boundryCount(c_p))
+    is_inc_on_ext[q] = true;
+
+  if(msc.is_paired(q) || msc.m_rect.boundryCount(c_q) !=
+     msc.m_ext_rect.boundryCount(c_q))
+    is_inc_on_ext[p] = true;
+}
+
+void mscomplex_t::simplify_pers_outcore(double f_tresh, double f_range)
+{
+  BOOST_AUTO(cmp,bind(&mscomplex_t::persistence_cmp,this,_2,_1));
+
+  priority_queue<int_pair_t,int_pair_list_t,typeof(cmp)> pq(cmp);
+
+  if(f_range <= 0)
+    f_range = *br::max_element(m_cp_fn) - *br::min_element(m_cp_fn);
+
+  f_tresh *= f_range;
+
+  vector<bool> is_inc_ext;
+
+  make_is_inc_ext(*this,is_inc_ext);
+
+  for(int i = 0 ;i < get_num_critpts();++i)
+  {
+    BOOST_FOREACH(int_int_t j,m_des_conn[i])
+    {
+      int_pair_t pr(i,j.first);
+
+      if(is_valid_canc_edge(*this,pr,is_inc_ext,f_tresh))
+        pq.push(pr);
+    }
+  }
+
+  while (pq.size() !=0)
+  {
+    int_pair_t pr = pq.top();
+
+    pq.pop();
+
+    if(is_valid_canc_edge(*this,pr,is_inc_ext,f_tresh) == false)
+      continue;
+
+    int &p = pr[0],&q = pr[1];
+
+    order_pr_by_cp_index(*this,p,q);
+
+    cancel_pair(p,q);
+
+    BOOST_FOREACH(int_int_t i,m_des_conn[p])
+    BOOST_FOREACH(int_int_t j,m_asc_conn[q])
+    {
+      int_pair_t npr(i.first,j.first);
+
+      update_is_inc_ext(*this,is_inc_ext,npr);
+
+      if(is_valid_canc_edge(*this,pr,is_inc_ext,f_tresh))
+        pq.push(npr);
+    }
+  }
+}
+
 
 void mscomplex_t::invert_for_collection()
 {
@@ -353,7 +490,7 @@ inline void get_idx_map(int_list_t & idx_map,
 }
 
 inline void copy_cp_info(mscomplex_t &msc,int_list_t & idx_map,
-cellid_list_t  &cl,cellid_list_t  &vl,int_list_t &pi,char_list_t &ci,cell_fn_list_t &fn)
+cellid_list_t  &cl,cellid_list_t  &vl,int_list_t &pi,int8_list_t &ci,cell_fn_list_t &fn)
 {
   int N = idx_map.size();
 
@@ -537,7 +674,7 @@ inline void copy_from_streams
   cellid_list_t  cl1,cl2;
   cellid_list_t  vl1,vl2;
   int_list_t     pi1,pi2;
-  char_list_t    ci1,ci2;
+  int8_list_t    ci1,ci2;
   bool_list_t    ic1,ic2;
   cell_fn_list_t fn1,fn2;
 
@@ -706,7 +843,7 @@ inline void copy_into_new_adj
 }
 
 inline void copy_new_cp_info
-( cellid_list_t  &cl,cellid_list_t  &vl,int_list_t &pi,char_list_t &ci,
+( cellid_list_t  &cl,cellid_list_t  &vl,int_list_t &pi,int8_list_t &ci,
   bool_list_t    &ic,cell_fn_list_t &fn,
   const mscomplex_t &msc, const int_list_t &idx_map,const int_list_t &ridx_map)
 {
@@ -789,7 +926,7 @@ void copy_into_stream
   cellid_list_t  cl;
   cellid_list_t  vl;
   int_list_t     pi;
-  char_list_t    ci;
+  int8_list_t    ci;
   bool_list_t    ic;
   cell_fn_list_t fn;
 

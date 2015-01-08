@@ -59,7 +59,7 @@ void mscomplex_t::connect_cps(int p, int q,int m)
 {
   order_pr_by_cp_index(*this,p,q);
 
-  ASSERT(index(p) == index(q)+1);
+  ENSURES(index(p) == index(q)+1);
 
   // if a d-cp hits a d+-1 cp and the d+-1 cp is paired
   // then the connection is useful iff the dimension of the pair is d

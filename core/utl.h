@@ -217,6 +217,14 @@ template<class _T1, class _T2> struct pair:public std::pair<_T1,_T2>
 
 /*---------------------------------------------------------------------------*/
 
+#define ILOG  \
+  if(utl::logger::get().isOpen(utl::logger::info))\
+  for(utl::detail::pair<bool,std::stringstream> __utl_lm_v__(true); \
+      __utl_lm_v__.first ;__utl_lm_v__.first=false,\
+  utl::logger::get().push(__utl_lm_v__.second.str())) __utl_lm_v__.second
+
+/*---------------------------------------------------------------------------*/
+
 #define LOG_TS(lev)  \
   if(utl::logger::get().isOpen(utl::logger::lev))\
   for(utl::detail::pair<bool,std::stringstream> __utl_lm_v__(true); \
@@ -225,7 +233,7 @@ template<class _T1, class _T2> struct pair:public std::pair<_T1,_T2>
 
 /*---------------------------------------------------------------------------*/
 
-#define STRMVAR(VAR) #VAR << " = "<< (VAR)
+#define SVAR(VAR) #VAR << " = "<< (VAR) << " "
 
 /*---------------------------------------------------------------------------*/
 
@@ -355,6 +363,54 @@ std::stringstream()
   for(std::stringstream ss ; true ; throw std::runtime_error(ss.str())) \
   ss<<"Failed to ensure condition " << #cond <<"\n" \
     <<"at ("<<__FILE__<<","<<__func__<<","<<__LINE__<<") \n "
+
+/*---------------------------------------------------------------------------*/
+
+#define CHECK_ERRORV1(func,var1) \
+try { func ; } catch (const std::exception &e) {\
+  if(utl::logger::get().isOpen(utl::logger::error)){\
+    std::stringstream ss; ss \
+    <<"From: ("<<__FILE__<<","<<__func__<<","<<__LINE__<<") \n "\
+    << #var1 <<" = "<< (var1) << "\n";\
+    utl::logger::get().push(ss.str());}\
+  throw;}
+
+/*---------------------------------------------------------------------------*/
+
+#define CHECK_ERRORV2(func,var1,var2) \
+try { func ; } catch (const std::exception &e) {\
+  if(utl::logger::get().isOpen(utl::logger::error)){\
+    std::stringstream ss; ss \
+    <<"From: ("<<__FILE__<<","<<__func__<<","<<__LINE__<<") \n "\
+    << #var1 <<" = "<< (var1) << "\n"\
+    << #var2 <<" = "<< (var2) << "\n";\
+    utl::logger::get().push(ss.str());}\
+  throw;}
+
+/*---------------------------------------------------------------------------*/
+
+#define CHECK_ERRORV3(func,var1,var2,var3) \
+try { func ; } catch (const std::exception &e) {\
+  if(utl::logger::get().isOpen(utl::logger::error)){\
+    std::stringstream ss; ss \
+    <<"From: ("<<__FILE__<<","<<__func__<<","<<__LINE__<<") \n "\
+    << #var1 <<" = "<< (var1) << "\n"\
+    << #var2 <<" = "<< (var2) << "\n"\
+    << #var3 <<" = "<< (var3) << "\n";\
+    utl::logger::get().push(ss.str());}\
+  throw;}
+
+/*---------------------------------------------------------------------------*/
+
+#define CHECK_ERRORS(func,strm) \
+try { func ; } catch (const std::exception &e) {\
+  if(utl::logger::get().isOpen(utl::logger::error)){\
+    std::stringstream ss; ss \
+    <<"From: ("<<__FILE__<<","<<__func__<<","<<__LINE__<<") \n "\
+    strm <<std::endl;\
+    utl::logger::get().push(ss.str());}\
+  throw;}
+
 
 /*===========================================================================*/
 

@@ -41,7 +41,7 @@ public:
   cellid_list_t   m_cp_cellid;
   cellid_list_t   m_cp_vertid;
   int_list_t      m_cp_pair_idx;
-  char_list_t     m_cp_index;
+  int8_list_t     m_cp_index;
   bool_list_t     m_cp_is_cancelled;
   cell_fn_list_t  m_cp_fn;
 
@@ -68,7 +68,7 @@ public:
   inline int       pair_idx(int i)                const;
   inline cellid_t  cellid(int i)                  const;
   inline cellid_t  vertid(int i)                  const;
-  inline char      index(int i)                   const;
+  inline int8_t    index(int i)                   const;
   inline cell_fn_t fn(int i)                      const;
   inline int       surv_extrema(int i)            const;
   inline bool      is_paired(int i)               const;
@@ -96,7 +96,8 @@ public:
   // simplification related stuff
   void cancel_pair();
   void cancel_pair(int p, int q);
-  void simplify(double simplification_treshold,double f_range);
+  bool persistence_cmp(int_pair_t p0,int_pair_t p1) const;
+  void simplify_pers(double thresh=1.0,bool is_nrm=true,int nmax=0,int nmin=0);
 
   // geometry collection related stuff
   void collect_mfolds(eGDIR dir, int dim, dataset_ptr_t ds);
@@ -112,6 +113,7 @@ public:
   void un_simplify();
   void invert_for_collection();
   void uncancel_pair( int p, int q);
+  void simplify_pers_outcore(double f_tresh, double f_range);
 
   // functions to enable outcore merging and merge history traversal etc.
   void save(const std::string &f, bool purge_data=true);
