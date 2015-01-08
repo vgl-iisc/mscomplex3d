@@ -100,6 +100,24 @@ inline void  get_adj_extrema(cellid_t c, cellid_t & e1,cellid_t & e2)
   //    ASSERT(dir != GDIR_DES || (get_cell_dim(e1) == 0  && get_cell_dim(e2) == 0));
 }
 
+/*---------------------------------------------------------------------------*/
+
+inline void dataset_t::save(const std::string &f) const
+{
+  std::fstream fs(f.c_str(),std::ios::out|std::ios::binary);
+  ENSUREV(fs.is_open(),"file not found!!",f);
+  save_bin(fs);
+}
+
+/*---------------------------------------------------------------------------*/
+
+inline void dataset_t::load(const std::string &f)
+{
+  std::fstream fs(f.c_str(),std::ios::in|std::ios::binary);
+  ENSUREV(fs.is_open(),"file not found!!",f);
+  load_bin(fs);
+}
+
 /*===========================================================================*/
 
 

@@ -37,6 +37,22 @@ class mscomplex_pyms3d_t: public mscomplex_t
 {
 public:
   dataset_ptr_t     ds;
+
+  void save(const string &f) const
+  {
+    std::fstream fs(f.c_str(),std::ios::out|std::ios::binary);
+    ENSUREV(fs.is_open(),"file not found!!",f);
+    save_bin(fs);
+    ds->save_bin(fs);
+  }
+
+  void load(const string &f)
+  {
+    std::fstream fs(f.c_str(),std::ios::in|std::ios::binary);
+    ENSUREV(fs.is_open(),"file not found!!",f);
+    load_bin(fs);
+    ds->load_bin(fs);
+  }
 };
 
 typedef  boost::shared_ptr<mscomplex_pyms3d_t> mscomplex_pyms3d_ptr_t;
@@ -185,9 +201,9 @@ void wrap_mscomplex_t()
            "vertex id of maximal vertex of critical cell")
       .def("cellid",&mscomplex_t::cellid,
            "cell id of critical cell")
-      .def("load",&mscomplex_t::load,
+      .def("load",&mscomplex_pyms3d_t::load,
            "Load mscomplex from file")
-      .def("save",&mscomplex_t::save,
+      .def("save",&mscomplex_pyms3d_t::save,
            "Save mscomplex to file")
       .def("num_canc",&mscomplex_num_canc,
            "Number of cancellation pairs")

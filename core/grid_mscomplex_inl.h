@@ -170,6 +170,24 @@ inline std::string mscomplex_t::cp_info (int cp_no) const
 inline boost::iterator_range<mscomplex_t::iterator_t> mscomplex_t::cpno_range() const
 {return boost::make_iterator_range(iterator_t(0),iterator_t(get_num_critpts()));}
 
+/*---------------------------------------------------------------------------*/
+
+inline void mscomplex_t::save(const std::string &f) const
+{
+  std::fstream fs(f.c_str(),std::ios::out|std::ios::binary);
+  ENSUREV(fs.is_open(),"file not found!!",f);
+  save_bin(fs);
+}
+
+/*---------------------------------------------------------------------------*/
+
+inline void mscomplex_t::load(const std::string &f)
+{
+  std::fstream fs(f.c_str(),std::ios::in|std::ios::binary);
+  ENSUREV(fs.is_open(),"file not found!!",f);
+  load_bin(fs);
+}
+
 /*===========================================================================*/
 
 

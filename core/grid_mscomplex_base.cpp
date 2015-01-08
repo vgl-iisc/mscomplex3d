@@ -1,5 +1,15 @@
 #include <boost/range/adaptors.hpp>
 
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/serialization/nvp.hpp>
+#include <boost/serialization/utility.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/map.hpp>
+#include <boost/serialization/set.hpp>
+#include <boost/serialization/array.hpp>
+
+
 #include <grid_mscomplex.h>
 
 using namespace std;
@@ -116,6 +126,49 @@ std::string mscomplex_t::cp_conn (int i) const
   ss<<std::endl;
 
   return ss.str();
+}
+
+template<class Archive>
+void mscomplex_t::serialize(Archive & ar, const unsigned int version)
+{
+  ar& BOOST_SERIALIZATION_NVP(m_rect);
+  ar& BOOST_SERIALIZATION_NVP(m_ext_rect);
+  ar& BOOST_SERIALIZATION_NVP(m_domain_rect);
+  ar& BOOST_SERIALIZATION_NVP(m_canc_pos);
+
+  ar& BOOST_SERIALIZATION_NVP(m_cp_cellid);
+  ar& BOOST_SERIALIZATION_NVP(m_cp_vertid);
+  ar& BOOST_SERIALIZATION_NVP(m_cp_pair_idx);
+  ar& BOOST_SERIALIZATION_NVP(m_cp_index);
+//  ar& BOOST_SERIALIZATION_NVP(m_cp_cancno);
+//  ar& BOOST_SERIALIZATION_NVP(m_cp_is_boundry);
+  ar& BOOST_SERIALIZATION_NVP(m_cp_is_cancelled);
+  ar& BOOST_SERIALIZATION_NVP(m_cp_fn);
+  ar& BOOST_SERIALIZATION_NVP(m_canc_list);
+  ar& BOOST_SERIALIZATION_NVP(m_des_conn);
+  ar& BOOST_SERIALIZATION_NVP(m_asc_conn);
+  ar& BOOST_SERIALIZATION_NVP(m_des_mfolds);
+  ar& BOOST_SERIALIZATION_NVP(m_asc_mfolds);
+//  ar& BOOST_SERIALIZATION_NVP(m_multires_version);
+//  ar& BOOST_SERIALIZATION_NVP(m_fmax);
+//  ar& BOOST_SERIALIZATION_NVP(m_fmin);
+//  ar& BOOST_SERIALIZATION_NVP(*m_merge_dag);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void mscomplex_t::save_bin(ostream &os) const
+{
+  boost::archive::binary_oarchive oa(os);
+  oa << BOOST_SERIALIZATION_NVP(*this);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void mscomplex_t::load_bin(istream &is)
+{
+  boost::archive::binary_iarchive ia(is);
+  ia >> BOOST_SERIALIZATION_NVP(*this);
 }
 
 /*===========================================================================*/

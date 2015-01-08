@@ -63,6 +63,17 @@ public:
   ~mscomplex_t();
   void clear();
 
+  // save/load data
+  inline void save(const std::string &f) const;
+  inline void load(const std::string &f);
+
+  void save_bin(std::ostream &os) const;
+  void load_bin(std::istream &is);
+
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int /* file_version */);
+
+
   // mscomplex basic query functions
   inline int       get_num_critpts()              const;
   inline int       pair_idx(int i)                const;
@@ -116,11 +127,10 @@ public:
   void simplify_pers_outcore(double f_tresh, double f_range);
 
   // functions to enable outcore merging and merge history traversal etc.
-  void save(const std::string &f, bool purge_data=true);
-  void load(const std::string &f);
+  void save_bin_outcore(const std::string &f, bool purge_data=true);
+  void load_bin_outcore(const std::string &f);
   int  load_merge(const std::string &f1,const std::string &f2);
   void unmerge_save(const std::string &f1,const std::string &f2);
-
 };
 
 inline void order_pr_by_cp_index(const mscomplex_t &msc,int &p,int &q);

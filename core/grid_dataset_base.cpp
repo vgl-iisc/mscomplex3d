@@ -1,8 +1,17 @@
 #include <grid_dataset.h>
 
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/serialization/nvp.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/binary_object.hpp>
+
+
 using namespace std;
 
 #define static_assert BOOST_STATIC_ASSERT
+
+namespace bs = boost::serialization;
 
 namespace grid
 {
@@ -13,7 +22,6 @@ dataset_t::dataset_t (const rect_t &r,const rect_t &e,const rect_t &d) :
   m_rect (r),
   m_ext_rect (e),
   m_domain_rect(d),
-  m_work_rect((r.lc()+e.lc())/2,(r.uc()+e.uc())/2),
   m_vert_fns(cellid_t::zero,boost::fortran_storage_order()),
   m_cell_flags(cellid_t::zero,boost::fortran_storage_order()),
   m_owner_maxima(cellid_t::zero,boost::fortran_storage_order()),
@@ -30,24 +38,12 @@ dataset_t::~dataset_t () {clear();}
 
 /*---------------------------------------------------------------------------*/
 
-void dataset_t::init(const std::string &filename)
+void dataset_t::init(const string &filename)
 {
-  static_assert(gc_grid_dim == 3 && "defined for 3-manifolds only");
+  init_storage();
 
-  rect_size_t   span   = m_ext_rect.span() + 1;
   rect_size_t  pt_span = (m_ext_rect.span()/2)+1;
-  rect_point_t bl = m_ext_rect.lower_corner();
-
-  m_cell_flags.resize(span);
-  m_vert_fns.resize(pt_span);
-
-  uint num_cells = span[0]*span[1]*span[2];
   uint num_pts   = pt_span[0]*pt_span[1]*pt_span[2];
-
-  m_cell_flags.reindex(bl);
-  m_vert_fns.reindex(bl/2);
-
-  std::fill_n(m_cell_flags.data(),num_cells,0);
 
   ifstream ifs(filename.c_str(),ios::in|ios::binary);
   ENSURE(ifs.is_open(),"unable to open file");
@@ -59,6 +55,26 @@ void dataset_t::init(const std::string &filename)
   ENSURE(uint(ifs.tellg())==num_pts*sizeof(cell_fn_t),"file/piece size mismatch");
 
   ifs.close();
+}
+
+/*---------------------------------------------------------------------------*/
+
+
+void dataset_t::init_storage()
+{
+  static_assert(gc_grid_dim == 3 && "defined for 3-manifolds only");
+
+  rect_size_t   span   = m_ext_rect.span() + 1;
+  rect_size_t  pt_span = (m_ext_rect.span()/2)+1;
+  rect_point_t bl = m_ext_rect.lower_corner();
+
+  m_cell_flags.resize(span);
+  m_vert_fns.resize(pt_span);
+
+  std::fill_n(m_cell_flags.data(),span[0]*span[1]*span[2],0);
+
+  m_cell_flags.reindex(bl);
+  m_vert_fns.reindex(bl/2);
 
   m_owner_maxima.resize(m_rect.span()/2);
   m_owner_minima.resize((m_rect.span()/2)+1);
@@ -402,6 +418,43 @@ bool dataset_t::isFakeBoundryCell (cellid_t c) const
 
 bool dataset_t::isCellExterior (cellid_t c) const
 {return (!m_rect.contains (c));}
+
+/*---------------------------------------------------------------------------*/
+
+template<class Archive>
+void dataset_t::serialize(Archive & ar, const unsigned int version)
+{
+  ar& BOOST_SERIALIZATION_NVP(m_rect);
+  ar& BOOST_SERIALIZATION_NVP(m_ext_rect);
+  ar& BOOST_SERIALIZATION_NVP(m_domain_rect);
+
+  if(Archive::is_loading::value)
+    init_storage();
+
+  rect_size_t  pt_span = (m_ext_rect.span()/2)+1;
+  uint npts            = pt_span[0]*pt_span[1]*pt_span[2];
+
+  ar & BOOST_SERIALIZATION_NVP(npts);
+  ar & bs::make_nvp("fn_data",bs::make_binary_object(m_vert_fns.data(), npts));
+
+  compute_owner_grad();
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dataset_t::save_bin(ostream &os) const
+{
+  boost::archive::binary_oarchive oa(os);
+  oa << BOOST_SERIALIZATION_NVP(*this);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dataset_t::load_bin(istream &is)
+{
+  boost::archive::binary_iarchive ia(is);
+  ia >> BOOST_SERIALIZATION_NVP(*this);
+}
 
 /*===========================================================================*/
 

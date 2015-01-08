@@ -54,7 +54,7 @@ void compute_mscomplex_basic(std::string filename, cellid_t size, double simp_tr
   }
   msc->collect_mfolds(ds);
 
-  msc->save(basename+".msc.bin",false);
+  msc->save(basename+".msc");
 
   LOG(info) <<"write msmfolds done ------ "<<g_timer.elapsed()<<endl;
 

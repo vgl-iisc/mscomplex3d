@@ -279,7 +279,7 @@ inline void bin_read(std::istream &is, const T &v)
 {is.read((char*)(void*)&v,sizeof(T));}
 
 
-void mscomplex_t::save(const std::string &f, bool purge_data)
+void mscomplex_t::save_bin_outcore(const std::string &f, bool purge_data)
 {
   std::fstream os(f.c_str(),std::ios::out|std::ios::binary);
 
@@ -323,7 +323,7 @@ void mscomplex_t::save(const std::string &f, bool purge_data)
   bin_write_vec(os,m_canc_list,purge_data);
 }
 
-void mscomplex_t::load(const std::string &f)
+void mscomplex_t::load_bin_outcore(const std::string &f)
 {
   std::fstream is(f.c_str(),std::ios::in|std::ios::binary);
 

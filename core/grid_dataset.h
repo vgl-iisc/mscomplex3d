@@ -63,7 +63,6 @@ public:
   rect_t             m_rect;
   rect_t             m_ext_rect;
   rect_t             m_domain_rect;
-  rect_t             m_work_rect;
 
   varray_t           m_vert_fns;
   cellflag_array_t   m_cell_flags;
@@ -78,7 +77,18 @@ public:
   ~dataset_t ();
 
   void  init(const std::string &filename);
+  void  init_storage(); // assumes rects are defined
   void  clear();
+
+  // save/load data
+  inline void save(const std::string &f) const;
+  inline void load(const std::string &f);
+
+  void save_bin(std::ostream &os) const;
+  void load_bin(std::istream &is);
+
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int /* file_version */);
 
   // dataset base functions
 
@@ -141,16 +151,6 @@ public:
   void  saveManifolds(mscomplex_ptr_t msgraph,const std::string &);
   void  storeOwnerArrays(int_marray_t &,int_marray_t &) const;
   void  loadOwnerArrays(int_marray_t &,int_marray_t &);
-
-
-  // File storage/load functions for outcore processing.
-  void store(std::ostream &os);
-  void load(std::istream &is);
-
-  inline void store(const std::string &f)
-  {std::fstream fs(f.c_str(),std::ios::out|std::ios::binary);store(fs);}
-  inline void load(const std::string &f)
-  {std::fstream fs(f.c_str(),std::ios::in|std::ios::binary);load(fs);}
 
 
   // misc functions

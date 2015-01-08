@@ -263,6 +263,13 @@ class n_vector_t: public boost::array<T,N>
 
 //      return (r);
 //    }
+
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int /* file_version */)
+    {
+      for(int i = 0 ; i < base_t::static_size; ++i) ar&(*this)[i];
+    }
+
 };
 
 // addition

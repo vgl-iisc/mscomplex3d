@@ -225,49 +225,6 @@ inline cellid_list_ptr_t compute_mfold(dataset_t &ds,mscomplex_t &msc,Titer b,Ti
 }
 
 
-template<typename T>
-inline void bin_write_marray(std::ostream & os,const T * p, const cellid_t & s)
-{os.write((const char*)(const void*)p,sizeof(T)*s[0]*s[1]*s[2]);}
-
-template<typename T>
-inline void bin_read_marray(std::istream & is,T * p, const cellid_t & s)
-{is.read((char*)(void*)p,sizeof(T)*s[0]*s[1]*s[2]);}
-
-
-void dataset_t::store(std::ostream &os)
-{
-  bin_write(os,m_rect);
-  bin_write(os,m_ext_rect);
-  bin_write(os,m_domain_rect);
-
-  bin_write_marray(os,m_cell_flags.data(),m_ext_rect.span()+1);
-  bin_write_marray(os,m_vert_fns.data(),(m_ext_rect.span()/2)+1);
-  bin_write_marray(os,m_owner_maxima.data(),m_rect.span()/2);
-  bin_write_marray(os,m_owner_minima.data(),(m_rect.span()/2)+1);
-}
-
-void dataset_t::load(std::istream &is)
-{
-  bin_read(is,m_rect);
-  bin_read(is,m_ext_rect);
-  bin_read(is,m_domain_rect);
-
-  m_cell_flags.resize(m_ext_rect.span()+1);
-  m_vert_fns.resize((m_ext_rect.span()/2)+1);
-  m_owner_maxima.resize(m_rect.span()/2);
-  m_owner_minima.resize((m_rect.span()/2)+1);
-
-  m_cell_flags.reindex(m_ext_rect.lc());
-  m_vert_fns.reindex(m_ext_rect.lc()/2);
-  m_owner_maxima.reindex(m_rect.lc()/2);
-  m_owner_minima.reindex(m_rect.lc()/2);
-
-  bin_read_marray(is,m_cell_flags.data(),m_ext_rect.span()+1);
-  bin_read_marray(is,m_vert_fns.data(),(m_ext_rect.span()/2)+1);
-  bin_read_marray(is,m_owner_maxima.data(),(m_rect.span()/2));
-  bin_read_marray(is,m_owner_minima.data(),(m_rect.span()/2)+1);
-}
-
 template<eGDIR dir>
 void copy_owner_extrema(int_marray_t &dest,const int_marray_t &src,const dataset_t & ds)
 {
