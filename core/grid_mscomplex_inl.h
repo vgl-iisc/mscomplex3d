@@ -172,7 +172,7 @@ inline boost::iterator_range<mscomplex_t::iterator_t> mscomplex_t::cpno_range() 
 
 /*---------------------------------------------------------------------------*/
 
-inline void mscomplex_t::save(const std::string &f) const
+inline void mscomplex_t::save(const std::string &f)
 {
   std::fstream fs(f.c_str(),std::ios::out|std::ios::binary);
   ENSUREV(fs.is_open(),"file not found!!",f);

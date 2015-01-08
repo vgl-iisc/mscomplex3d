@@ -1,17 +1,8 @@
 #include <grid_dataset.h>
 
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/serialization/nvp.hpp>
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/binary_object.hpp>
-
-
 using namespace std;
 
 #define static_assert BOOST_STATIC_ASSERT
-
-namespace bs = boost::serialization;
 
 namespace grid
 {
@@ -421,39 +412,34 @@ bool dataset_t::isCellExterior (cellid_t c) const
 
 /*---------------------------------------------------------------------------*/
 
-template<class Archive>
-void dataset_t::serialize(Archive & ar, const unsigned int version)
+void dataset_t::save_bin(ostream &os) const
 {
-  ar& BOOST_SERIALIZATION_NVP(m_rect);
-  ar& BOOST_SERIALIZATION_NVP(m_ext_rect);
-  ar& BOOST_SERIALIZATION_NVP(m_domain_rect);
-
-  if(Archive::is_loading::value)
-    init_storage();
+  utl::bin_write(os,m_rect);
+  utl::bin_write(os,m_ext_rect);
+  utl::bin_write(os,m_domain_rect);
 
   rect_size_t  pt_span = (m_ext_rect.span()/2)+1;
   uint npts            = pt_span[0]*pt_span[1]*pt_span[2];
 
-  ar & BOOST_SERIALIZATION_NVP(npts);
-  ar & bs::make_nvp("fn_data",bs::make_binary_object(m_vert_fns.data(), npts));
-
-  compute_owner_grad();
-}
-
-/*---------------------------------------------------------------------------*/
-
-void dataset_t::save_bin(ostream &os) const
-{
-  boost::archive::binary_oarchive oa(os);
-  oa << BOOST_SERIALIZATION_NVP(*this);
+  utl::bin_write_raw(os,m_vert_fns.data(),npts);
 }
 
 /*---------------------------------------------------------------------------*/
 
 void dataset_t::load_bin(istream &is)
 {
-  boost::archive::binary_iarchive ia(is);
-  ia >> BOOST_SERIALIZATION_NVP(*this);
+  utl::bin_read(is,m_rect);
+  utl::bin_read(is,m_ext_rect);
+  utl::bin_read(is,m_domain_rect);
+
+  init_storage();
+
+  rect_size_t  pt_span = (m_ext_rect.span()/2)+1;
+  uint npts            = pt_span[0]*pt_span[1]*pt_span[2];
+
+  utl::bin_read_raw(is,m_vert_fns.data(),npts);
+
+  compute_owner_grad();
 }
 
 /*===========================================================================*/

@@ -7,6 +7,8 @@
 #include <boost/range/adaptors.hpp>
 #include <iostream>
 
+#include <utl.h>
+
 namespace br=boost::range;
 namespace ba=boost::adaptors;
 
@@ -117,28 +119,15 @@ int get_header_size(int num_cps)
 }
 
 
-template<typename T>
-inline void bin_write(std::ostream & os,const T & d)
-{os.write((const char*)(const void*)&d,sizeof(T));}
-
-template<typename T>
-inline void bin_read(std::istream &is, const T &v)
-{is.read((char*)(void*)&v,sizeof(T));}
-
-template<typename T>
-inline void bin_write_vec(std::ostream &os, std::vector<T> &v)
-{os.write((const char*)(const void*)v.data(),v.size()*sizeof(T));}
-
-
 void write_header(std::ostream & os, dataset_t &ds,int_list_t & offsets,cellid_list_t &cps)
 {
   os.seekp(0,std::ios::beg);
 
-  bin_write(os,ds.m_rect);
-  bin_write(os,ds.m_ext_rect);
-  bin_write(os,ds.m_domain_rect);
+  utl::bin_write(os,ds.m_rect);
+  utl::bin_write(os,ds.m_ext_rect);
+  utl::bin_write(os,ds.m_domain_rect);
 
-  bin_write(os,(int)cps.size());
+  utl::bin_write(os,(int)cps.size());
 
   os.write((char*)(void*)cps.data(),cps.size()*sizeof(cellid_t));
   os.write((char*)(void*)offsets.data(),offsets.size()*sizeof(int));

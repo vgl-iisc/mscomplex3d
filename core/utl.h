@@ -197,6 +197,61 @@ template<class _T1, class _T2> struct pair:public std::pair<_T1,_T2>
 
 
 
+/*===========================================================================*/
+/* Binary read and write functions
+/*---------------------------------------------------------------------------*/
+
+namespace utl {
+
+/*---------------------------------------------------------------------------*/
+
+template<typename T>
+inline void bin_write(std::ostream &os, const T &v)
+{os.write((const char*)(const void*)&v,sizeof(T));}
+
+/*---------------------------------------------------------------------------*/
+
+template<typename T>
+inline void bin_read(std::istream &is, const T &v)
+{is.read((char*)(void*)&v,sizeof(T));}
+
+/*---------------------------------------------------------------------------*/
+
+template<typename T>
+inline void bin_read_raw(std::istream &is, T * v, size_t n)
+{is.read((char*)(void*)v,n*sizeof(T));}
+
+/*---------------------------------------------------------------------------*/
+
+template<typename T>
+inline void bin_write_raw(std::ostream &os, T * v, size_t n)
+{os.write((const char*)(const void*)v,n*sizeof(T));}
+
+/*---------------------------------------------------------------------------*/
+
+template<typename T>
+inline void bin_read_vec(std::istream &is, std::vector<T> &v)
+{
+  size_t n;
+  bin_read(is,n);
+  v.resize(n);
+  is.read((char*)(void*)v.data(),v.size()*sizeof(T));
+}
+
+/*---------------------------------------------------------------------------*/
+
+template<typename T>
+inline void bin_write_vec(std::ostream &os, const std::vector<T> &v)
+{
+  bin_write<size_t>(os,v.size());
+  os.write((const char*)(const void*)v.data(),v.size()*sizeof(T));
+}
+
+/*---------------------------------------------------------------------------*/
+
+}
+/*===========================================================================*/
+
 
 /*===========================================================================*/
 /* Macro definitions

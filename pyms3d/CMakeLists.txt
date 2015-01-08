@@ -1,6 +1,6 @@
 project(mscomplex3d-pyms3d)
 
-find_package(Boost 1.48 COMPONENTS python serialization system REQUIRED)
+find_package(Boost 1.48 COMPONENTS python system REQUIRED)
 
 find_package(OpenCL REQUIRED)
 

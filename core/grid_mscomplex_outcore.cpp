@@ -261,41 +261,20 @@ void mscomplex_t::invert_for_collection()
   }
 }
 
-
-template<typename T>
-inline void bin_write_vec(std::ostream &os, std::vector<T> &v,bool purge = true)
-{os.write((const char*)(const void*)v.data(),v.size()*sizeof(T));if(purge) v.clear();}
-
-template<typename T>
-inline void bin_write(std::ostream &os, const T &v)
-{os.write((const char*)(const void*)&v,sizeof(T));}
-
-template<typename T>
-inline void bin_read_vec(std::istream &is, std::vector<T> &v,int n)
-{v.resize(n);is.read((char*)(void*)v.data(),n*sizeof(T));}
-
-template<typename T>
-inline void bin_read(std::istream &is, const T &v)
-{is.read((char*)(void*)&v,sizeof(T));}
-
-
-void mscomplex_t::save_bin_outcore(const std::string &f, bool purge_data)
+void mscomplex_t::save_bin(ostream &os) const
 {
-  std::fstream os(f.c_str(),std::ios::out|std::ios::binary);
+  utl::bin_write(os,m_rect);
+  utl::bin_write(os,m_ext_rect);
+  utl::bin_write(os,m_domain_rect);
 
-  int N = get_num_critpts();
+  utl::bin_write_vec(os,m_cp_cellid);
+  utl::bin_write_vec(os,m_cp_vertid);
+  utl::bin_write_vec(os,m_cp_pair_idx);
+  utl::bin_write_vec(os,m_cp_index);
+  utl::bin_write_vec(os,m_cp_is_cancelled);
+  utl::bin_write_vec(os,m_cp_fn);
 
-  bin_write(os,N);
-  bin_write(os,m_rect);
-  bin_write(os,m_ext_rect);
-  bin_write(os,m_domain_rect);
-
-  bin_write_vec(os,m_cp_cellid,purge_data);
-  bin_write_vec(os,m_cp_vertid,purge_data);
-  bin_write_vec(os,m_cp_pair_idx,purge_data);
-  bin_write_vec(os,m_cp_index,purge_data);
-  bin_write_vec(os,m_cp_is_cancelled,purge_data);
-  bin_write_vec(os,m_cp_fn,purge_data);
+  int N = m_cp_cellid.size();
 
   int_list_t nconn(2*N);
   int_int_list_t adj;
@@ -309,45 +288,40 @@ void mscomplex_t::save_bin_outcore(const std::string &f, bool purge_data)
     br::copy(m_asc_conn[i],back_inserter(adj));
   }
 
-  bin_write(os,(int)adj.size());
-  bin_write_vec(os,nconn);
-  bin_write_vec(os,adj);
+  utl::bin_write_vec(os,nconn);
+  utl::bin_write_vec(os,adj);
 
-  if(purge_data)
+  utl::bin_write_vec(os,m_canc_list);
+
+  for(int i = 0 ; i < N; ++i)
   {
-    m_conn[0].clear();
-    m_conn[1].clear();
+    utl::bin_write_vec(os,m_des_mfolds[i]);
+    utl::bin_write_vec(os,m_asc_mfolds[i]);
   }
-
-  bin_write(os,int(m_canc_list.size()));
-  bin_write_vec(os,m_canc_list,purge_data);
 }
 
-void mscomplex_t::load_bin_outcore(const std::string &f)
+void mscomplex_t::load_bin(istream &is)
 {
-  std::fstream is(f.c_str(),std::ios::in|std::ios::binary);
-
   clear();
 
-  int N,NC;
   int_list_t     nconn;
   int_int_list_t adj;
 
-  bin_read(is,N);
-  bin_read(is,m_rect);
-  bin_read(is,m_ext_rect);
-  bin_read(is,m_domain_rect);
+  utl::bin_read(is,m_rect);
+  utl::bin_read(is,m_ext_rect);
+  utl::bin_read(is,m_domain_rect);
 
-  bin_read_vec(is,m_cp_cellid,N);
-  bin_read_vec(is,m_cp_vertid,N);
-  bin_read_vec(is,m_cp_pair_idx,N);
-  bin_read_vec(is,m_cp_index,N);
-  bin_read_vec(is,m_cp_is_cancelled,N);
-  bin_read_vec(is,m_cp_fn,N);
+  utl::bin_read_vec(is,m_cp_cellid);
+  utl::bin_read_vec(is,m_cp_vertid);
+  utl::bin_read_vec(is,m_cp_pair_idx);
+  utl::bin_read_vec(is,m_cp_index);
+  utl::bin_read_vec(is,m_cp_is_cancelled);
+  utl::bin_read_vec(is,m_cp_fn);
 
-  bin_read(is,NC);
-  bin_read_vec(is,nconn,2*N);
-  bin_read_vec(is,adj,NC);
+  utl::bin_read_vec(is,nconn);
+  utl::bin_read_vec(is,adj);
+
+  int N = m_cp_cellid.size();
 
   m_des_conn.resize(N);
   m_asc_conn.resize(N);
@@ -364,8 +338,13 @@ void mscomplex_t::load_bin_outcore(const std::string &f)
     copy(b,c,inserter(m_asc_conn[i],m_asc_conn[i].begin()));
   }
 
-  bin_read(is,NC);
-  bin_read_vec(is,m_canc_list,NC);
+  utl::bin_read_vec(is,m_canc_list);
+
+  for(int i = 0 ; i < N; ++i)
+  {
+    utl::bin_read_vec(is,m_des_mfolds[i]);
+    utl::bin_read_vec(is,m_asc_mfolds[i]);
+  }
 }
 
 inline cellid_t get_null_axes(rect_t r)
@@ -654,13 +633,11 @@ inline bool check_boundry_consistency
 inline void copy_from_streams
 (mscomplex_t &msc, std::istream &is1,std::istream &is2, rect_t &ixn,int_marray_t &ixn_idx,cellid_t &ixn_dir)
 {
-  int            N1,N2;
   rect_t         r1,r2,e1,e2,d1,d2;
 
-  bin_read(is1,N1);bin_read(is2,N2);
-  bin_read(is1,r1);bin_read(is2,r2);
-  bin_read(is1,e1);bin_read(is2,e2);
-  bin_read(is1,d1);bin_read(is2,d2);
+  utl::bin_read(is1,r1);utl::bin_read(is2,r2);
+  utl::bin_read(is1,e1);utl::bin_read(is2,e2);
+  utl::bin_read(is1,d1);utl::bin_read(is2,d2);
 
   get_ixn(ixn,ixn_dir,r1,r2,e1,e2);
 
@@ -682,16 +659,15 @@ inline void copy_from_streams
   int_int_list_t adj1,adj2;
   int            NC1,NC2;
 
-  bin_read_vec(is1,cl1,N1);      bin_read_vec(is2,cl2,N2);
-  bin_read_vec(is1,vl1,N1);      bin_read_vec(is2,vl2,N2);
-  bin_read_vec(is1,pi1,N1);      bin_read_vec(is2,pi2,N2);
-  bin_read_vec(is1,ci1,N1);      bin_read_vec(is2,ci2,N2);
-  bin_read_vec(is1,ic1,N1);      bin_read_vec(is2,ic2,N2);
-  bin_read_vec(is1,fn1,N1);      bin_read_vec(is2,fn2,N2);
+  utl::bin_read_vec(is1,cl1);      utl::bin_read_vec(is2,cl2);
+  utl::bin_read_vec(is1,vl1);      utl::bin_read_vec(is2,vl2);
+  utl::bin_read_vec(is1,pi1);      utl::bin_read_vec(is2,pi2);
+  utl::bin_read_vec(is1,ci1);      utl::bin_read_vec(is2,ci2);
+  utl::bin_read_vec(is1,ic1);      utl::bin_read_vec(is2,ic2);
+  utl::bin_read_vec(is1,fn1);      utl::bin_read_vec(is2,fn2);
 
-  bin_read(is1,NC1);             bin_read(is2,NC2);
-  bin_read_vec(is1,nconn1,2*N1); bin_read_vec(is2,nconn2,2*N2);
-  bin_read_vec(is1,adj1,NC1);    bin_read_vec(is2,adj2,NC2);
+  utl::bin_read_vec(is1,nconn1);   utl::bin_read_vec(is2,nconn2);
+  utl::bin_read_vec(is1,adj1);     utl::bin_read_vec(is2,adj2);
 
   int offset = 0;
 
@@ -918,7 +894,7 @@ inline void update_maps_for_new_pairs
 
 template<bool KEEP_IXN_CPS>
 void copy_into_stream
-(const mscomplex_t &msc, std::iostream &io,int N,rect_t r,rect_t e,rect_t d,
+(const mscomplex_t &msc, std::iostream &io,rect_t r,rect_t e,rect_t d,
  int_marray_t &ixn_idx,rect_t ixn,cellid_t ixn_dir,int &off)
 {
   int_list_t    idx_map,ridx_map;
@@ -932,19 +908,17 @@ void copy_into_stream
 
   int_list_t      nconn;
   int_int_list_t  adj;
-  int             NC,NCanc;
   int_pair_list_t cancl;
 
-  bin_read_vec(io,cl,N);
-  bin_read_vec(io,vl,N);
-  bin_read_vec(io,pi,N);
-  bin_read_vec(io,ci,N);
-  bin_read_vec(io,ic,N);
-  bin_read_vec(io,fn,N);
+  utl::bin_read_vec(io,cl);
+  utl::bin_read_vec(io,vl);
+  utl::bin_read_vec(io,pi);
+  utl::bin_read_vec(io,ci);
+  utl::bin_read_vec(io,ic);
+  utl::bin_read_vec(io,fn);
 
-  bin_read(io,NC);
-  bin_read_vec(io,nconn,2*N);
-  bin_read_vec(io,adj,NC);
+  utl::bin_read_vec(io,nconn);
+  utl::bin_read_vec(io,adj);
 
   get_idx_map<KEEP_IXN_CPS>(idx_map,ixn,ixn_idx,ixn_dir,cl,ic,pi,off);
 
@@ -961,34 +935,27 @@ void copy_into_stream
 
   idx_map.clear();ridx_map.clear();adj.clear();
 
-  N  = cl.size();
-  NC = new_adj.size();
+  utl::bin_read_vec(io,cancl);
 
-  bin_read(io,NCanc);
-  bin_read_vec(io,cancl,NCanc);
-
-  ASSERT(int(nconn.size()) == N*2);
+  ASSERT(int(nconn.size()) == cl.size()*2);
 
   io.seekp(0,ios::beg);
 
-  bin_write(io,N);
-  bin_write(io,r);
-  bin_write(io,e);
-  bin_write(io,d);
+  utl::bin_write(io,r);
+  utl::bin_write(io,e);
+  utl::bin_write(io,d);
 
-  bin_write_vec(io,cl);
-  bin_write_vec(io,vl);
-  bin_write_vec(io,pi);
-  bin_write_vec(io,ci);
-  bin_write_vec(io,ic);
-  bin_write_vec(io,fn);
+  utl::bin_write_vec(io,cl);
+  utl::bin_write_vec(io,vl);
+  utl::bin_write_vec(io,pi);
+  utl::bin_write_vec(io,ci);
+  utl::bin_write_vec(io,ic);
+  utl::bin_write_vec(io,fn);
 
-  bin_write(io,(int)new_adj.size());
-  bin_write_vec(io,nconn);
-  bin_write_vec(io,new_adj);
+  utl::bin_write_vec(io,nconn);
+  utl::bin_write_vec(io,new_adj);
 
-  bin_write(io,int(cancl.size()));
-  bin_write_vec(io,cancl);
+  utl::bin_write_vec(io,cancl);
 }
 
 void mscomplex_t::unmerge_save(const string &f1, const string &f2)
@@ -1000,13 +967,11 @@ void mscomplex_t::unmerge_save(const string &f1, const string &f2)
   int_marray_t  ixn_idx;
   cellid_t      ixn_dir;
 
-  int            N1,N2;
   rect_t         r1,r2,e1,e2,d1,d2;
 
-  bin_read(is1,N1);bin_read(is2,N2);
-  bin_read(is1,r1);bin_read(is2,r2);
-  bin_read(is1,e1);bin_read(is2,e2);
-  bin_read(is1,d1);bin_read(is2,d2);
+  utl::bin_read(is1,r1);utl::bin_read(is2,r2);
+  utl::bin_read(is1,e1);utl::bin_read(is2,e2);
+  utl::bin_read(is1,d1);utl::bin_read(is2,d2);
 
   get_ixn(ixn,ixn_dir,r1,r2,e1,e2);
 
@@ -1042,8 +1007,8 @@ void mscomplex_t::unmerge_save(const string &f1, const string &f2)
 
   int off = 0;
 
-  copy_into_stream<true>(*this,is1,N1,r1,e1,d1,ixn_idx,ixn,ixn_dir,off);
-  copy_into_stream<false>(*this,is2,N2,r2,e2,d2,ixn_idx,ixn,ixn_dir,off);
+  copy_into_stream<true>(*this,is1,r1,e1,d1,ixn_idx,ixn,ixn_dir,off);
+  copy_into_stream<false>(*this,is2,r2,e2,d2,ixn_idx,ixn,ixn_dir,off);
 }
 
 

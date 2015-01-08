@@ -87,9 +87,6 @@ public:
   void save_bin(std::ostream &os) const;
   void load_bin(std::istream &is);
 
-  template<class Archive>
-  void serialize(Archive & ar, const unsigned int /* file_version */);
-
   // dataset base functions
 
   cellid_t   getCellPairId ( cellid_t ) const;

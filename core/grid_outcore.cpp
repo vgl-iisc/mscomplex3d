@@ -202,7 +202,7 @@ namespace grid
       ds->init(dp->bn(m_basename)+".raw");
       ds->computeMsGraph(msc);
 
-      msc->save_bin_outcore(dp->bn(m_basename)+".msgraph.bin");
+      msc->save(dp->bn(m_basename)+".msgraph.bin");
 //      ds->store(dp->bn(m_basename)+".dataset.bin");
 
       cout<<g_timer.elapsed()<<"\t:processed piece "<<pc_i
@@ -219,9 +219,9 @@ namespace grid
       cell_fn_t t= m_simp_tresh;
       cell_fn_t r= m_f_range;
 
-      msc->load_bin_outcore(f);
+      msc->load(f);
       msc->simplify_pers_outcore(t,r);
-      msc->save_bin_outcore(f);
+      msc->save(f);
 
 //      for(j--; j >= 0 ; j--)
 //      {
@@ -253,7 +253,7 @@ namespace grid
 
         int num_c = msc.m_canc_list.size();
 
-        msc.save_bin_outcore(dp->bn(m_basename)+".msgraph.bin");
+        msc.save(dp->bn(m_basename)+".msgraph.bin");
 
         cout<<g_timer.elapsed()
             <<"\t:merged ("<<(n+i)*2-1<<","<<(n+i)*2<<") -->"<<n+i-1
@@ -278,7 +278,7 @@ namespace grid
 
         mscomplex_t msc(dp->m_rect,dp->m_ext_rect,dp->m_domain_rect);
 
-        msc.load_bin_outcore(dp->bn(m_basename)+".msgraph.bin");
+        msc.load(dp->bn(m_basename)+".msgraph.bin");
         msc.un_simplify();
 
         msc.unmerge_save(dp1->bn(m_basename)+".msgraph.bin",
@@ -309,7 +309,7 @@ namespace grid
       dataset_ptr_t   ds(new dataset_t(dp->m_rect,dp->m_ext_rect,dp->m_domain_rect));
       mscomplex_ptr_t msc(new mscomplex_t(dp->m_rect,dp->m_ext_rect,dp->m_domain_rect));
 
-      msc->load_bin_outcore(dp->bn(m_basename)+".msgraph.bin");
+      msc->load(dp->bn(m_basename)+".msgraph.bin");
       msc->un_simplify();
       msc->invert_for_collection();
 
