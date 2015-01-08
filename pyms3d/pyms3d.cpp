@@ -16,14 +16,6 @@ using namespace utl;
 
 namespace bp = boost::python;
 
-namespace grid {
-namespace opencl {
-void init();
-std::string get_info();
-}
-}
-
-
 /*****************************************************************************/
 namespace pyms3d {
 
@@ -181,7 +173,7 @@ void wrap_mscomplex_t()
 
   docstring_options local_docstring_options(true, false, false);
 
-  def("get_opencl_info",&opencl::get_info);
+  def("get_hw_info",&get_hw_info);
 
   class_<mscomplex_pyms3d_t,mscomplex_pyms3d_ptr_t>
       ("mscomplex","The Morse-Smale complex object",no_init)

@@ -87,19 +87,22 @@ namespace grid
 
 }
 
-namespace std
-{
-template<typename _IIter>
-  typename iterator_traits<_IIter>::difference_type
-  count(_IIter b, _IIter e)
-  {
-    typename iterator_traits<_IIter>::difference_type val = 0;
+namespace grid{
+namespace opencl{
 
-    for( ; b != e; ++b)
-      ++val;
+/// \brief Init OpenCL runtime
+void init();
 
-    return val;
-  }
+/// \brief Return the platform/device info after init
+std::string get_info();
+}
+
+namespace openmp {
+/// \brief Return the openmp info
+std::string get_info();
+}
+
+inline std::string get_hw_info(){return opencl::get_info()+openmp::get_info();}
 }
 
 #endif

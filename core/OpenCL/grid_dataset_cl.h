@@ -10,12 +10,6 @@ namespace grid
 namespace opencl
 {
 
-/// \brief Init OpenCL runtime
-void init();
-
-/// \brief Return the platform/device info after init
-std::string get_info();
-
 class worker
 {
 protected:

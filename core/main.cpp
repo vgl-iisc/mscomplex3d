@@ -13,18 +13,11 @@ using namespace grid;
 
 namespace bpo = boost::program_options ;
 
-namespace grid{
-namespace opencl{
-void init();
-std::string get_info();
-}
-}
-
 void compute_mscomplex_basic(std::string filename, cellid_t size, double simp_tresh)
 {
   g_timer.restart();
 
-  LOG(info) << opencl::get_info();
+  LOG(info) << get_hw_info();
 
   LOG(info) <<"===================================="<<endl
             <<"         Starting Processing        "<<endl
@@ -54,9 +47,11 @@ void compute_mscomplex_basic(std::string filename, cellid_t size, double simp_tr
   }
   msc->collect_mfolds(ds);
 
+  LOG(info) <<"mfold collection done ---- "<<g_timer.elapsed()<<endl;
+
   msc->save(basename+".msc");
 
-  LOG(info) <<"write msmfolds done ------ "<<g_timer.elapsed()<<endl;
+  LOG(info) <<"write data done ---------- "<<g_timer.elapsed()<<endl;
 
   LOG(info) <<"------------------------------------"<<endl
             <<"        Finished Processing         "<<endl
