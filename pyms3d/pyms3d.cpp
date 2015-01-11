@@ -136,21 +136,49 @@ void mscomplex_collect_mfolds(mscomplex_pyms3d_ptr_t msc)
 }
 
 template <eGDIR dir>
-bp::list mscomplex_geom(mscomplex_pyms3d_ptr_t msc, int i)
+bp::list mscomplex_geom(mscomplex_pyms3d_ptr_t msc, int cp,int hver=-1)
 {
-  ASSERT(is_in_range(i,0,msc->get_num_critpts()));
+  ENSURES(is_in_range(cp,0,msc->get_num_critpts())) << "out of range cpid="<<cp;
+
+  if( hver == -1) hver = msc->get_hversion();
+
+  int_list_t l;
+
+  int dim = msc->index(cp);
+
+  msc->m_merge_dag->get_contrib_cps(l,dir,cp,hver,msc->m_geom_hversion[dir][dim]);
+
   bp::list r;
-  BOOST_FOREACH(cellid_t c,msc->m_mfolds[dir][i])
+
+  for(int j = 0 ; j < l.size(); ++j)
   {
-    r.append(c);
+    BOOST_FOREACH(cellid_t c,msc->m_mfolds[dir][l[j]])
+    {
+      r.append(c);
+    }
   }
   return r;
 }
 
 template <eGDIR dir>
-int mscomplex_geom_size(mscomplex_pyms3d_ptr_t msc, int i)
+int mscomplex_geom_size(mscomplex_pyms3d_ptr_t msc, int cp,int hver=-1)
 {
-  return msc->m_mfolds[dir][i].size();
+  ENSURES(is_in_range(cp,0,msc->get_num_critpts())) << "out of range cpid="<<cp;
+
+  if( hver == -1) hver = msc->get_hversion();
+
+  int_list_t l;
+
+  int dim = msc->index(cp);
+
+  msc->m_merge_dag->get_contrib_cps(l,dir,cp,hver,msc->m_geom_hversion[dir][dim]);
+
+  int s = 0;
+
+  for(int j = 0 ; j < l.size(); ++j)
+    s += msc->m_mfolds[dir][l[j]].size();
+
+  return s;
 }
 
 //bp::list mscomplex_arc_geom(mscomplex_ptr_t msc, int a, int b)
@@ -207,20 +235,40 @@ void wrap_mscomplex_t()
            "List of ascending cps connected to a given critical point i")
       .def("des",&mscomplex_conn<DES>,
            "List of descending cps connected to a given critical point i")
-      .def("asc_geom",&mscomplex_geom<ASC>,
-           "Ascending manifold geometry of a given critical point i")
-      .def("des_geom",&mscomplex_geom<DES>,
-           "Descending manifold geometry of a given critical point i")
       .def("cps",&mscomplex_cps,(bp::arg("dim")=-1),
            "Returns a list of surviving critical cps\n"\
            "\n"
            "Parameters   :\n"
            "          dim: index of the cps. -1 signifies all. default=-1\n"
            )
+      .def("asc_geom",&mscomplex_geom<ASC>,
+           (bp::arg("cp"),bp::arg("hversion")=-1),
+           "Ascending manifold geometry of a given critical point i"
+           "Parameters: \n"\
+           "          cp: the critical point id\n"\
+           "    hversion: desired hierarchical version (optional).\n"\
+           )
+      .def("des_geom",&mscomplex_geom<DES>,
+           (bp::arg("cp"),bp::arg("hversion")=-1),
+           "Descending manifold geometry of a given critical point i"
+           "Parameters: \n"\
+           "          cp: the critical point id\n"\
+           "    hversion: desired hierarchical version (optional).\n"\
+           )
       .def("asc_geom_size",&mscomplex_geom_size<ASC>,
-           "size(num-cells) of the ascending geometry of a cp")
+           (bp::arg("cp"),bp::arg("hversion")=-1),
+           "Ascending manifold geometry size of a given critical point i"
+           "Parameters: \n"\
+           "          cp: the critical point id\n"\
+           "    hversion: desired hierarchical version (optional).\n"\
+           )
       .def("des_geom_size",&mscomplex_geom_size<DES>,
-           "size(num-cells) of the ascending geometry of a cp")
+           (bp::arg("cp"),bp::arg("hversion")=-1),
+           "Descending manifold geometry size of a given critical point i"
+           "Parameters: \n"\
+           "          cp: the critical point id\n"\
+           "    hversion: desired hierarchical version (optional).\n"\
+           )
 //      .def("gen_pers_hierarchy",&mscomplex_gen_pers_pairs,
 //           "Generates the persistence hierarchy using topo simplification")
       .def("compute_bin",&mscomplex_compute_bin,

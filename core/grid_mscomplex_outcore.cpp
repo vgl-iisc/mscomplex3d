@@ -293,12 +293,15 @@ void mscomplex_t::save_bin(ostream &os) const
 
   utl::bin_write(os,m_hversion);
   utl::bin_write_vec(os,m_canc_list);
+  utl::bin_write(os,m_geom_hversion);
 
   for(int i = 0 ; i < N; ++i)
   {
     utl::bin_write_vec(os,m_des_mfolds[i]);
     utl::bin_write_vec(os,m_asc_mfolds[i]);
   }
+
+  m_merge_dag->save_bin(os);
 }
 
 void mscomplex_t::load_bin(istream &is)
@@ -341,12 +344,15 @@ void mscomplex_t::load_bin(istream &is)
 
   utl::bin_read(is,m_hversion);
   utl::bin_read_vec(is,m_canc_list);
+  utl::bin_read(is,m_geom_hversion);
 
   for(int i = 0 ; i < N; ++i)
   {
     utl::bin_read_vec(is,m_des_mfolds[i]);
     utl::bin_read_vec(is,m_asc_mfolds[i]);
   }
+
+  m_merge_dag->load_bin(is);
 }
 
 inline cellid_t get_null_axes(rect_t r)

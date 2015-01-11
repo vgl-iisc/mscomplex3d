@@ -14,14 +14,16 @@ namespace grid
 
 mscomplex_t::mscomplex_t():
   m_des_mfolds(m_mfolds[0]),m_asc_mfolds(m_mfolds[1]),
-  m_des_conn(m_conn[0]),m_asc_conn(m_conn[1]),m_hversion(0){}
+  m_des_conn(m_conn[0]),m_asc_conn(m_conn[1]),
+  m_hversion(0),m_merge_dag(new merge_dag_t){resize(0);}
 
 /*---------------------------------------------------------------------------*/
 
 mscomplex_t::mscomplex_t(rect_t r,rect_t e,rect_t d):
   m_rect(r),m_ext_rect(e),m_domain_rect(d),
   m_des_mfolds(m_mfolds[0]),m_asc_mfolds(m_mfolds[1]),
-  m_des_conn(m_conn[0]),m_asc_conn(m_conn[1]),m_hversion(0){}
+  m_des_conn(m_conn[0]),m_asc_conn(m_conn[1]),
+  m_hversion(0),m_merge_dag(new merge_dag_t){resize(0);}
 
 /*---------------------------------------------------------------------------*/
 
@@ -41,16 +43,24 @@ void mscomplex_t::set_critpt(int i,cellid_t c,char idx,cell_fn_t f,cellid_t v)
 
 void  mscomplex_t::resize(int i)
 {
-  m_cp_cellid.resize(i,cellid_t(-1,-1,-1));
-  m_cp_vertid.resize(i,cellid_t(-1,-1,-1));
-  m_cp_index.resize(i,-1);
-  m_cp_pair_idx.resize(i,-1);
-  m_cp_is_cancelled.resize(i,false);
-  m_cp_fn.resize(i);
-  m_des_conn.resize(i);
-  m_asc_conn.resize(i);
-  m_des_mfolds.resize(i);
-  m_asc_mfolds.resize(i);
+  if(i !=0 )
+  {
+    m_cp_cellid.resize(i,cellid_t(-1,-1,-1));
+    m_cp_vertid.resize(i,cellid_t(-1,-1,-1));
+    m_cp_index.resize(i,-1);
+    m_cp_pair_idx.resize(i,-1);
+    m_cp_is_cancelled.resize(i,false);
+    m_cp_fn.resize(i);
+    m_des_conn.resize(i);
+    m_asc_conn.resize(i);
+    m_des_mfolds.resize(i);
+    m_asc_mfolds.resize(i);
+    m_merge_dag->init(i);
+  }
+
+  for(int dir = 0; dir < GDIR_CT; ++ dir)
+    for(int dim = 0 ; dim <= gc_grid_dim ;++ dim)
+      m_geom_hversion[dir][dim] = get_hversion();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -94,7 +104,7 @@ void mscomplex_t::clear()
   m_asc_conn.clear();
   m_des_mfolds.clear();
   m_asc_mfolds.clear();
-
+  m_merge_dag->clear();
 }
 
 /*---------------------------------------------------------------------------*/

@@ -290,24 +290,24 @@ void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
     if (ns_max <= nmax || ns_min <= nmin)
       break;
 
-    int &p = pr[0],&q = pr[1];
+    ASSERT(order_pair<DES>(shared_from_this(),pr) == pr);
 
-    order_pr_by_cp_index(*this,p,q);
+    if(index(pr[0]) == gc_grid_dim) --ns_max;
+    if(index(pr[1]) == 0          ) --ns_min;
 
-    if(index(p) == gc_grid_dim) --ns_max;
-    if(index(q) == 0          ) --ns_min;
+    cancel_pair(pr[0],pr[1]);
 
-    cancel_pair(p,q);
-
-    BOOST_FOREACH(int_int_t i,m_des_conn[p])
-    BOOST_FOREACH(int_int_t j,m_asc_conn[q])
+    BOOST_FOREACH(int_int_t i,m_des_conn[pr[0]])
+    BOOST_FOREACH(int_int_t j,m_asc_conn[pr[1]])
     {
-      int_pair_t e(i.first,j.first);
+      int_pair_t e(j.first,i.first);
 
       if(is_valid_canc_edge(*this,e,thresh))
         pq.push(e);
     }
   }
+
+  m_merge_dag->update(shared_from_this());
 }
 
 /*---------------------------------------------------------------------------*/
@@ -336,8 +336,6 @@ int mscomplex_t::get_hversion_pers(double thresh, bool is_nrm) const
 
 typedef std::vector<int_list_t> contrib_list_t;
 
-template<eGDIR dir>
-int_pair_t order_pair(mscomplex_ptr_t msc,int_pair_t pr);
 
 template <int dim,int odim>
 inline bool is_dim_pair(mscomplex_ptr_t msc,int_pair_t pr)
@@ -519,6 +517,8 @@ inline void __collect_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
 
     ds->getManifold(msc->m_mfolds[dir][contrib[i][0]],contrib_cells,dim,dir);
   }
+
+  msc->m_geom_hversion[dir][dim] = msc->get_hversion();
 }
 
 /* -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - */
@@ -589,6 +589,8 @@ inline void __collect_extrema_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
   for(int i = 0 ; i< msc->get_num_critpts(); ++i)
     if(msc->index(i)==dim)
       oarr(msc->cellid(i)/2) = c_to_i2(r,msc->cellid(i));
+
+  msc->m_geom_hversion[dir][dim] = msc->get_hversion();
 }
 
 
@@ -596,15 +598,16 @@ inline void __collect_extrema_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
 
 void mscomplex_t::collect_mfolds(eGDIR dir, int dim, dataset_ptr_t ds)
 {  
-  if(dir == ASC && dim == 0 )__collect_extrema_mfolds<ASC>(shared_from_this(),ds);
-  if(dir == ASC && dim == 1 )__collect_mfolds<ASC,1>(shared_from_this(),ds);
-  if(dir == ASC && dim == 2 )__collect_mfolds<ASC,2>(shared_from_this(),ds);
+  if(dir==ASC && dim==0 )__collect_extrema_mfolds<ASC>(shared_from_this(),ds);
+  if(dir==ASC && dim==1 )__collect_mfolds<ASC,1>(shared_from_this(),ds);
+  if(dir==ASC && dim==2 )__collect_mfolds<ASC,2>(shared_from_this(),ds);
 
-  if(dir == DES && dim == 1 )__collect_mfolds<DES,1>(shared_from_this(),ds);
-  if(dir == DES && dim == 2 )__collect_mfolds<DES,2>(shared_from_this(),ds);
-  if(dir == DES && dim == 3 )__collect_extrema_mfolds<DES>(shared_from_this(),ds);
+  if(dir==DES && dim==1 )__collect_mfolds<DES,1>(shared_from_this(),ds);
+  if(dir==DES && dim==2 )__collect_mfolds<DES,2>(shared_from_this(),ds);
+  if(dir==DES && dim==3 )__collect_extrema_mfolds<DES>(shared_from_this(),ds);
 }
 
+/* -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - */
 
 void mscomplex_t::collect_mfolds(dataset_ptr_t ds)
 {
@@ -616,19 +619,6 @@ void mscomplex_t::collect_mfolds(dataset_ptr_t ds)
   __collect_mfolds<DES,2>(shared_from_this(),ds);
   __collect_extrema_mfolds<DES>(shared_from_this(),ds);
 }
-
-/*---------------------------------------------------------------------------*/
-
-template<>
-int_pair_t order_pair<DES>(mscomplex_ptr_t msc,int_pair_t pr)
-{if(msc->index(pr[0]) < msc->index(pr[1]))
-    std::swap(pr[0],pr[1]);return pr;}
-
-template<>
-int_pair_t order_pair<ASC>(mscomplex_ptr_t msc,int_pair_t pr)
-{if(msc->index(pr[0]) > msc->index(pr[1]))
-    std::swap(pr[0],pr[1]); return pr;}
-
 
 /*===========================================================================*/
 

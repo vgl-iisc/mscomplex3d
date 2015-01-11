@@ -191,8 +191,78 @@ inline int mscomplex_t::get_hversion() const {return m_hversion;}
 inline void order_pr_by_cp_index(const mscomplex_t &msc,int &p,int &q)
 {if(msc.index(p) < msc.index(q))std::swap(p,q);}
 
+/*---------------------------------------------------------------------------*/
+
+template<> inline int_pair_t order_pair<DES>(mscomplex_ptr_t msc,int_pair_t pr)
+{if(msc->index(pr[0]) < msc->index(pr[1]))
+    std::swap(pr[0],pr[1]);return pr;}
+
+template<> inline int_pair_t order_pair<ASC>(mscomplex_ptr_t msc,int_pair_t pr)
+{if(msc->index(pr[0]) > msc->index(pr[1]))
+    std::swap(pr[0],pr[1]); return pr;}
+
 /*===========================================================================*/
 
+
+
+
+/*===========================================================================*/
+
+/// \brief Data structure to extract MSC geometry in hierarchical versions
+class mscomplex_t::merge_dag_t
+{
+public:
+  /// \brief ctor
+  merge_dag_t();
+
+  /// \brief init
+  void init(int ncps);
+
+  /// \brief clear
+  void clear();
+
+
+
+  /// \brief For the given critical point (cp) , get the cps that
+  /// that contribute to its geometry at the given hierarchical version.
+  ///
+  /// \param  hver : the hierarchical version of the geom requested
+  /// \param ghver : the hierarchical version at which the fine geom is available
+  void get_contrib_cps(std::vector<int> &l, eGDIR dir, int cp, int hver, int gver) const;
+
+  /// \brief update merge_dag after new cancellations
+  void update(mscomplex_ptr_t msc);
+
+
+
+  /// \brief save into a binary stream
+  void save_bin(std::ostream &os) const;
+
+  /// \brief load from a binary stream
+  void load_bin(std::istream &is);
+
+
+//private:
+
+  struct node_t
+  {
+    int base;
+    int other;
+    int hversion;
+
+    node_t():base(-1),other(-1),hversion(0){}
+    node_t(int b,int o,int c):base(b),other(o),hversion(c){}
+  };
+
+  std::vector<node_t>  m_nodes;
+  std::vector<int>     m_cp_geom[2];
+  int                  m_last_hversion;
+
+  inline const node_t& get_node(int i) const;
+  inline int  get_ncps() const;
+};
+
+/*===========================================================================*/
 
 }
 

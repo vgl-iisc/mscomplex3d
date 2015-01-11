@@ -33,6 +33,8 @@ class mscomplex_t:public boost::enable_shared_from_this<mscomplex_t>
 {
 public:
 
+  class merge_dag_t;
+
   rect_t        m_rect;
   rect_t        m_ext_rect;
   rect_t        m_domain_rect;
@@ -46,6 +48,7 @@ public:
 
   int             m_hversion;
   int_pair_list_t m_canc_list;
+  int             m_geom_hversion[GDIR_CT][gc_grid_dim+1];
 
   conn_list_t   m_conn[GDIR_CT];
   conn_list_t  &m_des_conn;
@@ -55,6 +58,7 @@ public:
   mfold_list_t &m_des_mfolds;
   mfold_list_t &m_asc_mfolds;
 
+  boost::shared_ptr<merge_dag_t> m_merge_dag;
 
 public:
 
@@ -134,6 +138,10 @@ public:
 };
 
 inline void order_pr_by_cp_index(const mscomplex_t &msc,int &p,int &q);
+
+template<eGDIR dir>
+int_pair_t order_pair(mscomplex_ptr_t msc,int_pair_t pr);
+
 }
 
 #include <grid_mscomplex_inl.h>
