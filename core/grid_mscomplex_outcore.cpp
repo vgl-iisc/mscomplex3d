@@ -291,6 +291,7 @@ void mscomplex_t::save_bin(ostream &os) const
   utl::bin_write_vec(os,nconn);
   utl::bin_write_vec(os,adj);
 
+  utl::bin_write(os,m_hversion);
   utl::bin_write_vec(os,m_canc_list);
 
   for(int i = 0 ; i < N; ++i)
@@ -338,6 +339,7 @@ void mscomplex_t::load_bin(istream &is)
     copy(b,c,inserter(m_asc_conn[i],m_asc_conn[i].begin()));
   }
 
+  utl::bin_read(is,m_hversion);
   utl::bin_read_vec(is,m_canc_list);
 
   for(int i = 0 ; i < N; ++i)

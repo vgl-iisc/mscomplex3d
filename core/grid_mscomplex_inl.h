@@ -59,6 +59,13 @@ inline bool mscomplex_t::is_canceled(int i) const
 
 /*---------------------------------------------------------------------------*/
 
+inline bool mscomplex_t::is_not_canceled(int i) const
+{
+  return !is_canceled(i);
+}
+
+/*---------------------------------------------------------------------------*/
+
 inline cellid_t mscomplex_t::cellid(int i) const
 {
   ASSERTV(is_in_range(i,0,(int)m_cp_cellid.size()),i);
@@ -97,23 +104,6 @@ inline bool mscomplex_t::is_saddle(int i) const
 
 /*---------------------------------------------------------------------------*/
 
-inline bool mscomplex_t::is_unpaired_saddle(int i) const
-{
-  return (is_saddle(i) &&(is_paired(i) == false));
-}
-
-/*---------------------------------------------------------------------------*/
-
-inline bool mscomplex_t::is_unpaired_two_saddle(int i) const
-{return ((index(i) == 2) &&(is_paired(i) == false));}
-
-/*---------------------------------------------------------------------------*/
-
-inline bool mscomplex_t::is_unpaired_one_saddle(int i) const
-{return ((index(i) == 1) &&(is_paired(i) == false));}
-
-/*---------------------------------------------------------------------------*/
-
 template<int dim> inline bool mscomplex_t::is_index_i_cp(int i) const
 {return (index(i) == dim);}
 
@@ -123,7 +113,7 @@ inline int mscomplex_t::surv_extrema(int i) const
 {
   ASSERT(is_extrema(i));
 
-  if(is_paired(i) == false)
+  if(is_canceled(i) == false)
     return i;
 
   eGDIR dir = (index(i) == 3)?(ASC):(DES);
@@ -132,7 +122,7 @@ inline int mscomplex_t::surv_extrema(int i) const
 
   int j = m_conn[dir][pair_idx(i)].begin()->first;
 
-  ASSERT(!is_paired(j));
+  ASSERT(is_not_canceled(j));
 
   return j;
 }
@@ -187,6 +177,10 @@ inline void mscomplex_t::load(const std::string &f)
   ENSUREV(fs.is_open(),"file not found!!",f);
   load_bin(fs);
 }
+
+/*---------------------------------------------------------------------------*/
+
+inline int mscomplex_t::get_hversion() const {return m_hversion;}
 
 /*===========================================================================*/
 

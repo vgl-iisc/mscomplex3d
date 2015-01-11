@@ -36,7 +36,6 @@ public:
   rect_t        m_rect;
   rect_t        m_ext_rect;
   rect_t        m_domain_rect;
-  int           m_canc_pos;
 
   cellid_list_t   m_cp_cellid;
   cellid_list_t   m_cp_vertid;
@@ -45,6 +44,7 @@ public:
   bool_list_t     m_cp_is_cancelled;
   cell_fn_list_t  m_cp_fn;
 
+  int             m_hversion;
   int_pair_list_t m_canc_list;
 
   conn_list_t   m_conn[GDIR_CT];
@@ -84,9 +84,7 @@ public:
   inline bool      is_extrema(int i)              const;
   inline bool      is_saddle(int i)               const;
   inline bool      is_canceled(int i)             const;
-  inline bool      is_unpaired_saddle(int i)      const;
-  inline bool      is_unpaired_two_saddle(int i)  const;
-  inline bool      is_unpaired_one_saddle(int i)  const;  
+  inline bool      is_not_canceled(int i)         const;
   inline cell_fn_t fn_min()                       const; // O(#cp) complexity
   inline cell_fn_t fn_max()                       const; // O(#cp) complexity  
   template <int i>
@@ -101,11 +99,18 @@ public:
   void  set_critpt(int i,cellid_t c,char idx,cell_fn_t f,cellid_t vert_cell);
   void  connect_cps(int p, int q,int m=1);
 
-  // simplification related stuff
+  // hierarchical Ms complex related stuff
   void cancel_pair();
   void cancel_pair(int p, int q);
+  void anticancel_pair();
+  void set_hversion(int hver);
+  int  get_hversion() const;
+  int  get_hversion_nextrema(int nmax=0,int nmin=0) const;
+
+  // persistence based simplification related stuff
   bool persistence_cmp(int_pair_t p0,int_pair_t p1) const;
   void simplify_pers(double thresh=1.0,bool is_nrm=true,int nmax=0,int nmin=0);
+  int  get_hversion_pers(double thresh=1.0,bool is_nrm=true) const;
 
   // geometry collection related stuff
   void collect_mfolds(eGDIR dir, int dim, dataset_ptr_t ds);

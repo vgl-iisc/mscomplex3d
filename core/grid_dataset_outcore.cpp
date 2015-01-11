@@ -133,11 +133,6 @@ void write_header(std::ostream & os, dataset_t &ds,int_list_t & offsets,cellid_l
   os.write((char*)(void*)offsets.data(),offsets.size()*sizeof(int));
 }
 
-inline bool need_saddle_mfold(const mscomplex_t& msc,int i)
-{
-  return msc.is_unpaired_saddle(i);
-}
-
 //  void save_saddle_mfolds(std::ostream &os,dataset_t &ds,mscomplex_t &msc)
 //  {
 //    mscomplex_t::filter_t fltr = bind(need_saddle_mfold,boost::cref(msc),_1);

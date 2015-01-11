@@ -113,7 +113,7 @@ bp::list mscomplex_cps(mscomplex_pyms3d_ptr_t msc,int dim)
   bp::list r;
 
   for(int i = 0 ; i < msc->get_num_critpts(); ++i)
-      if(msc->is_not_paired(i) && (dim == -1 || (msc->index(i) == dim)))
+      if(msc->is_not_canceled(i) && (dim == -1 || (msc->index(i) == dim)))
         r.append(i);
 
   return r;
@@ -259,8 +259,36 @@ void wrap_mscomplex_t()
            "    Any combination of the above criteria may be set\n"\
            "    Simplification will stop when any of the criteria is reached\n"
            )
-
-
+      .def("get_hversion",&mscomplex_t::get_hversion,
+           "Get the current Hierarchical Ms Complex version number")
+      .def("set_hversion",&mscomplex_t::set_hversion,
+           "Set the current Hierarchical Ms Complex version number")
+      .def("get_hversion_pers",&mscomplex_t::get_hversion_pers,
+           ("thresh",bp::arg("is_nrm")=true),
+           "Get the highest hierarchical version num wherein all pairs \n"
+           "with persistence less than the given value are canceled"
+           "\n"
+           "Parameters   :\n"
+           "    tresh    : persistence threshold\n"
+           "    is_nrm   : is the threshold normalized to [0,1] or not.\n"
+           "               if not then thresh is in scale of input function\n"
+           "\n"
+           "Note         : \n"
+           "    this presumes that the hierarchy generated was monotonic  \n"
+           "    in the persistence of each canceled pair.                 \n"
+           "\n"
+           "    Here, persistence is used interchangably to mean the      \n"
+           "    the absolute difference in function values of pairs.      \n"
+           )
+      .def("get_hversion_nextrema",&mscomplex_t::get_hversion_nextrema,
+           (bp::arg("nmax")=0,bp::arg("nmin")=0),
+           "Get the highest hierarchical no version which retains atleast \n"
+           "nmax/nmin maxima/minima"
+           "\n"
+           "Parameters   :\n"
+           "    nmax,nmin: num maxima/minima that should be retained\n"\
+           "\n"
+           )
 //      .def("arc_geom",&mscomplex_arc_geom,
 //           "seqence of cells of arc connecting 2 cps (empty list if no arc exists)")
       ;

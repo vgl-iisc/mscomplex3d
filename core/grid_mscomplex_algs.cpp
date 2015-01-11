@@ -21,7 +21,7 @@ void mscomplex_t::cancel_pair ( int p, int q)
 {
   order_pr_by_cp_index(*this,p,q);
 
-  ENSURE(m_canc_pos == m_canc_list.size(),
+  ENSURE(m_hversion == m_canc_list.size(),
          "Cannot cancel pair !! Ms complex resolution is not coarsest.");
   ENSURE(index(p) == index(q)+1,
          "indices do not differ by 1");
@@ -32,8 +32,8 @@ void mscomplex_t::cancel_pair ( int p, int q)
   ENSURE(m_des_conn[p][q] == 1 && m_asc_conn[q][p] == 1,
          "p and q are multiply connected");
 
-//  m_cp_cancno[p] = m_canc_list.size();
-//  m_cp_cancno[q] = m_canc_list.size();
+  m_cp_pair_idx[p] = q;
+  m_cp_pair_idx[q] = p;
   m_canc_list.push_back(int_pair_t(p,q));
 
   cancel_pair();
@@ -43,24 +43,21 @@ void mscomplex_t::cancel_pair ( int p, int q)
 
 void mscomplex_t::cancel_pair ()
 {
-  ENSURE(is_in_range(m_canc_pos,0,m_canc_list.size()),
+  ENSURE(is_in_range(m_hversion,0,m_canc_list.size()),
          "invalid cancellation position");
 
-  int p = m_canc_list[m_canc_pos][0];
-  int q = m_canc_list[m_canc_pos][1];
+  int p = m_canc_list[m_hversion][0];
+  int q = m_canc_list[m_hversion][1];
 
-  m_canc_pos++;
+  m_hversion++;
 
   ASSERT(index(p) == index(q)+1);
-  ASSERT(m_cp_pair_idx[p] == -1);
-  ASSERT(m_cp_pair_idx[q] == -1);
+  ASSERT(m_cp_pair_idx[p] == q);
+  ASSERT(m_cp_pair_idx[q] == p);
   ASSERT(m_des_conn[p].count(q) == 1);
   ASSERT(m_asc_conn[q].count(p) == 1);
   ASSERT(m_des_conn[p][q] == 1);
   ASSERT(m_asc_conn[q][p] == 1);
-
-  m_cp_pair_idx[p] = q;
-  m_cp_pair_idx[q] = p;
 
   m_des_conn[p].erase(q);
   m_asc_conn[q].erase(p);
@@ -85,9 +82,89 @@ void mscomplex_t::cancel_pair ()
 
   m_cp_is_cancelled[p] =true;
   m_cp_is_cancelled[q] =true;
+}
 
-  m_asc_conn[p].clear();
-  m_des_conn[q].clear();
+/*---------------------------------------------------------------------------*/
+
+void mscomplex_t::anticancel_pair()
+{
+  ENSURE(is_in_range(m_hversion-1,0,m_canc_list.size()),
+         "invalid cancellation position");
+
+  m_hversion--;
+
+  int p = m_canc_list[m_hversion][0];
+  int q = m_canc_list[m_hversion][1];
+
+  ASSERT(index(p) == index(q)+1);
+  ASSERT(m_cp_pair_idx[p] == q);
+  ASSERT(m_cp_pair_idx[q] == p);
+
+  BOOST_FOREACH(int_int_t pr,m_des_conn[p]) m_asc_conn[pr.first][p] = pr.second;
+  BOOST_FOREACH(int_int_t pr,m_asc_conn[p]) m_des_conn[pr.first][p] = pr.second;
+  BOOST_FOREACH(int_int_t pr,m_des_conn[q]) m_asc_conn[pr.first][q] = pr.second;
+  BOOST_FOREACH(int_int_t pr,m_asc_conn[q]) m_des_conn[pr.first][q] = pr.second;
+
+  // cps in lower of u except l
+  BOOST_FOREACH(int_int_t i,m_des_conn[p])
+      BOOST_FOREACH(int_int_t j,m_asc_conn[q])
+  {
+    int u = i.first;
+    int v = j.first;
+    int m = i.second*j.second;
+
+    ASSERT(is_canceled(u) == false);
+    ASSERT(is_canceled(v) == false);
+
+    connect_cps(u,v,-m);
+  }
+
+  connect_cps(p,q,1);
+
+  ASSERT(m_des_conn[p].count(q) == 1);
+  ASSERT(m_asc_conn[q].count(p) == 1);
+  ASSERT(m_des_conn[p][q] == 1);
+  ASSERT(m_asc_conn[q][p] == 1);
+
+  m_cp_is_cancelled[p] =false;
+  m_cp_is_cancelled[q] =false;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void mscomplex_t::set_hversion(int hver)
+{
+  for(int i = m_hversion; i>hver && i>0; --i)  anticancel_pair();
+  for(int i = m_hversion; i<hver && i<m_canc_list.size(); ++i)cancel_pair();
+}
+
+
+/*---------------------------------------------------------------------------*/
+
+int mscomplex_t::get_hversion_nextrema(int nmax, int nmin) const
+{
+  int ns_max = boost::distance(cpno_range()
+    |ba::filtered(bind(&mscomplex_t::is_index_i_cp<gc_grid_dim>,this,_1)));
+
+  int ns_min = boost::distance(cpno_range()
+    |ba::filtered(bind(&mscomplex_t::is_index_i_cp<0>,this,_1)));
+
+  int hver = 0;
+
+  for(int hver = 0 ; hver < m_canc_list.size() ; ++hver)
+  {
+    int p = m_canc_list[hver][0],q = m_canc_list[hver][1];
+
+    order_pr_by_cp_index(*this,p,q);
+
+    if(index(p) == gc_grid_dim) --ns_max;
+    if(index(q) == 0          ) --ns_min;
+
+    if (ns_max <= nmax || ns_min <= nmin)
+      break;
+  }
+
+  return hver;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -195,9 +272,11 @@ void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
   }
 
   int ns_max = boost::distance(cpno_range()
-    |ba::filtered(bind(&mscomplex_t::is_index_i_cp<gc_grid_dim>,this,_1)));
+    |ba::filtered(bind(&mscomplex_t::is_index_i_cp<gc_grid_dim>,this,_1))
+    |ba::filtered(bind(&mscomplex_t::is_not_canceled,this,_1)));
   int ns_min = boost::distance(cpno_range()
-    |ba::filtered(bind(&mscomplex_t::is_index_i_cp<0>,this,_1)));
+    |ba::filtered(bind(&mscomplex_t::is_index_i_cp<0>,this,_1))
+    |ba::filtered(bind(&mscomplex_t::is_not_canceled,this,_1)));
 
   while (pq.size() !=0)
   {
@@ -229,6 +308,28 @@ void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
         pq.push(e);
     }
   }
+}
+
+/*---------------------------------------------------------------------------*/
+
+int mscomplex_t::get_hversion_pers(double thresh, bool is_nrm) const
+{
+  int hver = 0;
+
+  if(is_nrm)
+    thresh *= (*br::max_element(m_cp_fn) - *br::min_element(m_cp_fn));
+
+  for(int hver = 0 ; hver < m_canc_list.size() ; ++hver)
+  {
+    int p = m_canc_list[hver][0],q = m_canc_list[hver][1];
+
+    order_pr_by_cp_index(*this,p,q);
+
+    if (!(std::abs<double>(fn(p)-fn(q)) < thresh))
+      break;
+  }
+
+  return hver;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -266,7 +367,7 @@ void getCanceledCpContrib(mscomplex_ptr_t msc,contrib_list_t& ccp_contrib)
   std::map<int,int> ccp_map;
 
   BOOST_AUTO(ccp_rng,msc->m_canc_list
-             // |ba::sliced(0,msc->m_multires_version)
+             |ba::sliced(0,msc->m_hversion)
              |ba::transformed(bind(order_pair<dir>,msc,_1))
              |ba::filtered(bind(is_dim_pair<dim,odim>,msc,_1))
              );
@@ -293,8 +394,8 @@ void getCanceledCpContrib(mscomplex_ptr_t msc,contrib_list_t& ccp_contrib)
     // for each qa in the asc conn of q:
     BOOST_FOREACH(int qa, msc->m_conn[odir][q]|ba::map_keys)
     {
-      // a) if qa is not paired ..
-      if(msc->is_not_paired(qa))
+      // a) if qa is not canceled ..
+      if(msc->is_not_canceled(qa))
       {
         // .. p contributes to qa.
         pcontrib.push_back(qa);
@@ -311,7 +412,7 @@ void getCanceledCpContrib(mscomplex_ptr_t msc,contrib_list_t& ccp_contrib)
           pcontrib.push_back(qaqa);
 
           // pdpd has to be a surviving cp
-          ASSERT(msc->is_not_paired(qaqa));
+          ASSERT(msc->is_not_canceled(qaqa));
         }
       }
     }
@@ -324,12 +425,12 @@ void getCanceledCpContrib(mscomplex_ptr_t msc,contrib_list_t& ccp_contrib)
     int ccp = ccp_l.front();
 
     ASSERTS (msc->index(ccp) == dim) << "incorrect dim";
-    ASSERTS (msc->is_paired(ccp))    << ccp << " should be cancelled";
+    ASSERTS (msc->is_canceled(ccp))    << ccp << " should be cancelled";
 
     BOOST_FOREACH(int scp, ccp_l|ba::sliced(1,ccp_l.size()))
     {
       ASSERTS(msc->index(scp) == dim)  << "incorrect dim";
-      ASSERTS(msc->is_not_paired(scp)) << scp << " should be calcelled";
+      ASSERTS(msc->is_not_canceled(scp)) << scp << " should be calcelled";
     }
   }
 }
@@ -348,7 +449,7 @@ void getSurvivingCpContrib(mscomplex_ptr_t msc,contrib_list_t& scp_contrib)
   std::map<int,int> scp_map;
 
   BOOST_AUTO(scp_rng, msc->cpno_range()
-             |ba::filtered(bind(&mscomplex_t::is_not_paired,msc,_1))
+             |ba::filtered(bind(&mscomplex_t::is_not_canceled,msc,_1))
              |ba::filtered(bind(&mscomplex_t::is_index_i_cp<dim>,msc,_1)));
 
   BOOST_FOREACH(int cp,scp_rng)
@@ -385,12 +486,12 @@ void getSurvivingCpContrib(mscomplex_ptr_t msc,contrib_list_t& scp_contrib)
     int scp = scp_l.front();
 
     ASSERTS (msc->index(scp) == dim)   << "incorrect dim";
-    ASSERTS (msc->is_not_paired(scp))  << scp << " should be cancelled";
+    ASSERTS (msc->is_not_canceled(scp))  << scp << " should be cancelled";
 
     BOOST_FOREACH(int ccp, scp_l|ba::sliced(1,scp_l.size()))
     {
       ASSERTS(msc->index(ccp) == dim)     << "incorrect dim";
-      ASSERTS(msc->is_paired(ccp)) << ccp << " should be calcelled";
+      ASSERTS(msc->is_canceled(ccp)) << ccp << " should be calcelled";
     }
   }
 }
