@@ -159,11 +159,12 @@ int mscomplex_t::get_hversion_nextrema(int nmax, int nmin) const
 
     order_pr_by_cp_index(*this,p,q);
 
+    if (ns_max <= nmax || ns_min <= nmin)
+      break;
+
     if(index(p) == gc_grid_dim) --ns_max;
     if(index(q) == 0          ) --ns_min;
 
-    if (ns_max <= nmax || ns_min <= nmin)
-      break;
   }
 
   return hver;
