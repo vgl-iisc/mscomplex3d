@@ -64,39 +64,37 @@ files_to_c_variables(
 
 set(${PROJECT_NAME}_SRCS ${${PROJECT_NAME}_SRCS}
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/utl.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/utl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/aabb.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/n_vector.h
+    utl.h
+    utl.cpp
+    aabb.h
+    n_vector.h
 
+    grid.h
+    grid.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/grid.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/grid.cpp
+    grid_dataset.h
+    grid_dataset_inl.h
+    grid_dataset_base.cpp
+    grid_dataset_algs.cpp
+    grid_dataset_outcore.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/grid_dataset.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/grid_dataset_inl.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/grid_dataset_base.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/grid_dataset_algs.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/grid_dataset_outcore.cpp
+    grid_mscomplex.h
+    grid_mscomplex_inl.h
+    grid_mscomplex_base.cpp
+    grid_mscomplex_algs.cpp
+    grid_mscomplex_merge_dag.cpp
+    grid_mscomplex_outcore.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/grid_mscomplex.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/grid_mscomplex_inl.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/grid_mscomplex_base.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/grid_mscomplex_algs.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/grid_mscomplex_merge_dag.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/grid_mscomplex_outcore.cpp
+    grid_outcore.h
+    grid_outcore.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/grid_outcore.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/grid_outcore.cpp
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/OpenCL/grid_dataset_cl.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/OpenCL/grid_dataset_cl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/OpenCL/cl.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/grid_dataset_cl_sources.h
-    ${CMAKE_CURRENT_BINARY_DIR}/grid_dataset_cl_sources.cpp
+    OpenCL/grid_dataset_cl.h
+    OpenCL/grid_dataset_cl.cpp
+    OpenCL/cl.hpp
+    grid_dataset_cl_sources.h
+    grid_dataset_cl_sources.cpp
 )
 
-configure_file(${PROJECT_SOURCE_DIR}/config.h.in ${PROJECT_BINARY_DIR}/config.h)
 
 if(OPENMP_FOUND)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
@@ -104,7 +102,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
-set_source_files_properties(${${PROJECT_NAME}_SRCS} PROPERTIES COMPILE_FLAGS -fpic)
+set_source_files_properties(OpenCL/grid_dataset_cl.cpp PROPERTIES COMPILE_FLAGS
+"-DOPENCL_NUM_WORK_ITEMS_PER_GROUP=${OPENCL_NUM_WORK_ITEMS_PER_GROUP} -DOPENCL_NUM_WORK_GROUPS=${OPENCL_NUM_WORK_GROUPS}")
 
 add_library(${PROJECT_NAME} OBJECT ${${PROJECT_NAME}_SRCS})
 

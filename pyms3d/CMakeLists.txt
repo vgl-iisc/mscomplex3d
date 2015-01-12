@@ -47,7 +47,6 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}
 endif()
 
 add_library(pyms3d-core OBJECT pyms3d.cpp ${BOOST_NUMPY_SRCS})
-set_source_files_properties(${BOOST_NUMPY_SRCS} pyms3d.cpp PROPERTIES COMPILE_FLAGS -fpic)
 
 
 add_library(pyms3d SHARED $<TARGET_OBJECTS:mscomplex3d-core>

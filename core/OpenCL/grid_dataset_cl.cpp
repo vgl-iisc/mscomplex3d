@@ -12,7 +12,6 @@
 #endif
 
 #include <utl.h>
-#include <config.h>
 
 #include<grid_dataset_cl.h>
 #include<grid_dataset.h>

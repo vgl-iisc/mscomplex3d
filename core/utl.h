@@ -159,7 +159,7 @@ class logger
   enum severity_level {trace,debug,info,warning,error,fatal};
 
   inline bool isOpen(severity_level severity)
-  {return severity >= info;}
+  {return severity >= UTL_LOG_LEVEL;}
 
   inline void push_ts(const std::string & log)
   {

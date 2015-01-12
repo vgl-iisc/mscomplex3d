@@ -6,6 +6,13 @@ cmake_minimum_required(VERSION 2.8.3)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
+# Common Properties
+set(MSCOMPLEX3D_LOG_LEVEL 2 CACHE STRING
+      "log level value trace=0,debug=1,info=2,warning=3,error=4,fatal=5")
+
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fpic -DUTL_LOG_LEVEL=${MSCOMPLEX3D_LOG_LEVEL}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpic -DUTL_LOG_LEVEL=${MSCOMPLEX3D_LOG_LEVEL}")
+
 # Handle installation paths
 set(MSCOMPLEX3D_INSTALL_DIR "" CACHE PATH "installation dir")
 

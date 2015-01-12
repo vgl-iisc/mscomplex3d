@@ -68,16 +68,19 @@ void mscomplex_compute_bin
   int x = bp::extract<int>(tp[0]);
   int y = bp::extract<int>(tp[1]);
   int z = bp::extract<int>(tp[2]);
+  cellid_t size = cellid_t(x,y,z);
 
-  TLOG << "Entered :\n\t\t" << SVAR(bin_file) << SVAR(cellid_t(x,y,z));
+  rect_t dom(cellid_t::zero,(size-cellid_t::one)*2);
 
-  rect_t r(cellid_t::zero,(cellid_t(x,y,z)-cellid_t::one)*2);
+  TLOG << "Entered :"
+       << endl << "\t" << SVAR(bin_file)
+       << endl << "\t" << SVAR(size);
 
-  msc->m_rect        = r;
-  msc->m_domain_rect = r;
-  msc->m_ext_rect    = r;
+  msc->m_rect        = dom;
+  msc->m_domain_rect = dom;
+  msc->m_ext_rect    = dom;
 
-  msc->ds.reset(new dataset_t(r,r,r));
+  msc->ds.reset(new dataset_t(dom,dom,dom));
   msc->ds->init(bin_file);
   msc->ds->computeMsGraph(msc);
 
@@ -425,6 +428,8 @@ int main(int argc, char **argv)
     ENSURES(argc == 2) << "Usage : " << argv[0] << " <filename.py>" << endl;
 
     std::ifstream t(argv[1]);
+
+    ENSURES(t.is_open()) << "Unable to open File="<<argv[1] << endl;
 
     std::string s((std::istreambuf_iterator<char>(t)),
                   std::istreambuf_iterator<char>());

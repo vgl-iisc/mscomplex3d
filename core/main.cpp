@@ -1,7 +1,5 @@
 #include <boost/program_options.hpp>
 
-#include <config.h>
-
 #include <grid_dataset.h>
 #include <grid_mscomplex.h>
 #include <grid_outcore.h>
