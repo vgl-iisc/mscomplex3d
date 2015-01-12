@@ -153,7 +153,7 @@ int mscomplex_t::get_hversion_nextrema(int nmax, int nmin) const
 
   int hver = 0;
 
-  for(int hver = 0 ; hver < m_canc_list.size() ; ++hver)
+  for(hver = 0 ; hver < m_canc_list.size() ; ++hver)
   {
     int p = m_canc_list[hver][0],q = m_canc_list[hver][1];
 
