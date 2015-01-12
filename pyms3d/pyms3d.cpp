@@ -18,21 +18,31 @@ using namespace utl;
 namespace bp = boost::python;
 namespace np = boost::numpy;
 
-/*****************************************************************************/
+namespace utl {
+template<class rng_t>
+inline std::string to_string_rng(rng_t rng,const char * delim = ", ")
+{
+  std::stringstream ss;
+
+  BOOST_AUTO(b,boost::begin(rng));
+  BOOST_AUTO(e,boost::end(rng));
+
+  ss<<"["; for(; b!=e ; b) ss << *b++ << delim; ss<<"]";
+  return ss.str();
+}
+}
+
+
+/*===========================================================================*/
 namespace pyms3d {
-
-
-/*****************************************************************************/
-/******** Python wrapped Morse-Smale complex class                    ********/
-/*****************************************************************************/
-
-// Wrapper to hold on to references to some other objects
+/// \brief Wrapper for python to hold on to references of dataset_t
 class mscomplex_pyms3d_t: public mscomplex_t
 {
-  typedef mscomplex_t base_t;
-
 public:
   dataset_ptr_t     ds;
+  typedef mscomplex_t base_t;
+
+  /*-------------------------------------------------------------------------*/
 
   void save(const string &f) const
   {
@@ -42,6 +52,8 @@ public:
     ds->save_bin(fs);
   }
 
+  /*-------------------------------------------------------------------------*/
+
   void load(const string &f)
   {
     std::fstream fs(f.c_str(),std::ios::in|std::ios::binary);
@@ -49,7 +61,123 @@ public:
     load_bin(fs);
     ds->load_bin(fs);
   }
+
+  /*-------------------------------------------------------------------------*/
+
+
+  template <eGDIR dir>
+  np::ndarray conn(int cp)
+  {
+    TLOG << "Entered :" << SVAR(cp);
+
+    ENSURES(is_in_range(cp,0,get_num_critpts()))
+        << "out of range "<<SVAR(cp);
+
+    int       nconn =  m_conn[dir][cp].size();
+    np::dtype    dt =  np::dtype::get_builtin<int>();
+    np::ndarray arr =  np::empty(bp::make_tuple(nconn,2),dt);
+
+    int *iter = reinterpret_cast<int*>(arr.get_data());
+
+    BOOST_FOREACH(int_int_t c,m_conn[dir][cp])
+    {
+      *iter++ = c.first;
+      *iter++ = c.second;
+    }
+
+    TLOG << "Exited  :" <<SVAR(nconn);
+    return arr;
+  }
+
+
+  /*-------------------------------------------------------------------------*/
+
+  template <eGDIR dir> int geom_size(int cp,int hver=-1)
+  {
+    TLOG << "Entered :" << SVAR(cp) << SVAR(hver);
+
+    if( hver == -1) hver = get_hversion();
+
+    ENSURES(is_in_range(cp,0,get_num_critpts()))
+        << "out of range "<<SVAR(cp);
+    ENSURES(is_in_range(hver,0,m_canc_list.size()+1))
+        << "hversion not in range "<<SVAR(hver);
+
+    int_list_t l;
+
+    int dim = index(cp);
+
+    m_merge_dag->get_contrib_cps(l,dir,cp,hver,m_geom_hversion[dir][dim]);
+
+    int s = 0;
+
+    for(int j = 0 ; j < l.size(); ++j)
+      s += m_mfolds[dir][l[j]].size();
+
+    TLOG << "Exited  :" << SVAR(s);
+
+    return s;
+  }
+
+  /*-------------------------------------------------------------------------*/
+
+  template <eGDIR dir> np::ndarray geom(int cp,int hver=-1)
+  {
+    TLOG << "Entered :" << SVAR(cp) << SVAR(hver);
+
+    if( hver == -1) hver = get_hversion();
+
+    ENSURES(is_in_range(cp,0,get_num_critpts()))
+        << "out of range "<<SVAR(cp);
+    ENSURES(is_in_range(hver,0,m_canc_list.size()+1))
+        << "hversion not in range "<<SVAR(hver);
+
+    int_list_t l;
+
+    int dim = index(cp);
+
+    m_merge_dag->get_contrib_cps
+        (l,dir,cp,hver,m_geom_hversion[dir][dim]);
+
+    TLOG << "Merge Dag Query Completed ";
+
+    int NC = 0;
+    int  O = 0;
+
+    for(int j = 0 ; j < l.size(); ++j)
+      NC += m_mfolds[dir][l[j]].size();
+
+    np::dtype    dt =   np::dtype::get_builtin<int>();
+    np::ndarray arr =  np::zeros(bp::make_tuple(NC,3),dt);
+
+    int * iter = reinterpret_cast<int*>(arr.get_data());
+
+    for(int j = 0 ; j < l.size(); ++j)
+    {
+      mfold_t & mfold = m_mfolds[dir][l[j]];
+
+      for(int k = 0 ; k < mfold.size(); ++k)
+      {
+        *iter++ = mfold[k][0];
+        *iter++ = mfold[k][1];
+        *iter++ = mfold[k][2];
+      }
+
+      O += mfold.size();
+    }
+
+    TLOG << "Exited  :" << SVAR(NC);
+    return arr;
+  }
+
+  /*-------------------------------------------------------------------------*/
+
 };
+}
+
+/*===========================================================================*/
+
+namespace pyms3d {
 
 typedef  boost::shared_ptr<mscomplex_pyms3d_t> mscomplex_pyms3d_ptr_t;
 
@@ -106,26 +234,6 @@ bp::tuple mscomplex_frange(mscomplex_pyms3d_ptr_t msc)
   return bp::make_tuple();
 }
 
-template <eGDIR dir>
-np::ndarray mscomplex_conn(mscomplex_pyms3d_ptr_t msc, int cp)
-{
-  ASSERT(is_in_range(cp,0,msc->get_num_critpts()));
-
-  np::dtype dt =np::dtype::get_builtin<int>();
-
-  np::ndarray arr =  np::empty(bp::make_tuple(msc->m_conn[dir][cp].size(),2),dt);
-
-  int j = 0;
-
-  BOOST_FOREACH(int_int_t c,msc->m_conn[dir][cp])
-  {
-    arr[j][0] = c.first;
-    arr[j][1] = c.second;
-    ++j;
-  }
-  return arr;
-}
-
 bp::list mscomplex_cps(mscomplex_pyms3d_ptr_t msc,int dim)
 {
   bp::list r;
@@ -155,74 +263,6 @@ void mscomplex_collect_mfolds(mscomplex_pyms3d_ptr_t msc)
   TLOG << "Exited  :";
 }
 
-template <eGDIR dir>
-int mscomplex_geom_size(mscomplex_pyms3d_ptr_t msc, int cp,int hver=-1)
-{
-  TLOG << "Entered :" << SVAR(cp) << SVAR(hver);
-
-  ENSURES(is_in_range(cp,0,msc->get_num_critpts())) << "out of range cpid="<<cp;
-
-  if( hver == -1) hver = msc->get_hversion();
-
-  int_list_t l;
-
-  int dim = msc->index(cp);
-
-  msc->m_merge_dag->get_contrib_cps(l,dir,cp,hver,msc->m_geom_hversion[dir][dim]);
-
-  int s = 0;
-
-  for(int j = 0 ; j < l.size(); ++j)
-    s += msc->m_mfolds[dir][l[j]].size();
-
-  TLOG << "Exited  :" << SVAR(s);
-
-  return s;
-}
-
-template <eGDIR dir>
-np::ndarray mscomplex_geom(mscomplex_pyms3d_ptr_t msc, int cp,int hver=-1)
-{
-  TLOG << "Entered :" << SVAR(cp) << SVAR(hver);
-
-  ENSURES(is_in_range(cp,0,msc->get_num_critpts())) << "out of range cpid="<<cp;
-
-  if( hver == -1) hver = msc->get_hversion();
-
-  int_list_t l;
-
-  int dim = msc->index(cp);
-
-  msc->m_merge_dag->get_contrib_cps
-      (l,dir,cp,hver,msc->m_geom_hversion[dir][dim]);
-
-  int NC = 0;
-  int  O = 0;
-
-  for(int j = 0 ; j < l.size(); ++j)  
-    NC += msc->m_mfolds[dir][l[j]].size();  
-
-  np::dtype    dt =   np::dtype::get_builtin<int>();
-  np::ndarray arr =  np::empty(bp::make_tuple(NC,3),dt);
-
-  for(int j = 0 ; j < l.size(); ++j)
-  {
-    mfold_t & mfold = msc->m_mfolds[dir][l[j]];
-
-    //#pragma omp parallel for
-    for(int k = 0 ; k < mfold.size(); ++k)
-    {
-      arr[O+k][0] = mfold[k][0];
-      arr[O+k][1] = mfold[k][1];
-      arr[O+k][2] = mfold[k][2];
-    }
-
-    O += mfold.size();
-  }
-
-  TLOG << "Exited  :" << SVAR(NC);
-  return arr;
-}
 
 //bp::list mscomplex_arc_geom(mscomplex_ptr_t msc, int a, int b)
 //{
@@ -274,9 +314,9 @@ void wrap_mscomplex_t()
            "The ith cancellation pair")
       .def("frange",&mscomplex_frange,
            "Range of function values")
-      .def("asc",&mscomplex_conn<ASC>,
+      .def("asc",&mscomplex_pyms3d_t::conn<ASC>,
            "List of ascending cps connected to a given critical point i")
-      .def("des",&mscomplex_conn<DES>,
+      .def("des",&mscomplex_pyms3d_t::conn<DES>,
            "List of descending cps connected to a given critical point i")
       .def("cps",&mscomplex_cps,(bp::arg("dim")=-1),
            "Returns a list of surviving critical cps\n"\
@@ -284,28 +324,28 @@ void wrap_mscomplex_t()
            "Parameters   :\n"
            "          dim: index of the cps. -1 signifies all. default=-1\n"
            )
-      .def("asc_geom",&mscomplex_geom<ASC>,
+      .def("asc_geom",&mscomplex_pyms3d_t::geom<ASC>,
            (bp::arg("cp"),bp::arg("hversion")=-1),
            "Ascending manifold geometry of a given critical point i"
            "Parameters: \n"\
            "          cp: the critical point id\n"\
            "    hversion: desired hierarchical version (optional).\n"\
            )
-      .def("des_geom",&mscomplex_geom<DES>,
+      .def("des_geom",&mscomplex_pyms3d_t::geom<DES>,
            (bp::arg("cp"),bp::arg("hversion")=-1),
            "Descending manifold geometry of a given critical point i"
            "Parameters: \n"\
            "          cp: the critical point id\n"\
            "    hversion: desired hierarchical version (optional).\n"\
            )
-      .def("asc_geom_size",&mscomplex_geom_size<ASC>,
+      .def("asc_geom_size",&mscomplex_pyms3d_t::geom_size<ASC>,
            (bp::arg("cp"),bp::arg("hversion")=-1),
            "Ascending manifold geometry size of a given critical point i"
            "Parameters: \n"\
            "          cp: the critical point id\n"\
            "    hversion: desired hierarchical version (optional).\n"\
            )
-      .def("des_geom_size",&mscomplex_geom_size<DES>,
+      .def("des_geom_size",&mscomplex_pyms3d_t::geom_size<DES>,
            (bp::arg("cp"),bp::arg("hversion")=-1),
            "Descending manifold geometry size of a given critical point i"
            "Parameters: \n"\

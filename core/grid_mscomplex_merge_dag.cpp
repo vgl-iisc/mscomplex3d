@@ -81,18 +81,16 @@ void mscomplex_t::merge_dag_t::update(mscomplex_ptr_t msc)
          <<"earlier pnode has formed from a later cancellation"
          <<SVAR(get_node(pnode).hversion) << SVAR(m_last_hversion);
 
-      if( pnode >= get_ncps() )
+      BOOST_FOREACH(int r,msc->m_conn[odir][q]|ba::map_keys)
       {
-        BOOST_FOREACH(int r,msc->m_conn[odir][q]|ba::map_keys)
-        {
-          int rnode         = m_cp_geom[dir][r];
-          m_cp_geom[dir][r] = m_nodes.size();
-          m_nodes.push_back(node_t(r,rnode,pnode,m_last_hversion));
+        int rnode         = m_cp_geom[dir][r];
+        m_cp_geom[dir][r] = m_nodes.size();
+        m_nodes.push_back(node_t(r,rnode,pnode,m_last_hversion));
 
-          ENSURES(get_node(rnode).hversion < m_last_hversion)
-              <<"earlier rnode has formed from a later cancellation";
-        }
+        ENSURES(get_node(rnode).hversion < m_last_hversion)
+            <<"earlier rnode has formed from a later cancellation";
       }
+      std::swap(p,q);
     }
   }
 }

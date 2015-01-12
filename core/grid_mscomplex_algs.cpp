@@ -563,9 +563,9 @@ inline void __collect_extrema_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
       oarr(msc->cellid(i)/2) = i;
 
   #pragma omp parallel for
-  for(    int z = lc[2]; z < uc[2]; z +=2 )
-    for(  int y = lc[1]; y < uc[1]; y +=2 )
-      for(int x = lc[0]; x < uc[0]; x +=2 )
+  for(    int z = lc[2]; z <= uc[2]; z +=2 )
+    for(  int y = lc[1]; y <= uc[1]; y +=2 )
+      for(int x = lc[0]; x <= uc[0]; x +=2 )
       {
         cellid_t c(x,y,z);
         int oe   = oarr(c/2 );
@@ -581,9 +581,9 @@ inline void __collect_extrema_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
 
 
   #pragma omp parallel for
-  for(    int z = lc[2]; z < uc[2]; z +=2 )
-    for(  int y = lc[1]; y < uc[1]; y +=2 )
-      for(int x = lc[0]; x < uc[0]; x +=2 )
+  for(    int z = lc[2]; z <= uc[2]; z +=2 )
+    for(  int y = lc[1]; y <= uc[1]; y +=2 )
+      for(int x = lc[0]; x <= uc[0]; x +=2 )
       {
         cellid_t c(x,y,z);
         int oe   = oarr(c/2 );
