@@ -2,6 +2,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
+#include <boost/numpy.hpp>
 
 #include <iostream>
 
@@ -15,6 +16,7 @@ using namespace grid;
 using namespace utl;
 
 namespace bp = boost::python;
+namespace np = boost::numpy;
 
 /*****************************************************************************/
 namespace pyms3d {
@@ -27,6 +29,8 @@ namespace pyms3d {
 // Wrapper to hold on to references to some other objects
 class mscomplex_pyms3d_t: public mscomplex_t
 {
+  typedef mscomplex_t base_t;
+
 public:
   dataset_ptr_t     ds;
 
@@ -61,10 +65,11 @@ void mscomplex_compute_bin
  bp::tuple              tp)
 {
 //  ENSURES(bin_fmt == "float32") <<"Only float32 is supported" <<endl;
-
   int x = bp::extract<int>(tp[0]);
   int y = bp::extract<int>(tp[1]);
   int z = bp::extract<int>(tp[2]);
+
+  TLOG << "Entered :\n\t\t" << SVAR(bin_file) << SVAR(cellid_t(x,y,z));
 
   rect_t r(cellid_t::zero,(cellid_t(x,y,z)-cellid_t::one)*2);
 
@@ -75,6 +80,8 @@ void mscomplex_compute_bin
   msc->ds.reset(new dataset_t(r,r,r));
   msc->ds->init(bin_file);
   msc->ds->computeMsGraph(msc);
+
+  TLOG << "Exited  :";
 }
 
 
@@ -97,15 +104,23 @@ bp::tuple mscomplex_frange(mscomplex_pyms3d_ptr_t msc)
 }
 
 template <eGDIR dir>
-bp::list mscomplex_conn(mscomplex_pyms3d_ptr_t msc, int i)
+np::ndarray mscomplex_conn(mscomplex_pyms3d_ptr_t msc, int cp)
 {
-  ASSERT(is_in_range(i,0,msc->get_num_critpts()));
-  bp::list r;
-  BOOST_FOREACH(int_int_t c,msc->m_conn[dir][i])
+  ASSERT(is_in_range(cp,0,msc->get_num_critpts()));
+
+  np::dtype dt =np::dtype::get_builtin<int>();
+
+  np::ndarray arr =  np::empty(bp::make_tuple(msc->m_conn[dir][cp].size(),2),dt);
+
+  int j = 0;
+
+  BOOST_FOREACH(int_int_t c,msc->m_conn[dir][cp])
   {
-    r.append(c);
+    arr[j][0] = c.first;
+    arr[j][1] = c.second;
+    ++j;
   }
-  return r;
+  return arr;
 }
 
 bp::list mscomplex_cps(mscomplex_pyms3d_ptr_t msc,int dim)
@@ -128,41 +143,20 @@ bp::list mscomplex_cps(mscomplex_pyms3d_ptr_t msc,int dim)
 
 void mscomplex_collect_mfolds(mscomplex_pyms3d_ptr_t msc)
 {
+  TLOG << "Entered :";
   ENSURES(msc->ds !=0)
       << "Gradient information unavailable" <<endl
       << "Did you load the mscomplex from a file!!!"<<endl;
 
   msc->collect_mfolds(msc->ds);
-}
-
-template <eGDIR dir>
-bp::list mscomplex_geom(mscomplex_pyms3d_ptr_t msc, int cp,int hver=-1)
-{
-  ENSURES(is_in_range(cp,0,msc->get_num_critpts())) << "out of range cpid="<<cp;
-
-  if( hver == -1) hver = msc->get_hversion();
-
-  int_list_t l;
-
-  int dim = msc->index(cp);
-
-  msc->m_merge_dag->get_contrib_cps(l,dir,cp,hver,msc->m_geom_hversion[dir][dim]);
-
-  bp::list r;
-
-  for(int j = 0 ; j < l.size(); ++j)
-  {
-    BOOST_FOREACH(cellid_t c,msc->m_mfolds[dir][l[j]])
-    {
-      r.append(c);
-    }
-  }
-  return r;
+  TLOG << "Exited  :";
 }
 
 template <eGDIR dir>
 int mscomplex_geom_size(mscomplex_pyms3d_ptr_t msc, int cp,int hver=-1)
 {
+  TLOG << "Entered :" << SVAR(cp) << SVAR(hver);
+
   ENSURES(is_in_range(cp,0,msc->get_num_critpts())) << "out of range cpid="<<cp;
 
   if( hver == -1) hver = msc->get_hversion();
@@ -178,7 +172,53 @@ int mscomplex_geom_size(mscomplex_pyms3d_ptr_t msc, int cp,int hver=-1)
   for(int j = 0 ; j < l.size(); ++j)
     s += msc->m_mfolds[dir][l[j]].size();
 
+  TLOG << "Exited  :" << SVAR(s);
+
   return s;
+}
+
+template <eGDIR dir>
+np::ndarray mscomplex_geom(mscomplex_pyms3d_ptr_t msc, int cp,int hver=-1)
+{
+  TLOG << "Entered :" << SVAR(cp) << SVAR(hver);
+
+  ENSURES(is_in_range(cp,0,msc->get_num_critpts())) << "out of range cpid="<<cp;
+
+  if( hver == -1) hver = msc->get_hversion();
+
+  int_list_t l;
+
+  int dim = msc->index(cp);
+
+  msc->m_merge_dag->get_contrib_cps
+      (l,dir,cp,hver,msc->m_geom_hversion[dir][dim]);
+
+  int NC = 0;
+  int  O = 0;
+
+  for(int j = 0 ; j < l.size(); ++j)  
+    NC += msc->m_mfolds[dir][l[j]].size();  
+
+  np::dtype    dt =   np::dtype::get_builtin<int>();
+  np::ndarray arr =  np::empty(bp::make_tuple(NC,3),dt);
+
+  for(int j = 0 ; j < l.size(); ++j)
+  {
+    mfold_t & mfold = msc->m_mfolds[dir][l[j]];
+
+    //#pragma omp parallel for
+    for(int k = 0 ; k < mfold.size(); ++k)
+    {
+      arr[O+k][0] = mfold[k][0];
+      arr[O+k][1] = mfold[k][1];
+      arr[O+k][2] = mfold[k][2];
+    }
+
+    O += mfold.size();
+  }
+
+  TLOG << "Exited  :" << SVAR(NC);
+  return arr;
 }
 
 //bp::list mscomplex_arc_geom(mscomplex_ptr_t msc, int a, int b)
@@ -312,7 +352,7 @@ void wrap_mscomplex_t()
       .def("set_hversion",&mscomplex_t::set_hversion,
            "Set the current Hierarchical Ms Complex version number")
       .def("get_hversion_pers",&mscomplex_t::get_hversion_pers,
-           ("thresh",bp::arg("is_nrm")=true),
+           (bp::arg("thresh"),bp::arg("is_nrm")=true),
            "Get the highest hierarchical version num wherein all pairs \n"
            "with persistence less than the given value are canceled"
            "\n"
@@ -361,15 +401,40 @@ struct int_int_to_tup
 
 BOOST_PYTHON_MODULE(pyms3d)
 {
-  numeric::array::set_module_and_type("numpy", "ndarray");
-
   boost::python::to_python_converter<cellid_t,cellid_to_tup>();
   boost::python::to_python_converter<int_int_t,int_int_to_tup>();
+
+  np::initialize();
 
   grid::opencl::init();
 
   wrap_mscomplex_t();
 }
+
+int main(int argc, char **argv)
+{
+    // This line makes our module available to the embedded Python intepreter.
+# if PY_VERSION_HEX >= 0x03000000
+    PyImport_AppendInittab("pyms3d", &PyInit_pyms3d);
+# else
+    PyImport_AppendInittab("pyms3d", &initpyms3d);
+# endif
+    // Initialize the Python runtime.
+    Py_Initialize();
+
+    ENSURES(argc == 2) << "Usage : " << argv[0] << " <filename.py>" << endl;
+
+    std::ifstream t(argv[1]);
+
+    std::string s((std::istreambuf_iterator<char>(t)),
+                  std::istreambuf_iterator<char>());
+
+    PyRun_SimpleString( s.c_str()   );
+    Py_Finalize();
+
+    return 0;
+}
+
 
 }/****************************************************************************/
 

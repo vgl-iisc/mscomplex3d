@@ -72,7 +72,7 @@ void mscomplex_t::cancel_pair ()
     ASSERT(is_canceled(u) == false);
     ASSERT(is_canceled(v) == false);
 
-    connect_cps(u,v,m);
+    BTRACE_ERROR(connect_cps(u,v,m));
   }
 
   BOOST_FOREACH(int_int_t pr,m_des_conn[p]) m_asc_conn[pr.first].erase(p);
@@ -116,10 +116,10 @@ void mscomplex_t::anticancel_pair()
     ASSERT(is_canceled(u) == false);
     ASSERT(is_canceled(v) == false);
 
-    connect_cps(u,v,-m);
+    BTRACE_ERROR(connect_cps(u,v,-m));
   }
 
-  connect_cps(p,q,1);
+  BTRACE_ERROR(connect_cps(p,q,1));
 
   ASSERT(m_des_conn[p].count(q) == 1);
   ASSERT(m_asc_conn[q].count(p) == 1);
@@ -134,8 +134,10 @@ void mscomplex_t::anticancel_pair()
 
 void mscomplex_t::set_hversion(int hver)
 {
+  TLOG << "Entered :" << SVAR(m_hversion);
   for(int i = m_hversion; i>hver && i>0; --i)  anticancel_pair();
   for(int i = m_hversion; i<hver && i<m_canc_list.size(); ++i)cancel_pair();
+  TLOG << "Exited  :" << SVAR(m_hversion);
 }
 
 
@@ -253,6 +255,8 @@ bool mscomplex_t::persistence_cmp(int_pair_t p0,int_pair_t p1) const
 
 void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
 {
+  TLOG << "Entered :" << SVAR(thresh) <<SVAR(is_nrm) << SVAR(nmax)<<SVAR(nmin);
+
   BOOST_AUTO(cmp,bind(&mscomplex_t::persistence_cmp,this,_2,_1));
 
   priority_queue<int_pair_t,int_pair_list_t,typeof(cmp)> pq(cmp);
@@ -308,18 +312,21 @@ void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
   }
 
   m_merge_dag->update(shared_from_this());
+
+  TLOG << "Exited  :" << SVAR(m_hversion) <<SVAR(ns_max) <<SVAR(ns_min);
 }
 
 /*---------------------------------------------------------------------------*/
 
 int mscomplex_t::get_hversion_pers(double thresh, bool is_nrm) const
 {
+  TLOG << "Entered :" << SVAR(thresh) << SVAR(is_nrm);
   int hver = 0;
 
   if(is_nrm)
     thresh *= (*br::max_element(m_cp_fn) - *br::min_element(m_cp_fn));
 
-  for(int hver = 0 ; hver < m_canc_list.size() ; ++hver)
+  for(hver = 0 ; hver < m_canc_list.size() ; ++hver)
   {
     int p = m_canc_list[hver][0],q = m_canc_list[hver][1];
 
@@ -329,6 +336,7 @@ int mscomplex_t::get_hversion_pers(double thresh, bool is_nrm) const
       break;
   }
 
+  TLOG << "Exited  :" << SVAR(hver);
   return hver;
 }
 

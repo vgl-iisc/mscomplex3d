@@ -16,13 +16,11 @@ namespace grid
 
 /*===========================================================================*/
 
-inline const mscomplex_t::merge_dag_t::node_t&
+inline mscomplex_t::merge_dag_t::node_t
 mscomplex_t::merge_dag_t::get_node(int i) const
 {
-  static node_t defnode;
-
   if(i < 0)
-    return defnode;
+    return node_t(i+get_ncps());
   return m_nodes[i];
 }
 
@@ -42,8 +40,13 @@ void mscomplex_t::merge_dag_t::init(int ncps)
   m_cp_geom[ASC].resize(ncps);
   m_cp_geom[DES].resize(ncps);
 
-  br::copy(boost::counting_range(-ncps,0)|ba::reversed,m_cp_geom[ASC].begin());
-  br::copy(boost::counting_range(-ncps,0)|ba::reversed,m_cp_geom[DES].begin());
+//  #pragma omp parallel for
+  for(int i = 0; i < ncps; ++i)
+  {
+    m_cp_geom[ASC][i] = i-ncps;
+    m_cp_geom[DES][i] = i-ncps;
+  }
+
 }
 
 /*---------------------------------------------------------------------------*/
@@ -78,13 +81,13 @@ void mscomplex_t::merge_dag_t::update(mscomplex_ptr_t msc)
          <<"earlier pnode has formed from a later cancellation"
          <<SVAR(get_node(pnode).hversion) << SVAR(m_last_hversion);
 
-      if( pnode >= get_ncps()  || msc->m_mfolds[dir][pnode].size() > 0)
+      if( pnode >= get_ncps() )
       {
         BOOST_FOREACH(int r,msc->m_conn[odir][q]|ba::map_keys)
         {
           int rnode         = m_cp_geom[dir][r];
           m_cp_geom[dir][r] = m_nodes.size();
-          m_nodes.push_back(node_t(rnode,pnode,m_last_hversion));
+          m_nodes.push_back(node_t(r,rnode,pnode,m_last_hversion));
 
           ENSURES(get_node(rnode).hversion < m_last_hversion)
               <<"earlier rnode has formed from a later cancellation";
@@ -120,12 +123,11 @@ void mscomplex_t::merge_dag_t::get_contrib_cps
 
     visited.insert(g);
 
-    if( g < 0)
-      l.push_back(-g-1);
-
     node_t gnode = get_node(g);
 
-    if(gnode.base != -1 && gnode.hversion <= gver)
+    if( gnode.hversion <= gver)
+      l.push_back(gnode.cpid);
+    else if(gnode.base != -1)
     {
       stk.push(gnode.base);
       stk.push(gnode.other);
@@ -140,6 +142,7 @@ void mscomplex_t::merge_dag_t::save_bin(ostream &os) const
   utl::bin_write_vec(os,m_nodes);
   utl::bin_write_vec(os,m_cp_geom[DES]);
   utl::bin_write_vec(os,m_cp_geom[ASC]);
+  utl::bin_write(os,m_last_hversion);
 }
 
 //*--------------------------------------------------------------------------*/
@@ -149,6 +152,7 @@ void mscomplex_t::merge_dag_t::load_bin(istream &is)
   utl::bin_read_vec(is,m_nodes);
   utl::bin_read_vec(is,m_cp_geom[DES]);
   utl::bin_read_vec(is,m_cp_geom[ASC]);
+  utl::bin_read(is,m_last_hversion);
 }
 
 //*--------------------------------------------------------------------------*/

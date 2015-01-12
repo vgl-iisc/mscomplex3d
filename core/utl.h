@@ -167,7 +167,7 @@ class logger
         (boost::posix_time::microsec_clock::local_time());
 
     boost::mutex::scoped_lock  lock(s_mutex);
-    std::clog << " [" <<tstr <<"]" << log;
+    std::clog << "[" <<tstr <<"] " << log << std::endl;
   }
 
   inline void push(const std::string & log)
@@ -277,6 +277,20 @@ inline void bin_write_vec(std::ostream &os, const std::vector<T> &v)
   for(utl::detail::pair<bool,std::stringstream> __utl_lm_v__(true); \
       __utl_lm_v__.first ;__utl_lm_v__.first=false,\
   utl::logger::get().push(__utl_lm_v__.second.str())) __utl_lm_v__.second
+
+/*---------------------------------------------------------------------------*/
+
+#define TLOG  \
+  if(utl::logger::get().isOpen(utl::logger::trace))\
+  for(utl::detail::pair<bool,std::stringstream> __utl_lm_v__(true); \
+      __utl_lm_v__.first ;__utl_lm_v__.first=false,\
+  utl::logger::get().push_ts(__utl_lm_v__.second.str())) \
+  __utl_lm_v__.second << utl::detail::__trace_indenter_t__::get_indent()\
+  <<utl::detail::__classFunction__(__PRETTY_FUNCTION__) << " "
+
+
+#define TLOG_INDENT utl::detail::__trace_indenter_t__ __trace_indenter__; \
+
 
 /*---------------------------------------------------------------------------*/
 
@@ -421,6 +435,16 @@ std::stringstream()
 
 /*---------------------------------------------------------------------------*/
 
+#define BTRACE_ERROR(func) \
+try { func ; } catch (const std::exception &e) {\
+  if(utl::logger::get().isOpen(utl::logger::error)){\
+    std::stringstream ss; ss \
+    <<"From: ("<<__FILE__<<","<<__func__<<","<<__LINE__<<") \n ";\
+    utl::logger::get().push(ss.str());}\
+  throw;}
+
+/*---------------------------------------------------------------------------*/
+
 #define CHECK_ERRORV1(func,var1) \
 try { func ; } catch (const std::exception &e) {\
   if(utl::logger::get().isOpen(utl::logger::error)){\
@@ -465,6 +489,23 @@ try { func ; } catch (const std::exception &e) {\
     strm <<std::endl;\
     utl::logger::get().push(ss.str());}\
   throw;}
+
+/*---------------------------------------------------------------------------*/
+
+namespace utl{ namespace detail{
+
+std::string __classFunction__(const std::string& prettyFunction);
+
+class __trace_indenter_t__
+{
+  static int   s_indent;
+public:
+  __trace_indenter_t__()   {++s_indent;}
+  ~__trace_indenter_t__()  {--s_indent;}
+  static std::string get_indent();
+};
+
+}}
 
 
 /*===========================================================================*/

@@ -85,8 +85,47 @@ const std::string & file_line_iterator::dereference() const
 
 /*---------------------------------------------------------------------------*/
 
+namespace detail{
+std::string __classFunction__(const std::string& prettyFunction)
+{
+  std::string str(prettyFunction);
+
+  str = str.substr(str.find(" ")+1);
+  str = str.substr(0,str.find("("));
+
+  size_t first_colon  =  str.rfind("::");
+
+  if(first_colon != std::string::npos)
+  {
+    size_t second_colon = str.substr(0,first_colon).rfind("::");
+
+    if(second_colon != std::string::npos)
+      str   = str.substr(second_colon+2);
+  }
+  return str;
+}
+
+/*---------------------------------------------------------------------------*/
+
+std::string __trace_indenter_t__::get_indent()
+{
+  std::string s;
+
+  for(int i = 0 ; i < s_indent; ++i)
+    s += "  ";
+
+  return s;
+}
+
+
+}
+
+/*---------------------------------------------------------------------------*/
+
 boost::mutex logger::s_mutex;
 logger       logger::s_logger;
+
+int    detail::__trace_indenter_t__::s_indent = 0;
 
 /*---------------------------------------------------------------------------*/
 

@@ -74,8 +74,8 @@ void mscomplex_t::connect_cps(int p, int q,int m)
   // if a d-cp hits a d+-1 cp and the d+-1 cp is paired
   // then the connection is useful iff the dimension of the pair is d
 
-  ASSERT(!(is_paired(p) && index(pair_idx(p))!= index(q)));
-  ASSERT(!(is_paired(q) && index(pair_idx(q))!= index(p)));
+//  ASSERT(!(is_paired(p) && index(pair_idx(p))!= index(q)));
+//  ASSERT(!(is_paired(q) && index(pair_idx(q))!= index(p)));
 
   if( m_des_conn[p].count(q) == 0)
   {

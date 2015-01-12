@@ -249,16 +249,18 @@ public:
     int base;
     int other;
     int hversion;
+    int cpid;
 
-    node_t():base(-1),other(-1),hversion(0){}
-    node_t(int b,int o,int c):base(b),other(o),hversion(c){}
+    node_t():cpid(-1),base(-1),other(-1),hversion(0){}
+    node_t(int c):cpid(c),base(-1),other(-1),hversion(0){}
+    node_t(int c,int b,int o,int h):cpid(c),base(b),other(o),hversion(h){}
   };
 
   std::vector<node_t>  m_nodes;
   std::vector<int>     m_cp_geom[2];
   int                  m_last_hversion;
 
-  inline const node_t& get_node(int i) const;
+  inline node_t get_node(int i) const;
   inline int  get_ncps() const;
 };
 
