@@ -3,6 +3,9 @@
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
 #include <boost/numpy.hpp>
+#include <boost/range/algorithm.hpp>
+#include <boost/range/adaptors.hpp>
+#include <boost/range/iterator_range.hpp>
 
 #include <iostream>
 
@@ -17,6 +20,8 @@ using namespace utl;
 
 namespace bp = boost::python;
 namespace np = boost::numpy;
+namespace br = boost::range;
+namespace ba = boost::adaptors;
 
 namespace utl {
 template<class rng_t>
@@ -32,10 +37,47 @@ inline std::string to_string_rng(rng_t rng,const char * delim = ", ")
 }
 }
 
+template<typename DTYPE,int NCOL,typename T>
+np::ndarray vector_to_ndarray(const std::vector<T> & vec)
+{
+  BOOST_STATIC_ASSERT(sizeof(DTYPE)*NCOL==sizeof(T));
+
+  int           N = vec.size();
+  np::dtype    dt = np::dtype::get_builtin<DTYPE>();
+  bp::tuple   dim = (NCOL==1)?(bp::make_tuple(N)):(bp::make_tuple(N,NCOL));
+  np::ndarray arr = np::zeros(dim,dt);
+  br::copy(vec,reinterpret_cast<T*>(arr.get_data()));
+  return arr;
+}
+
+template<typename DTYPE,int NCOL,typename rng_t>
+np::ndarray range_to_ndarray(const rng_t & rng)
+{
+  typedef typename boost::range_value<rng_t>::type    T;
+
+  BOOST_STATIC_ASSERT(sizeof(DTYPE)*NCOL==sizeof(T));
+
+  size_t        N = boost::distance(rng);
+  np::dtype    dt = np::dtype::get_builtin<DTYPE>();
+  bp::tuple   dim = (NCOL==1)?(bp::make_tuple(N)):(bp::make_tuple(N,NCOL));
+  np::ndarray arr = np::zeros(dim,dt);
+  char       *ptr = arr.get_data();
+  BOOST_AUTO(iter,boost::begin(rng));
+
+  for(;iter!=boost::end(rng);)
+  {
+    T v  = *iter++;
+    memcpy((void*)ptr,(void*)(&v),sizeof(T));
+    ptr += sizeof(T);
+  }
+  return arr;
+}
+
+
 
 /*===========================================================================*/
 namespace pyms3d {
-/// \brief Wrapper for python to hold on to references of dataset_t
+/// \brief Wrapper for python
 class mscomplex_pyms3d_t: public mscomplex_t
 {
 public:
@@ -46,56 +88,39 @@ public:
 
   void save(const string &f) const
   {
+    DLOG << "Entered :" << SVAR(f);
     std::fstream fs(f.c_str(),std::ios::out|std::ios::binary);
     ENSUREV(fs.is_open(),"file not found!!",f);
     save_bin(fs);
     ds->save_bin(fs);
+    DLOG << "Exited  :";
   }
 
   /*-------------------------------------------------------------------------*/
 
   void load(const string &f)
   {
+    DLOG << "Entered :" << SVAR(f);
     std::fstream fs(f.c_str(),std::ios::in|std::ios::binary);
     ENSUREV(fs.is_open(),"file not found!!",f);
     load_bin(fs);
     ds->load_bin(fs);
+    DLOG << "Exited  :";
   }
 
   /*-------------------------------------------------------------------------*/
 
-
   template <eGDIR dir>
   np::ndarray conn(int cp)
   {
-    TLOG << "Entered :" << SVAR(cp);
-
-    ENSURES(is_in_range(cp,0,get_num_critpts()))
-        << "out of range "<<SVAR(cp);
-
-    int       nconn =  m_conn[dir][cp].size();
-    np::dtype    dt =  np::dtype::get_builtin<int>();
-    np::ndarray arr =  np::empty(bp::make_tuple(nconn,2),dt);
-
-    int *iter = reinterpret_cast<int*>(arr.get_data());
-
-    BOOST_FOREACH(int_int_t c,m_conn[dir][cp])
-    {
-      *iter++ = c.first;
-      *iter++ = c.second;
-    }
-
-    TLOG << "Exited  :" <<SVAR(nconn);
-    return arr;
+    ENSURES(is_in_range(cp,0,get_num_critpts())) << "out of range "<<SVAR(cp);
+    TLOG <<SVAR(cp); return range_to_ndarray<int,2>(m_conn[dir][cp]);
   }
-
 
   /*-------------------------------------------------------------------------*/
 
   template <eGDIR dir> int geom_size(int cp,int hver=-1)
   {
-    TLOG << "Entered :" << SVAR(cp) << SVAR(hver);
-
     if( hver == -1) hver = get_hversion();
 
     ENSURES(is_in_range(cp,0,get_num_critpts()))
@@ -109,22 +134,20 @@ public:
 
     m_merge_dag->get_contrib_cps(l,dir,cp,hver,m_geom_hversion[dir][dim]);
 
-    int s = 0;
+    int NC = 0;
 
     for(int j = 0 ; j < l.size(); ++j)
-      s += m_mfolds[dir][l[j]].size();
+      NC += m_mfolds[dir][l[j]].size();
 
-    TLOG << "Exited  :" << SVAR(s);
+    TLOG <<SVAR(cp) << SVAR(hver) << SVAR(NC);
 
-    return s;
+    return NC;
   }
 
   /*-------------------------------------------------------------------------*/
 
   template <eGDIR dir> np::ndarray geom(int cp,int hver=-1)
   {
-    TLOG << "Entered :" << SVAR(cp) << SVAR(hver);
-
     if( hver == -1) hver = get_hversion();
 
     ENSURES(is_in_range(cp,0,get_num_critpts()))
@@ -139,39 +162,60 @@ public:
     m_merge_dag->get_contrib_cps
         (l,dir,cp,hver,m_geom_hversion[dir][dim]);
 
-    TLOG << "Merge Dag Query Completed ";
-
     int NC = 0;
-    int  O = 0;
 
     for(int j = 0 ; j < l.size(); ++j)
       NC += m_mfolds[dir][l[j]].size();
 
-    np::dtype    dt =   np::dtype::get_builtin<int>();
-    np::ndarray arr =  np::zeros(bp::make_tuple(NC,3),dt);
-
-    int * iter = reinterpret_cast<int*>(arr.get_data());
+    np::dtype    dt = np::dtype::get_builtin<cell_coord_t>();
+    np::ndarray arr = np::zeros(bp::make_tuple(NC,gc_grid_dim),dt);
+    cellid_t  *iter = reinterpret_cast<cellid_t*>(arr.get_data());
 
     for(int j = 0 ; j < l.size(); ++j)
     {
       mfold_t & mfold = m_mfolds[dir][l[j]];
 
       for(int k = 0 ; k < mfold.size(); ++k)
-      {
-        *iter++ = mfold[k][0];
-        *iter++ = mfold[k][1];
-        *iter++ = mfold[k][2];
-      }
-
-      O += mfold.size();
+        *iter++ = mfold[k];
     }
 
-    TLOG << "Exited  :" << SVAR(NC);
+    TLOG << SVAR(cp) << SVAR(hver) << SVAR(NC);
+
     return arr;
   }
 
   /*-------------------------------------------------------------------------*/
 
+  np::ndarray cps(int i)
+  {
+    TLOG;BOOST_AUTO(rng,cpno_range()|ba::filtered
+                    (bind(&mscomplex_pyms3d_t::is_not_canceled,this,_1)));
+
+    if(i == -1) return range_to_ndarray<int,1>(rng);
+    else        return range_to_ndarray<int,1>
+        (rng|ba::filtered(bind(&mscomplex_pyms3d_t::is_index_i_cp_,this,_1,i)));
+
+  }
+
+  /*-------------------------------------------------------------------------*/
+
+  np::ndarray canc_pairs() {TLOG;return vector_to_ndarray<int,2>         (m_canc_list);}
+  np::ndarray cps_func()   {TLOG;return vector_to_ndarray<cell_fn_t,1>   (m_cp_fn);}
+  np::ndarray cps_index()  {TLOG;return vector_to_ndarray<int8_t,1>      (m_cp_index);}
+  np::ndarray cps_pairid() {TLOG;return vector_to_ndarray<int,1>         (m_cp_pair_idx);}
+  np::ndarray cps_cellid() {TLOG;return vector_to_ndarray<cell_coord_t,3>(m_cp_cellid);}
+  np::ndarray cps_vertid() {TLOG;return vector_to_ndarray<cell_coord_t,3>(m_cp_vertid);}
+
+  /*-------------------------------------------------------------------------*/
+
+  void collect_mfolds(int dir ,int dim)
+  {
+    DLOG << "Entered :" << SVAR(dir) << SVAR(dim);
+    ENSURES(ds !=0)<< "Gradient information unavailable";
+    base_t::collect_mfolds((eGDIR)dir,dim,ds);
+    DLOG << "Exited  :";
+  }
+  /*-------------------------------------------------------------------------*/
 };
 }
 
@@ -200,7 +244,7 @@ void mscomplex_compute_bin
 
   rect_t dom(cellid_t::zero,(size-cellid_t::one)*2);
 
-  TLOG << "Entered :"
+  DLOG << "Entered :"
        << endl << "\t" << SVAR(bin_file)
        << endl << "\t" << SVAR(size);
 
@@ -212,76 +256,12 @@ void mscomplex_compute_bin
   msc->ds->init(bin_file);
   msc->ds->computeMsGraph(msc);
 
-  TLOG << "Exited  :";
+  DLOG << "Exited  :";
 }
 
-
-int mscomplex_num_canc(mscomplex_pyms3d_ptr_t msc)
-{
-  return msc->m_canc_list.size();
-}
-
-bp::tuple mscomplex_canc(mscomplex_pyms3d_ptr_t msc,int i)
-{
-  ASSERT(is_in_range(i,0,msc->m_canc_list.size()));
-  return bp::make_tuple(msc->m_canc_list[i][0],msc->m_canc_list[i][1]);
-}
-
-bp::tuple mscomplex_frange(mscomplex_pyms3d_ptr_t msc)
-{
-//  return bp::make_tuple(msc->m_fmin,msc->m_fmax);
-  LOG(error) << "Not yet implemented" << endl;
-  return bp::make_tuple();
-}
-
-bp::list mscomplex_cps(mscomplex_pyms3d_ptr_t msc,int dim)
-{
-  bp::list r;
-
-  for(int i = 0 ; i < msc->get_num_critpts(); ++i)
-      if(msc->is_not_canceled(i) && (dim == -1 || (msc->index(i) == dim)))
-        r.append(i);
-
-  return r;
-}
-
-//void mscomplex_gen_pers_pairs(mscomplex_pyms3d_ptr_t msc)
-//{
-//  int lastVer = msc->get_multires_version();
-//  msc->simplify(1.0,true);
-//  msc->set_multires_version(lastVer);
-//}
-
-void mscomplex_collect_mfolds(mscomplex_pyms3d_ptr_t msc)
-{
-  TLOG << "Entered :";
-  ENSURES(msc->ds !=0)
-      << "Gradient information unavailable" <<endl
-      << "Did you load the mscomplex from a file!!!"<<endl;
-
-  msc->collect_mfolds(msc->ds);
-  TLOG << "Exited  :";
-}
-
-
-//bp::list mscomplex_arc_geom(mscomplex_ptr_t msc, int a, int b)
-//{
-//  bp::list r;
-
-//  if(msc->m_arc_geom.count(int_pair_t(a,b)) != 0)
-//  {
-//      BOOST_FOREACH(int c,msc->m_arc_geom[int_pair_t(a,b)])
-//      {
-//        r.append(c);
-//      }
-//    }
-
-//  return r;
-//}
 
 void wrap_mscomplex_t()
 {
-
   docstring_options local_docstring_options(true, false, false);
 
   def("get_hw_info",&get_hw_info);
@@ -290,58 +270,64 @@ void wrap_mscomplex_t()
       ("mscomplex","The Morse-Smale complex object",no_init)
       .def("__init__", make_constructor( &new_msc),
            "ctor")
-      .def("num_cp",&mscomplex_t::get_num_critpts,
+
+      .def("num_cps",&mscomplex_t::get_num_critpts,
            "Number of Critical Points")
-      .def("fn",&mscomplex_t::fn,
-           "Function value at critical point i")
-      .def("index",&mscomplex_t::index,
-           "Morse index od critical point i")
-      .def("pair_idx",&mscomplex_t::pair_idx,
-           "Index of the cp that is paired with i (-1 if it is not paired)")
-//      .def("is_boundry",&mscomplex_t::is_boundry,
-//           "If the cp is on the boundary or not")
-      .def("vertid",&mscomplex_t::vertid,
-           "vertex id of maximal vertex of critical cell")
-      .def("cellid",&mscomplex_t::cellid,
-           "cell id of critical cell")
-      .def("load",&mscomplex_pyms3d_t::load,
-           "Load mscomplex from file")
-      .def("save",&mscomplex_pyms3d_t::save,
-           "Save mscomplex to file")
-      .def("num_canc",&mscomplex_num_canc,
-           "Number of cancellation pairs")
-      .def("canc",&mscomplex_canc,
-           "The ith cancellation pair")
-      .def("frange",&mscomplex_frange,
-           "Range of function values")
-      .def("asc",&mscomplex_pyms3d_t::conn<ASC>,
-           "List of ascending cps connected to a given critical point i")
-      .def("des",&mscomplex_pyms3d_t::conn<DES>,
-           "List of descending cps connected to a given critical point i")
-      .def("cps",&mscomplex_cps,(bp::arg("dim")=-1),
+      .def("cps",&mscomplex_pyms3d_t::cps,(bp::arg("dim")=-1),
            "Returns a list of surviving critical cps\n"\
            "\n"
            "Parameters   :\n"
            "          dim: index of the cps. -1 signifies all. default=-1\n"
            )
+
+
+      .def("cp_func",&mscomplex_t::fn,
+           "Function value at critical point i")
+      .def("cp_index",&mscomplex_t::index,
+           "Morse index od critical point i")
+      .def("cp_pairid",&mscomplex_t::pair_idx,
+           "Index of the cp that is paired with i (-1 if it is not paired)")
+//      .def("is_boundry",&mscomplex_t::is_boundry,
+//           "If the cp is on the boundary or not")
+      .def("cp_vertid",&mscomplex_t::vertid,
+           "vertex id of maximal vertex of critical cell")
+      .def("cp_cellid",&mscomplex_t::cellid,
+           "cell id of critical cell")
+
+      .def("cps_index",&mscomplex_pyms3d_t::cps_index,
+           "get Morse Indices of all critical points\n")
+      .def("cps_func",&mscomplex_pyms3d_t::cps_func,
+           "get Function values of all critical points\n")
+      .def("cps_pairid",&mscomplex_pyms3d_t::cps_pairid,
+           "get the cancellation pair ids of all critical points\n")
+      .def("cps_vertid",&mscomplex_pyms3d_t::cps_vertid,
+           "get maximal vertex id sof all critical points\n")
+      .def("cps_cellid",&mscomplex_pyms3d_t::cps_cellid,
+           "get cellids of all critical points\n")
+
+
+      .def("asc",&mscomplex_pyms3d_t::conn<ASC>,
+           "List of ascending cps connected to a given critical point i")
+      .def("des",&mscomplex_pyms3d_t::conn<DES>,
+           "List of descending cps connected to a given critical point i")
       .def("asc_geom",&mscomplex_pyms3d_t::geom<ASC>,
            (bp::arg("cp"),bp::arg("hversion")=-1),
            "Ascending manifold geometry of a given critical point i"
-           "Parameters: \n"\
+           "Parameters  : \n"\
            "          cp: the critical point id\n"\
            "    hversion: desired hierarchical version (optional).\n"\
            )
       .def("des_geom",&mscomplex_pyms3d_t::geom<DES>,
            (bp::arg("cp"),bp::arg("hversion")=-1),
            "Descending manifold geometry of a given critical point i"
-           "Parameters: \n"\
+           "Parameters  : \n"\
            "          cp: the critical point id\n"\
            "    hversion: desired hierarchical version (optional).\n"\
            )
       .def("asc_geom_size",&mscomplex_pyms3d_t::geom_size<ASC>,
            (bp::arg("cp"),bp::arg("hversion")=-1),
            "Ascending manifold geometry size of a given critical point i"
-           "Parameters: \n"\
+           "Parameters  : \n"\
            "          cp: the critical point id\n"\
            "    hversion: desired hierarchical version (optional).\n"\
            )
@@ -354,11 +340,14 @@ void wrap_mscomplex_t()
            )
 //      .def("gen_pers_hierarchy",&mscomplex_gen_pers_pairs,
 //           "Generates the persistence hierarchy using topo simplification")
+
+
+
       .def("compute_bin",&mscomplex_compute_bin,
            "Compute the Mscomplex from a structured grid with scalars given \n"\
            "in a raw/bin format \n"\
            "\n"\
-           "Parameters: \n"\
+           "Parameters  : \n"\
            "    bin_file: the bin/raw file containing the scalar function\n"\
            "              in float32 format \n"\
            "    size    : size of each dimension in x,y,z ordering .\n"\
@@ -368,12 +357,21 @@ void wrap_mscomplex_t()
            "Note: This only computes the combinatorial structure\n"\
            "     Call collect_mfold(s) to extract geometry\n"
            )
-      .def("collect_geom",&mscomplex_collect_mfolds,
+      .def("collect_geom",&mscomplex_pyms3d_t::collect_mfolds,
+           (bp::arg("dir")=2,bp::arg("dim")=-1),
            "Collect the geometry of all survivng critical points\n"\
            "\n"\
-           "Note: This must be called only after any of the compute functions are called. \n"\
+           "Parameters  : \n"\
+           "         dir: Geometry type \n"\
+           "              dir=0 --> Descending \n"\
+           "              dir=1 --> Ascending \n"\
+           "              dir=2 --> Both (default) \n"\
+           "         dim: Critical point type \n"\
+           "              dim=-1      --> All (default)\n"\
+           "              dim=0,1,2,3 --> Minima, 1-saddle,2-saddle,Maxima \n"\
+           "\n"\
+           "Note        : Call only after the compute function is called.\n"\
            )
-
       .def("simplify_pers",&mscomplex_t::simplify_pers,
            (bp::arg("thresh")=1.0,bp::arg("is_nrm")=true,
             bp::arg("nmax")=0,bp::arg("nmin")=0),
@@ -389,7 +387,15 @@ void wrap_mscomplex_t()
            "Note         : \n"\
            "    Any combination of the above criteria may be set\n"\
            "    Simplification will stop when any of the criteria is reached\n"
+           "    Call only after the compute function is called.\n"
            )
+
+      .def("load",&mscomplex_pyms3d_t::load,
+           "Load mscomplex from file")
+      .def("save",&mscomplex_pyms3d_t::save,
+           "Save mscomplex to file")
+
+
       .def("get_hversion",&mscomplex_t::get_hversion,
            "Get the current Hierarchical Ms Complex version number")
       .def("set_hversion",&mscomplex_t::set_hversion,
@@ -420,8 +426,9 @@ void wrap_mscomplex_t()
            "    nmax,nmin: num maxima/minima that should be retained\n"\
            "\n"
            )
-//      .def("arc_geom",&mscomplex_arc_geom,
-//           "seqence of cells of arc connecting 2 cps (empty list if no arc exists)")
+      .def("canc_pairs",&mscomplex_pyms3d_t::canc_pairs,
+           "get all cancellation pairs \n")
+
       ;
 }
 
@@ -429,12 +436,6 @@ struct cellid_to_tup
 {
   static PyObject* convert(cellid_t v)
   {return boost::python::incref(bp::make_tuple(v[0],v[1],v[2]).ptr());}
-};
-
-struct int_int_to_tup
-{
-  static PyObject* convert(int_int_t v)
-  {return boost::python::incref(bp::make_tuple(v.first,v.second).ptr());}
 };
 
 
@@ -445,7 +446,6 @@ struct int_int_to_tup
 BOOST_PYTHON_MODULE(pyms3d)
 {
   boost::python::to_python_converter<cellid_t,cellid_to_tup>();
-  boost::python::to_python_converter<int_int_t,int_int_to_tup>();
 
   np::initialize();
 

@@ -93,6 +93,8 @@ public:
   inline cell_fn_t fn_max()                       const; // O(#cp) complexity  
   template <int i>
   inline bool      is_index_i_cp(int cp)          const;
+  inline bool      is_index_i_cp_(int cp,int i)   const;
+
 
   // iterator range to go over the set of critical points
   typedef boost::counting_iterator<int> iterator_t;

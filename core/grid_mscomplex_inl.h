@@ -104,8 +104,14 @@ inline bool mscomplex_t::is_saddle(int i) const
 
 /*---------------------------------------------------------------------------*/
 
-template<int dim> inline bool mscomplex_t::is_index_i_cp(int i) const
-{return (index(i) == dim);}
+template<int i> inline bool mscomplex_t::is_index_i_cp(int cp) const
+{return (index(cp) == i);}
+
+/*---------------------------------------------------------------------------*/
+
+inline bool mscomplex_t::is_index_i_cp_(int cp, int i) const
+{return (index(cp) == i);}
+
 
 /*---------------------------------------------------------------------------*/
 

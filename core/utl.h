@@ -276,7 +276,19 @@ inline void bin_write_vec(std::ostream &os, const std::vector<T> &v)
   if(utl::logger::get().isOpen(utl::logger::info))\
   for(utl::detail::pair<bool,std::stringstream> __utl_lm_v__(true); \
       __utl_lm_v__.first ;__utl_lm_v__.first=false,\
-  utl::logger::get().push(__utl_lm_v__.second.str())) __utl_lm_v__.second
+  utl::logger::get().push_ts(__utl_lm_v__.second.str())) \
+  __utl_lm_v__.second \
+  <<utl::detail::__classFunction__(__PRETTY_FUNCTION__) << " "
+
+/*---------------------------------------------------------------------------*/
+
+#define DLOG  \
+  if(utl::logger::get().isOpen(utl::logger::debug))\
+  for(utl::detail::pair<bool,std::stringstream> __utl_lm_v__(true); \
+      __utl_lm_v__.first ;__utl_lm_v__.first=false,\
+  utl::logger::get().push_ts(__utl_lm_v__.second.str())) \
+  __utl_lm_v__.second \
+  <<utl::detail::__classFunction__(__PRETTY_FUNCTION__) << " "
 
 /*---------------------------------------------------------------------------*/
 
@@ -290,7 +302,6 @@ inline void bin_write_vec(std::ostream &os, const std::vector<T> &v)
 
 
 #define TLOG_INDENT utl::detail::__trace_indenter_t__ __trace_indenter__; \
-
 
 /*---------------------------------------------------------------------------*/
 

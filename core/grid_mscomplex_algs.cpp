@@ -134,12 +134,11 @@ void mscomplex_t::anticancel_pair()
 
 void mscomplex_t::set_hversion(int hver)
 {
-  TLOG << "Entered :" << SVAR(m_hversion);
+  int hversion_old = m_hversion;
   for(int i = m_hversion; i>hver && i>0; --i)  anticancel_pair();
   for(int i = m_hversion; i<hver && i<m_canc_list.size(); ++i)cancel_pair();
-  TLOG << "Exited  :" << SVAR(m_hversion);
+  TLOG << SVAR(hver) <<SVAR(hversion_old) << SVAR(m_hversion);
 }
-
 
 /*---------------------------------------------------------------------------*/
 
@@ -166,6 +165,8 @@ int mscomplex_t::get_hversion_nextrema(int nmax, int nmin) const
     if(index(q) == 0          ) --ns_min;
 
   }
+
+  TLOG << SVAR(nmax) <<SVAR(nmin) << SVAR(hver);
 
   return hver;
 }
@@ -256,7 +257,7 @@ bool mscomplex_t::persistence_cmp(int_pair_t p0,int_pair_t p1) const
 
 void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
 {
-  TLOG << "Entered :" << SVAR(thresh) <<SVAR(is_nrm) << SVAR(nmax)<<SVAR(nmin);
+  DLOG << "Entered :" << SVAR(thresh) <<SVAR(is_nrm) << SVAR(nmax)<<SVAR(nmin);
 
   BOOST_AUTO(cmp,bind(&mscomplex_t::persistence_cmp,this,_2,_1));
 
@@ -314,14 +315,13 @@ void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
 
   m_merge_dag->update(shared_from_this());
 
-  TLOG << "Exited  :" << SVAR(m_hversion) <<SVAR(ns_max) <<SVAR(ns_min);
+  DLOG << "Exited  :" << SVAR(m_hversion) <<SVAR(ns_max) <<SVAR(ns_min);
 }
 
 /*---------------------------------------------------------------------------*/
 
 int mscomplex_t::get_hversion_pers(double thresh, bool is_nrm) const
 {
-  TLOG << "Entered :" << SVAR(thresh) << SVAR(is_nrm);
   int hver = 0;
 
   if(is_nrm)
@@ -337,7 +337,7 @@ int mscomplex_t::get_hversion_pers(double thresh, bool is_nrm) const
       break;
   }
 
-  TLOG << "Exited  :" << SVAR(hver);
+  TLOG << SVAR(thresh) << SVAR(is_nrm)<< SVAR(hver);
   return hver;
 }
 
@@ -606,14 +606,23 @@ inline void __collect_extrema_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
 /* -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - */
 
 void mscomplex_t::collect_mfolds(eGDIR dir, int dim, dataset_ptr_t ds)
-{  
-  if(dir==ASC && dim==0 )__collect_extrema_mfolds<ASC>(shared_from_this(),ds);
-  if(dir==ASC && dim==1 )__collect_mfolds<ASC,1>(shared_from_this(),ds);
-  if(dir==ASC && dim==2 )__collect_mfolds<ASC,2>(shared_from_this(),ds);
+{
+  ENSURES(dir==DES || dir==ASC || dir==GDIR_CT) <<SVAR(dir);
+  ENSURES(dim == -1 || (0<=dim && dim <= gc_grid_dim) ) <<SVAR(dim);
 
-  if(dir==DES && dim==1 )__collect_mfolds<DES,1>(shared_from_this(),ds);
-  if(dir==DES && dim==2 )__collect_mfolds<DES,2>(shared_from_this(),ds);
-  if(dir==DES && dim==3 )__collect_extrema_mfolds<DES>(shared_from_this(),ds);
+  if (dir == ASC || dir == GDIR_CT)
+  {
+    if(dim==0 || dim==-1)__collect_extrema_mfolds<ASC>(shared_from_this(),ds);
+    if(dim==1 || dim==-1)__collect_mfolds<ASC,1>(shared_from_this(),ds);
+    if(dim==2 || dim==-1)__collect_mfolds<ASC,2>(shared_from_this(),ds);
+  }
+
+  if (dir == DES || dir == GDIR_CT)
+  {
+    if(dim==1 || dim==-1)__collect_mfolds<DES,1>(shared_from_this(),ds);
+    if(dim==2 || dim==-1)__collect_mfolds<DES,2>(shared_from_this(),ds);
+    if(dim==3 || dim==-1)__collect_extrema_mfolds<DES>(shared_from_this(),ds);
+  }
 }
 
 /* -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - */
