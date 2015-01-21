@@ -119,34 +119,66 @@ public:
 
   /*-------------------------------------------------------------------------*/
 
-  template <eGDIR dir> int geom_size(int cp,int hver=-1)
+  template <eCCTYPE ccTYPE,int dim>
+  np::ndarray __mfold_to_point_indices(const mfold_t & mfold)
   {
-    if( hver == -1) hver = get_hversion();
+    const int nCellPoints = (ccTYPE == CC_PRIM)?(1<<(dim)):(1<<(gc_grid_dim - dim));
+    const int           O = (ccTYPE == CC_PRIM)?(0):(1);
 
-    ENSURES(is_in_range(cp,0,get_num_critpts()))
-        << "out of range "<<SVAR(cp);
-    ENSURES(is_in_range(hver,0,m_canc_list.size()+1))
-        << "hversion not in range "<<SVAR(hver);
+    rect_t prect = (ccTYPE == CC_PRIM)?(m_rect):(rect_t(m_rect.lc()+1,m_rect.uc()-1));
 
-    int_list_t l;
+    int_list_t points;
 
-    int dim = index(cp);
+    for(int i = 0 ; i < mfold.size(); ++i)
+    {
+      cellid_t c = mfold[i],j;
 
-    m_merge_dag->get_contrib_cps(l,dir,cp,hver,m_geom_hversion[dir][dim]);
+      bool need_cell = true;
 
-    int NC = 0;
+      for(    j[2] = -((c[2]+O)&1) ; j[2] <= ((c[2]+O)&1) ;j[2]+=2)
+        for(  j[1] = -((c[1]+O)&1) ; j[1] <= ((c[1]+O)&1) ;j[1]+=2)
+          for(j[0] = -((c[0]+O)&1) ; j[0] <= ((c[0]+O)&1) ;j[0]+=2)
+            if(!prect.contains(c+j))
+              need_cell = false;
 
-    for(int j = 0 ; j < l.size(); ++j)
-      NC += m_mfolds[dir][l[j]].size();
+      if(need_cell)
+        for(    j[2] = -((c[2]+O)&1) ; j[2] <= ((c[2]+O)&1) ;j[2]+=2)
+          for(  j[1] = -((c[1]+O)&1) ; j[1] <= ((c[1]+O)&1) ;j[1]+=2)
+            for(j[0] = -((c[0]+O)&1) ; j[0] <= ((c[0]+O)&1) ;j[0]+=2)
+              points.push_back(c_to_i2(prect,c+j));
+    }
 
-    TLOG <<SVAR(cp) << SVAR(hver) << SVAR(NC);
+    np::ndarray arr = vector_to_ndarray<int,1>(points);
 
-    return NC;
+    if (nCellPoints != 1)
+      arr = arr.reshape(bp::make_tuple(points.size()/nCellPoints,nCellPoints));
+    return arr;
   }
 
-  /*-------------------------------------------------------------------------*/
+  /// \brief get the geometry of a critical point cp
+  ///
+  /// \param cp     id of the critical point
+  /// \param hver   hierarchical version of the geometry (-1 indicates current)
+  /// \param dir    Asc/Des geometry
+  /// \param ToPts  convert the geometry to point indices.
+  ///               False  : returns a list of cellids
+  ///               True   : returns a list of Point idxs in Primal/Dual grid
+  ///
+  /// \note : if ToPts is enabled, then the cellids are converted to point
+  ///          indices in primal/Dual Grid according to the following table.
+  ///
+  ///         DIR     index(cp)    pt-Index-Type    ret-ArrayShape
+  ///         ASC         0         Primal             [NC]
+  ///         ASC         1         Dual               [NC',4]
+  ///         ASC         2         Dual               [NC',2]
+  ///         DES         1         Primal             [NC,2]
+  ///         DES         2         Primal             [NC,4]
+  ///         DES         3         Dual               [NC]
+  ///
+  ///     Here NC  #cells in Asc/Des mfold of cp.
+  ///          NC' #cells in Asc/Des mfold of cp whose all dual pts are in Primal Grid
 
-  template <eGDIR dir> np::ndarray geom(int cp,int hver=-1)
+  template <eGDIR dir> np::ndarray geom(int cp,int hver=-1,bool ToPts=true)
   {
     if( hver == -1) hver = get_hversion();
 
@@ -154,6 +186,7 @@ public:
         << "out of range "<<SVAR(cp);
     ENSURES(is_in_range(hver,0,m_canc_list.size()+1))
         << "hversion not in range "<<SVAR(hver);
+    BOOST_STATIC_ASSERT(   dir==ASC     ||    dir==DES );
 
     int_list_t l;
 
@@ -162,24 +195,55 @@ public:
     m_merge_dag->get_contrib_cps
         (l,dir,cp,hver,m_geom_hversion[dir][dim]);
 
-    int NC = 0;
+    mfold_t mfold;
 
     for(int j = 0 ; j < l.size(); ++j)
-      NC += m_mfolds[dir][l[j]].size();
+      br::copy(m_mfolds[dir][l[j]],std::back_inserter(mfold));
 
-    np::dtype    dt = np::dtype::get_builtin<cell_coord_t>();
-    np::ndarray arr = np::zeros(bp::make_tuple(NC,gc_grid_dim),dt);
-    cellid_t  *iter = reinterpret_cast<cellid_t*>(arr.get_data());
+    TLOG << SVAR(cp) << SVAR(hver) << SVAR(mfold.size());
 
-    for(int j = 0 ; j < l.size(); ++j)
+    if (ToPts)
     {
-      mfold_t & mfold = m_mfolds[dir][l[j]];
+      if(dir==ASC && dim==0) return __mfold_to_point_indices<CC_PRIM,0>(mfold);
+      if(dir==ASC && dim==1) return __mfold_to_point_indices<CC_DUAL,1>(mfold);
+      if(dir==ASC && dim==2) return __mfold_to_point_indices<CC_DUAL,2>(mfold);
 
-      for(int k = 0 ; k < mfold.size(); ++k)
-        *iter++ = mfold[k];
+      if(dir==DES && dim==1) return __mfold_to_point_indices<CC_PRIM,1>(mfold);
+      if(dir==DES && dim==2) return __mfold_to_point_indices<CC_PRIM,2>(mfold);
+      if(dir==DES && dim==3) return __mfold_to_point_indices<CC_DUAL,3>(mfold);
+
+      ENSURES(false) <<"Should never reach here";
     }
 
-    TLOG << SVAR(cp) << SVAR(hver) << SVAR(NC);
+    return vector_to_ndarray<cell_coord_t,gc_grid_dim>(mfold);
+  }
+
+  /*-------------------------------------------------------------------------*/
+
+  template <eCCTYPE pTYPE> np::ndarray points()
+  {
+    rect_t prect = m_rect;
+
+    if(pTYPE == CC_DUAL)
+      prect = rect_t(m_rect.lc()+1,m_rect.uc()-1);
+
+    int           N = 1 + c_to_i2(prect,prect.uc());
+    np::dtype    dt = np::dtype::get_builtin<float>();
+    np::ndarray arr = np::zeros(bp::make_tuple(N,gc_grid_dim),dt);
+    float    *  iter= reinterpret_cast<float*>(arr.get_data());
+
+    BOOST_STATIC_ASSERT(gc_grid_dim == 3 && "defined for 3-manifolds only");
+
+    cellid_t c;
+
+    for(    c[2] = prect.lc()[2] ; c[2] <= prect.uc()[2] ;c[2]+=2)
+      for(  c[1] = prect.lc()[1] ; c[1] <= prect.uc()[1] ;c[1]+=2)
+        for(c[0] = prect.lc()[0] ; c[0] <= prect.uc()[0] ;c[0]+=2)
+        {
+          *iter++ = float(c[0])/2;
+          *iter++ = float(c[1])/2;
+          *iter++ = float(c[2])/2;
+        }
 
     return arr;
   }
@@ -264,8 +328,6 @@ void wrap_mscomplex_t()
 {
   docstring_options local_docstring_options(true, false, false);
 
-  def("get_hw_info",&get_hw_info);
-
   class_<mscomplex_pyms3d_t,mscomplex_pyms3d_ptr_t>
       ("mscomplex","The Morse-Smale complex object",no_init)
       .def("__init__", make_constructor( &new_msc),
@@ -311,37 +373,60 @@ void wrap_mscomplex_t()
       .def("des",&mscomplex_pyms3d_t::conn<DES>,
            "List of descending cps connected to a given critical point i")
       .def("asc_geom",&mscomplex_pyms3d_t::geom<ASC>,
-           (bp::arg("cp"),bp::arg("hversion")=-1),
+           (bp::arg("cp"),bp::arg("hversion")=-1,bp::arg("ToPts")=true),
            "Ascending manifold geometry of a given critical point i"
-           "Parameters  : \n"\
-           "          cp: the critical point id\n"\
-           "    hversion: desired hierarchical version (optional).\n"\
+           "\n"
+           "Parameters  : \n"
+           "          cp: the critical point id\n"
+           "    hversion: desired hierarchical version.\n"
+           "              -1 indicates current version (default)"
+           "       ToPts: convert the geometry data to point indices.\n"
+           "               default = True     \n"
+           "\n"
+           "               False  : returns a list of cellids \n"
+           "               True   : returns a list of Point idxs in \n"
+           "                        Primal/Dual grid according to following\n"
+           "                        table\n"
+           "\n"
+           "                         index(cp) pt-Index-Type  ArrayShape\n"
+           "                             0      Primal          [NC]\n"
+           "                             1      Dual            [NC',4]\n"
+           "                             2      Dual            [NC',2]\n"
+           "\n"
+           "                       NC  #cells in Asc/Des mfold of cp.\n"
+           "                       NC' #cells in Asc/Des mfold of cp whose \n"
+           "                             dual pts are inside Primal Grid\n"
            )
       .def("des_geom",&mscomplex_pyms3d_t::geom<DES>,
-           (bp::arg("cp"),bp::arg("hversion")=-1),
+           (bp::arg("cp"),bp::arg("hversion")=-1,bp::arg("ToPts")=true),
            "Descending manifold geometry of a given critical point i"
-           "Parameters  : \n"\
-           "          cp: the critical point id\n"\
-           "    hversion: desired hierarchical version (optional).\n"\
-           )
-      .def("asc_geom_size",&mscomplex_pyms3d_t::geom_size<ASC>,
-           (bp::arg("cp"),bp::arg("hversion")=-1),
-           "Ascending manifold geometry size of a given critical point i"
-           "Parameters  : \n"\
-           "          cp: the critical point id\n"\
-           "    hversion: desired hierarchical version (optional).\n"\
-           )
-      .def("des_geom_size",&mscomplex_pyms3d_t::geom_size<DES>,
-           (bp::arg("cp"),bp::arg("hversion")=-1),
-           "Descending manifold geometry size of a given critical point i"
-           "Parameters: \n"\
-           "          cp: the critical point id\n"\
-           "    hversion: desired hierarchical version (optional).\n"\
-           )
-//      .def("gen_pers_hierarchy",&mscomplex_gen_pers_pairs,
-//           "Generates the persistence hierarchy using topo simplification")
+           "\n"
+           "Parameters  : \n"
+           "          cp: the critical point id\n"
+           "    hversion: desired hierarchical version.\n"
+           "              -1 indicates current version (default)"
+           "       ToPts: convert the geometry data to point indices.\n"
+           "               default = True     \n"
+           "\n"
+           "               False  : returns a list of cellids \n"
+           "               True   : returns a list of Point idxs in \n"
+           "                        Primal/Dual grid according to following\n"
+           "                        table\n"
+           "\n"
+           "                         index(cp) pt-Index-Type  ArrayShape\n"
+           "                             1      Primal          [NC,2]\n"
+           "                             2      Primal          [NC,4]\n"
+           "                             3      Dual            [NC]\n"
+           "\n"
+           "                       NC  #cells in Asc/Des mfold of cp.\n"
+           "                       NC' #cells in Asc/Des mfold of cp whose \n"
+           "                             dual pts are inside Primal Grid\n"
 
-
+           )
+      .def("primal_points",&mscomplex_pyms3d_t::points<CC_PRIM>,
+           "Get coordinates of primal points of the grid")
+      .def("dual_points",&mscomplex_pyms3d_t::points<CC_DUAL>,
+           "Get coordinates of dual points of the grid")
 
       .def("compute_bin",&mscomplex_compute_bin,
            "Compute the Mscomplex from a structured grid with scalars given \n"\
@@ -450,6 +535,8 @@ BOOST_PYTHON_MODULE(pyms3d)
   np::initialize();
 
   grid::opencl::init();
+
+  def("get_hw_info",&get_hw_info);
 
   wrap_mscomplex_t();
 }

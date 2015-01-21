@@ -53,6 +53,15 @@ namespace grid
   const eGDIR GDIR_DES=DES;
   const eGDIR GDIR_ASC=ASC;
 
+  /// \brief cell complex type
+  enum eCCTYPE
+  {
+    CC_NONE=0,
+    CC_PRIM=1, // primal
+    CC_DUAL=2, // Dual
+    CC_BOTH=3
+  };
+
   class dataset_t;
   class mscomplex_t;
   class data_manager_t;

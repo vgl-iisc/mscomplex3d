@@ -93,6 +93,7 @@ public:
   cellid_t   getCellMaxFacetId ( cellid_t ) const;
   cellid_t   getCellSecondMaxFacetId ( cellid_t ) const;
   uint       getCellPoints ( cellid_t ,cellid_t  * ) const;
+  uint       getCellCubes ( cellid_t ,cellid_t  * ) const;
   uint       getCellFacets ( cellid_t ,cellid_t * ) const;
   uint       getCellIncCells( cellid_t ,cellid_t * ) const;
   uint       getCellCofacets ( cellid_t ,cellid_t * ) const;
@@ -120,6 +121,8 @@ public:
   inline rect_t         get_extrema_rect(eGDIR dir) const;
   template<eGDIR dir>
   inline uint           get_cets(cellid_t c,cellid_t *cets) const;
+  template<eCCTYPE dir>
+  inline uint           get_points(cellid_t c,cellid_t *cets) const;
   template<eGDIR dir>
   inline uint           get_co_cets(cellid_t c,cellid_t *cets) const;
   template <eGDIR dir>

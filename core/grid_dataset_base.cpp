@@ -202,6 +202,27 @@ uint dataset_t::getCellPoints (cellid_t c,cellid_t  *p) const
 
 /*---------------------------------------------------------------------------*/
 
+uint dataset_t::getCellCubes (cellid_t c,cellid_t  *p) const
+{
+  static_assert(gc_grid_dim == 3 && "defined for 3-manifolds only");
+
+  static_assert(((cell_coord_t)-1) < 0 && "coord_t needs to support -1 ");
+
+  uint pos = 0;
+
+  cellid_t i;
+
+  for(    i[2] = -((c[2]+1)&1) ; i[2] <= ((c[2]+1)&1) ;i[2]+=2)
+    for(  i[1] = -((c[1]+1)&1) ; i[1] <= ((c[1]+1)&1) ;i[1]+=2)
+      for(i[0] = -((c[0]+1)&1) ; i[0] <= ((c[0]+1)&1) ;i[0]+=2)
+        if(m_ext_rect.contains(c+i))
+          p[pos++] = c+i;
+
+  return pos;
+}
+
+/*---------------------------------------------------------------------------*/
+
 uint dataset_t::getCellFacets (cellid_t c,cellid_t *f) const
 {
   uint pos = 0;

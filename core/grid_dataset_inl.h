@@ -71,6 +71,13 @@ template<eGDIR dir> inline uint dataset_t::get_co_cets
 
 /*---------------------------------------------------------------------------*/
 
+template<> inline uint dataset_t::get_points<CC_PRIM>
+(cellid_t c,cellid_t *pts) const {return getCellPoints(c,pts);}
+template<> inline uint dataset_t::get_points<CC_DUAL>
+(cellid_t c,cellid_t *pts) const {return getCellCubes(c,pts);}
+
+/*---------------------------------------------------------------------------*/
+
 inline rect_t dataset_t::get_extrema_rect(eGDIR dir) const
 {return (dir == GDIR_DES)?(rect_t(m_rect.lc()+1,m_rect.uc()-1)):(m_rect);}
 

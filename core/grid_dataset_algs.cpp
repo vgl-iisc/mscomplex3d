@@ -1,4 +1,5 @@
 #include <boost/range/adaptors.hpp>
+#include <boost/foreach.hpp>
 
 #include <grid_dataset.h>
 #include <grid_mscomplex.h>
@@ -181,6 +182,8 @@ inline void collect_reachable_saddle
 
   priority_queue<cellid_int_pair_t,cellid_int_pair_list_t,typeof(cmp_dim) >
       pq(cmp_dim);
+
+  BOOST_FOREACH(cellid_t c, rng) {pq.push(cellid_int_pair_t(c,1));}
 
   cellid_t f[40];
 
