@@ -1,6 +1,3 @@
-[submodule "utls"]
-	path = utls
-	url = https://github.com/nithins/utls.git
 [submodule "pyms3d/Boost.Numpy"]
 	path = pyms3d/Boost.Numpy
 	url = https://github.com/ndarray/Boost.NumPy.git
