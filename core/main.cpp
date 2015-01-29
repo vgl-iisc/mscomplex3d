@@ -23,7 +23,7 @@
 
 #include <grid_dataset.h>
 #include <grid_mscomplex.h>
-#include <grid_outcore.h>
+//#include <grid_outcore.h>
 
 #include <sys/resource.h>
 
@@ -104,8 +104,8 @@ int main(int ac , char **av)
        "grid file name")
       ("dim,d", bpo::value<cellid_t>(&size)->required(),
        "dim of grid entered as [x,y,z]")
-      ("levels,l",bpo::value<cellid_t>(&levels)->default_value(cellid_t(0,0,0)),
-       "number of subdivision levels in each dim .. entered as [x,y,z]")
+//      ("levels,l",bpo::value<cellid_t>(&levels)->default_value(cellid_t(0,0,0)),
+//       "number of subdivision levels in each dim .. entered as [x,y,z]")
       ("simp-tresh,t",bpo::value<double>(&simp_tresh)->default_value(0.0),
        "simplification treshold")
       ;
@@ -131,14 +131,14 @@ int main(int ac , char **av)
 
   opencl::init();
 
-  if(levels == cellid_t::zero)
+//  if(levels == cellid_t::zero)
   {
     compute_mscomplex_basic(filename,size,simp_tresh);
   }
-  else
-  {
-    data_manager_ptr_t gdm(new data_manager_t(filename,size,levels,simp_tresh));
+//  else
+//  {
+//    data_manager_ptr_t gdm(new data_manager_t(filename,size,levels,simp_tresh));
 
-    gdm->work();
-  }
+//    gdm->work();
+//  }
 }

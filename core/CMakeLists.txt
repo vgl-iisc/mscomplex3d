@@ -76,17 +76,17 @@ set(${PROJECT_NAME}_SRCS ${${PROJECT_NAME}_SRCS}
     grid_dataset_inl.h
     grid_dataset_base.cpp
     grid_dataset_algs.cpp
-    grid_dataset_outcore.cpp
+#    grid_dataset_outcore.cpp
 
     grid_mscomplex.h
     grid_mscomplex_inl.h
     grid_mscomplex_base.cpp
     grid_mscomplex_algs.cpp
     grid_mscomplex_merge_dag.cpp
-    grid_mscomplex_outcore.cpp
+#    grid_mscomplex_outcore.cpp
 
-    grid_outcore.h
-    grid_outcore.cpp
+#    grid_outcore.h
+#    grid_outcore.cpp
 
     OpenCL/grid_dataset_cl.h
     OpenCL/grid_dataset_cl.cpp

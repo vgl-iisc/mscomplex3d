@@ -364,6 +364,13 @@ void  dataset_t::getManifold
   if(dim == 3 && dir == DES) collect_reachable_extrema<  DES>      (mfold,rng,shared_from_this());
 }
 
+/*---------------------------------------------------------------------------*/
+
+void dataset_t::compute_owner_grad()
+{
+  opencl::assign_gradient_and_owner_extrema(shared_from_this());
+}
+
 /*===========================================================================*/
 
 }
