@@ -27,7 +27,7 @@ void mscomplex_t::cancel_pair ( int p, int q)
          "indices do not differ by 1");
   ENSURE(m_cp_pair_idx[p] == -1 && m_cp_pair_idx[q] == -1,
          "p/q has already been paired");
-  ENSURE(m_des_conn[p].count(q) == 1 && m_des_conn[p].count(q),
+  ENSURE(m_des_conn[p].count(q) == 1 && m_asc_conn[q].count(p) == 1,
          "p is not connected to q");
   ENSURE(m_des_conn[p][q] == 1 && m_asc_conn[q][p] == 1,
          "p and q are multiply connected");
