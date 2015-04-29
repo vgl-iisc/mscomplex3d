@@ -264,27 +264,35 @@ inline bool is_required_cp(const mscomplex_t& msc,int i)
       && (!msc.is_paired(i) || msc.index(msc.pair_idx(i)) == pdim);
 }
 
-void computeSaddleConnections(mscomplex_ptr_t msc,dataset_ptr_t ds,
-                              mscomplex_connector_t &msc_connector)
+template <int dim, eGDIR dir>
+void computeConnections(mscomplex_ptr_t msc,dataset_ptr_t ds,
+                        mscomplex_connector_t &msc_connector)
 {
-  BOOST_AUTO(cps_1asc,msc->cpno_range()|
+  static_assert(!(dim == 1 && dir == ASC));
+
+  if(dim == 2 && dir == DES)
+  {
+    cellid_list_t cps_1asc;
+
+    br::copy(msc->cpno_range()|
              ba::filtered(bind(is_required_cp<1,GDIR_ASC>,boost::cref(*msc),_1))|
-             ba::transformed(bind(&mscomplex_t::cellid,boost::cref(msc),_1)));
+             ba::transformed(bind(&mscomplex_t::cellid,msc,_1)),
+             std::back_inserter(cps_1asc));
 
-  mark_reachable<1,GDIR_ASC,typeof(cps_1asc)>(cps_1asc,ds);
+    mark_reachable<1,GDIR_ASC,typeof(cps_1asc)>(cps_1asc,ds);
+  }
 
-
-  cellid_list_t cps_2des;
+  cellid_list_t cps;
 
   br::copy(msc->cpno_range()|
-           ba::filtered(bind(is_required_cp<2,GDIR_DES>,boost::cref(*msc),_1))|
+           ba::filtered(bind(is_required_cp<dim,dir>,boost::cref(*msc),_1))|
            ba::transformed(bind(&mscomplex_t::cellid,boost::cref(msc),_1)),
-           std::back_inserter(cps_2des));
+           std::back_inserter(cps));
 
   #pragma omp parallel for
-  for(int i = 0 ; i < cps_2des.size(); ++i)
+  for(int i = 0 ; i < cps.size(); ++i)
   {
-    compute_inc_pairs_pq<2,DES>(cps_2des[i],ds,msc_connector);
+    compute_inc_pairs_pq<dim,dir>(cps[i],ds,msc_connector);
   }
 }
 
@@ -339,13 +347,21 @@ void  dataset_t::computeMsGraph(mscomplex_ptr_t msc)
   #pragma omp sections
   {
     #pragma omp section
-    {computeSaddleConnections(msc,shared_from_this(),msc_connector);}
+    {computeConnections<2,DES>(msc,shared_from_this(),msc_connector);}
 
     #pragma omp section
     {
-      w.owner_extrema(shared_from_this());
-      computeExtremaConnections<DES>(msc,shared_from_this(),msc_connector);
-      computeExtremaConnections<ASC>(msc,shared_from_this(),msc_connector);
+      if(opencl::is_gpu_context())
+      {
+        w.owner_extrema(shared_from_this());
+        computeExtremaConnections<DES>(msc,shared_from_this(),msc_connector);
+        computeExtremaConnections<ASC>(msc,shared_from_this(),msc_connector);
+      }
+      else
+      {
+        computeConnections<2,ASC>(msc,shared_from_this(),msc_connector);
+        computeConnections<1,DES>(msc,shared_from_this(),msc_connector);
+      }
     }
   }
 }
@@ -368,7 +384,11 @@ void  dataset_t::getManifold
 
 void dataset_t::compute_owner_grad()
 {
-  opencl::assign_gradient_and_owner_extrema(shared_from_this());
+  opencl::worker w;
+  w.assign_gradient(shared_from_this());
+
+  if(opencl::is_gpu_context())
+    w.owner_extrema(shared_from_this());
 }
 
 /*===========================================================================*/

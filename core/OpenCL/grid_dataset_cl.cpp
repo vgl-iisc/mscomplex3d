@@ -211,7 +211,10 @@ namespace grid
          << "PlatformVendor = " << s_platform.getInfo<CL_PLATFORM_VENDOR>() << endl
          << "DeviceName     = " << s_device.getInfo<CL_DEVICE_NAME>() << endl
          << "DeviceVendor   = " << s_device.getInfo<CL_DEVICE_VENDOR>() << endl
+         << "DeviceMemory(b)= " << s_device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>() << "(b)" << endl
+         << "MaxMemAlloc(b) = " << s_device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>() <<"(b)" << endl
          << "====================================" << endl;
+
 
       return ss.str();
     }
@@ -409,6 +412,11 @@ namespace grid
       }
     }
 
+    bool is_gpu_context()
+    {
+      return (s_device.getInfo<CL_DEVICE_TYPE>() == CL_DEVICE_TYPE_GPU);
+    }
+
     void __assign_gradient
       ( cell_pair_t rct,
         cell_pair_t ext,
@@ -504,7 +512,15 @@ namespace grid
       }
       catch(cl::Error err)
       {
-        ENSURES(false)<<"ERROR: "<< err.what()<< "("<< err.err()<< ")"<< std::endl;
+        FLOG <<"OpenCL ERROR: "<< err.what() <<" Errcode:"<< err.err();
+        if (err.err() == CL_MEM_OBJECT_ALLOCATION_FAILURE)
+        {
+          FLOG<<"CL_MEM_OBJECT_ALLOCATION_FAILURE" << endl
+              <<"Possible causes:" <<endl
+              <<"  Buffer size tried to allocate:"<<cell_ct <<endl
+              <<"  DeviceMaxMemAlloc : " << s_device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>() << endl
+              ;
+        }
         throw;
       }
     }
@@ -621,18 +637,20 @@ namespace grid
       __assign_gradient(rct,ext,dom,func_img,*flag_img,
                         ds->m_vert_fns.data(),ds->m_cell_flags.data());
 
+      if(msc)
+      {
+        cl::Buffer cp_offset_buf;
+        int          num_cps;
 
-      cl::Buffer cp_offset_buf;
-      int          num_cps;
+        __count_and_scan_cps(rct,ext,dom,*flag_img,cp_offset_buf,num_cps);
 
-      __count_and_scan_cps(rct,ext,dom,*flag_img,cp_offset_buf,num_cps);
+        msc->resize(num_cps);
 
-      msc->resize(num_cps);
-
-      __save_cps(rct,ext,dom,func_img,*flag_img,cp_offset_buf,num_cps,
-                 msc->m_cp_cellid.data(),msc->m_cp_vertid.data(),
-                 msc->m_cp_pair_idx.data(),msc->m_cp_index.data(),
-                 msc->m_cp_fn.data());
+        __save_cps(rct,ext,dom,func_img,*flag_img,cp_offset_buf,num_cps,
+                   msc->m_cp_cellid.data(),msc->m_cp_vertid.data(),
+                   msc->m_cp_pair_idx.data(),msc->m_cp_index.data(),
+                   msc->m_cp_fn.data());
+      }
     }
 
     void __owner_extrema
@@ -692,26 +710,26 @@ namespace grid
       __owner_extrema(rct,ext,dom,min_rect,*flag_img,ds->m_owner_minima.data());
     }
 
-    void assign_gradient_and_owner_extrema(dataset_ptr_t ds)
-    {
-      cl::Image3D  flag_img;
+//    void assign_gradient_and_owner_extrema(dataset_ptr_t ds)
+//    {
+//      cl::Image3D  flag_img;
 
-      cell_pair_t rct      = to_cell_pair(ds->m_rect);
-      cell_pair_t ext      = to_cell_pair(ds->m_ext_rect);
-      cell_pair_t dom      = to_cell_pair(ds->m_domain_rect);
-      cell_pair_t max_rect = to_cell_pair(ds->get_extrema_rect(GDIR_DES));
-      cell_pair_t min_rect = to_cell_pair(ds->get_extrema_rect(GDIR_ASC));
+//      cell_pair_t rct      = to_cell_pair(ds->m_rect);
+//      cell_pair_t ext      = to_cell_pair(ds->m_ext_rect);
+//      cell_pair_t dom      = to_cell_pair(ds->m_domain_rect);
+//      cell_pair_t max_rect = to_cell_pair(ds->get_extrema_rect(GDIR_DES));
+//      cell_pair_t min_rect = to_cell_pair(ds->get_extrema_rect(GDIR_ASC));
 
-      {
-        cl::Image3D  func_img;
+//      {
+//        cl::Image3D  func_img;
 
-        __assign_gradient(rct,ext,dom,func_img,flag_img,
-                          ds->m_vert_fns.data(),ds->m_cell_flags.data());
-      }
+//        __assign_gradient(rct,ext,dom,func_img,flag_img,
+//                          ds->m_vert_fns.data(),ds->m_cell_flags.data());
+//      }
 
-      __owner_extrema(rct,ext,dom,max_rect,flag_img,ds->m_owner_maxima.data());
-      __owner_extrema(rct,ext,dom,min_rect,flag_img,ds->m_owner_minima.data());
-    }
+//      __owner_extrema(rct,ext,dom,max_rect,flag_img,ds->m_owner_maxima.data());
+//      __owner_extrema(rct,ext,dom,min_rect,flag_img,ds->m_owner_minima.data());
+//    }
 
     void __update_to_surv_extrema
       ( cell_pair_t rct,

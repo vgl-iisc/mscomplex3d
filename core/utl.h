@@ -272,6 +272,28 @@ inline void bin_write_vec(std::ostream &os, const std::vector<T> &v)
 
 /*---------------------------------------------------------------------------*/
 
+#define ELOG  \
+  if(utl::logger::get().isOpen(utl::logger::error))\
+  for(utl::detail::pair<bool,std::stringstream> __utl_lm_v__(true); \
+      __utl_lm_v__.first ;__utl_lm_v__.first=false,\
+  utl::logger::get().push_ts(__utl_lm_v__.second.str())) \
+  __utl_lm_v__.second \
+  <<utl::detail::__classFunction__(__PRETTY_FUNCTION__) << " "
+
+/*---------------------------------------------------------------------------*/
+
+#define FLOG  \
+  if(utl::logger::get().isOpen(utl::logger::fatal))\
+  for(utl::detail::pair<bool,std::stringstream> __utl_lm_v__(true); \
+      __utl_lm_v__.first ;__utl_lm_v__.first=false,\
+  utl::logger::get().push_ts(__utl_lm_v__.second.str())) \
+  __utl_lm_v__.second \
+  <<utl::detail::__classFunction__(__PRETTY_FUNCTION__) << " "
+
+
+
+/*---------------------------------------------------------------------------*/
+
 #define ILOG  \
   if(utl::logger::get().isOpen(utl::logger::info))\
   for(utl::detail::pair<bool,std::stringstream> __utl_lm_v__(true); \

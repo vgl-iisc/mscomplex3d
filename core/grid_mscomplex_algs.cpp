@@ -6,6 +6,7 @@
 
 #include <grid_dataset.h>
 #include <grid_mscomplex.h>
+#include <grid_dataset_cl.h>
 
 using namespace std;
 
@@ -612,7 +613,13 @@ void mscomplex_t::collect_mfolds(eGDIR dir, int dim, dataset_ptr_t ds)
 
   if (dir == ASC || dir == GDIR_CT)
   {
-    if(dim==0 || dim==-1)__collect_extrema_mfolds<ASC>(shared_from_this(),ds);
+    if(dim==0 || dim==-1)
+    {
+      if(opencl::is_gpu_context())
+        __collect_extrema_mfolds<ASC>(shared_from_this(),ds);
+      else
+        __collect_mfolds<ASC,0>(shared_from_this(),ds);
+    }
     if(dim==1 || dim==-1)__collect_mfolds<ASC,1>(shared_from_this(),ds);
     if(dim==2 || dim==-1)__collect_mfolds<ASC,2>(shared_from_this(),ds);
   }
@@ -621,7 +628,13 @@ void mscomplex_t::collect_mfolds(eGDIR dir, int dim, dataset_ptr_t ds)
   {
     if(dim==1 || dim==-1)__collect_mfolds<DES,1>(shared_from_this(),ds);
     if(dim==2 || dim==-1)__collect_mfolds<DES,2>(shared_from_this(),ds);
-    if(dim==3 || dim==-1)__collect_extrema_mfolds<DES>(shared_from_this(),ds);
+    if(dim==3 || dim==-1)
+    {
+      if(opencl::is_gpu_context())
+        __collect_extrema_mfolds<DES>(shared_from_this(),ds);
+      else
+        __collect_mfolds<DES,3>(shared_from_this(),ds);
+    }
   }
 }
 
@@ -629,13 +642,22 @@ void mscomplex_t::collect_mfolds(eGDIR dir, int dim, dataset_ptr_t ds)
 
 void mscomplex_t::collect_mfolds(dataset_ptr_t ds)
 {
-  __collect_extrema_mfolds<ASC>(shared_from_this(),ds);
+  if(opencl::is_gpu_context())
+  {
+    __collect_extrema_mfolds<ASC>(shared_from_this(),ds);
+    __collect_extrema_mfolds<DES>(shared_from_this(),ds);
+  }
+  else
+  {
+    __collect_mfolds<ASC,0>(shared_from_this(),ds);
+    __collect_mfolds<DES,3>(shared_from_this(),ds);
+  }
+
   __collect_mfolds<ASC,1>(shared_from_this(),ds);
   __collect_mfolds<ASC,2>(shared_from_this(),ds);
 
   __collect_mfolds<DES,1>(shared_from_this(),ds);
   __collect_mfolds<DES,2>(shared_from_this(),ds);
-  __collect_extrema_mfolds<DES>(shared_from_this(),ds);
 }
 
 /*===========================================================================*/

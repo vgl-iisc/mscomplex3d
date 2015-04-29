@@ -149,30 +149,41 @@ public:
     rect_t prect = (ccTYPE == CC_PRIM)?(m_rect):(rect_t(m_rect.lc()+1,m_rect.uc()-1));
 
     int_list_t points;
+    int_list_t point_idxs(mfold.size(),-1);
 
-    for(int i = 0 ; i < mfold.size(); ++i)
+    int num_pts;
+
+    #pragma omp parallel for
+    for(int i = 0; i < mfold.size(); ++i)
     {
       cellid_t c = mfold[i],j;
-
-      bool need_cell = true;
 
       for(    j[2] = -((c[2]+O)&1) ; j[2] <= ((c[2]+O)&1) ;j[2]+=2)
         for(  j[1] = -((c[1]+O)&1) ; j[1] <= ((c[1]+O)&1) ;j[1]+=2)
           for(j[0] = -((c[0]+O)&1) ; j[0] <= ((c[0]+O)&1) ;j[0]+=2)
             if(!prect.contains(c+j))
-              need_cell = false;
+              point_idxs[i] = __sync_fetch_and_add(&num_pts,1);
+    }
 
-      if(need_cell)
+    points.resize(num_pts);
+
+    #pragma omp parallel for
+    for(int i = 0; i < mfold.size(); ++i)
+    {
+      cellid_t c = mfold[i],j;
+      if(point_idxs[i] != -1)
         for(    j[2] = -((c[2]+O)&1) ; j[2] <= ((c[2]+O)&1) ;j[2]+=2)
           for(  j[1] = -((c[1]+O)&1) ; j[1] <= ((c[1]+O)&1) ;j[1]+=2)
             for(j[0] = -((c[0]+O)&1) ; j[0] <= ((c[0]+O)&1) ;j[0]+=2)
-              points.push_back(c_to_i2(prect,c+j));
+              points[point_idxs[i]] =  c_to_i2(prect,c+j);
     }
+    TLOG << "Transformed:";
 
     np::ndarray arr = vector_to_ndarray<int,1>(points);
-
     if (nCellPoints != 1)
       arr = arr.reshape(bp::make_tuple(points.size()/nCellPoints,nCellPoints));
+    TLOG << "Copied  :";
+
     return arr;
   }
 
@@ -201,6 +212,8 @@ public:
 
   template <eGDIR dir> np::ndarray geom(int cp,int hver=-1,bool ToPts=true)
   {
+    TLOG <<"Entered :" << SVAR(cp) << SVAR(hver);
+
     if( hver == -1) hver = get_hversion();
 
     ENSURES(is_in_range(cp,0,get_num_critpts()))
@@ -221,7 +234,7 @@ public:
     for(int j = 0 ; j < l.size(); ++j)
       br::copy(m_mfolds[dir][l[j]],std::back_inserter(mfold));
 
-    TLOG << SVAR(cp) << SVAR(hver) << SVAR(mfold.size());
+    TLOG << "Computed:" << SVAR(mfold.size());
 
     if (ToPts)
     {
@@ -273,12 +286,18 @@ public:
 
   np::ndarray cps(int i)
   {
-    TLOG;BOOST_AUTO(rng,cpno_range()|ba::filtered
+    TLOG << "Entered :";
+
+    BOOST_AUTO(rng,cpno_range()|ba::filtered
                     (bind(&mscomplex_pyms3d_t::is_not_canceled,this,_1)));
+
+    TLOG << "Computed:";
 
     if(i == -1) return range_to_ndarray<int,1>(rng);
     else        return range_to_ndarray<int,1>
         (rng|ba::filtered(bind(&mscomplex_pyms3d_t::is_index_i_cp_,this,_1,i)));
+
+    TLOG << "Exited  :";
 
   }
 
@@ -302,6 +321,11 @@ public:
   }
   /*-------------------------------------------------------------------------*/
 };
+
+void ping()
+{
+  ILOG <<"Pinged  :";
+}
 }
 
 /*===========================================================================*/
@@ -558,6 +582,8 @@ BOOST_PYTHON_MODULE(pyms3d)
   grid::opencl::init();
 
   def("get_hw_info",&get_hw_info);
+
+  def("ping",&pyms3d::ping);
 
   wrap_mscomplex_t();
 }
