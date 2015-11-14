@@ -1,4 +1,5 @@
 #include <stack>
+#include <set>
 
 #include <boost/foreach.hpp>
 #include <boost/range/adaptors.hpp>
