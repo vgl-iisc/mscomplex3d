@@ -76,6 +76,7 @@ public:
   dataset_t ( const rect_t &r,const rect_t &e,const rect_t &d );
   ~dataset_t ();
 
+  void  init(const cell_fn_t * dptr,bool is_fortran_order);
   void  init(const std::string &filename);
   void  init_storage(); // assumes rects are defined
   void  clear();

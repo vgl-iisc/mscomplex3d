@@ -51,6 +51,27 @@ void dataset_t::init(const string &filename)
 
 /*---------------------------------------------------------------------------*/
 
+void  dataset_t::init(const cell_fn_t * dptr, bool is_fortran_order)
+{
+  init_storage();
+
+  rect_size_t  pt_span = (m_ext_rect.span()/2)+1;
+  uint num_pts   = pt_span[0]*pt_span[1]*pt_span[2];
+
+
+  if(is_fortran_order)
+    std::memcpy(m_vert_fns.data(),dptr,num_pts*sizeof(cell_fn_t));
+  else
+    for(int x = 0 ; x < pt_span[0] ; ++ x)
+      for(int y = 0 ; y < pt_span[1] ; ++ y)
+        for(int z = 0 ; z < pt_span[2] ; ++ z)
+          m_vert_fns[x][y][z] = *dptr++;
+
+
+}
+
+/*---------------------------------------------------------------------------*/
+
 
 void dataset_t::init_storage()
 {

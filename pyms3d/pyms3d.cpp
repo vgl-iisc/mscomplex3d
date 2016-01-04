@@ -320,6 +320,48 @@ public:
     DLOG << "Exited  :";
   }
   /*-------------------------------------------------------------------------*/
+
+  void compute_arr(np::ndarray  arr)
+  {
+    ENSURES(arr.get_nd() == 3) << " 3D array expected " << std::endl;
+
+    ENSURES(arr.get_flags() & np::ndarray::ALIGNED)
+        <<"Contiguous array expected " << std::endl;
+
+    arr = arr.astype(np::dtype::get_builtin<float>());
+
+  //  ENSURES(bin_fmt == "float32") <<"Only float32 is supported" <<endl;
+    int x = arr.shape(0);
+    int y = arr.shape(1);
+    int z = arr.shape(2);
+    cellid_t size = cellid_t(x,y,z);
+
+    rect_t dom(cellid_t::zero,(size-cellid_t::one)*2);
+
+    DLOG << "Entered :"
+         << endl << "\t" << SVAR(size);
+
+    m_rect        = dom;
+    m_domain_rect = dom;
+    m_ext_rect    = dom;
+
+    bool is_fortran = (arr.get_flags() & np::ndarray::F_CONTIGUOUS);
+
+    ds.reset(new dataset_t(dom,dom,dom));
+    const cell_fn_t * data= reinterpret_cast<const cell_fn_t* >(arr.get_data());
+    ds->init(data,is_fortran);
+    ds->computeMsGraph(shared_from_this());
+
+    DLOG << "Exited  :";
+  }
+
+  /*-------------------------------------------------------------------------*/
+
+  cell_fn_t vert_fn(int x, int y, int z)
+  {
+    return ds->m_vert_fns(cellid_t(x,y,z));
+  }
+
 };
 
 void ping()
@@ -386,6 +428,8 @@ void wrap_mscomplex_t()
            "Parameters   :\n"
            "          dim: index of the cps. -1 signifies all. default=-1\n"
            )
+      .def("vert_func",&mscomplex_pyms3d_t::vert_fn,
+           "Scalar value at vertex coordinate")
 
 
       .def("cp_func",&mscomplex_t::fn,
@@ -479,7 +523,7 @@ void wrap_mscomplex_t()
            "\n"\
            "Parameters  : \n"\
            "    bin_file: the bin/raw file containing the scalar function\n"\
-           "              in float32 format \n"\
+           "              in float32 format in fortran order\n"\
            "    size    : size of each dimension in x,y,z ordering .\n"\
 //         "    bin_fmt : binary format .\n"\
 //         "              Acceptable values = (\"float32\")\n"
@@ -487,6 +531,19 @@ void wrap_mscomplex_t()
            "Note: This only computes the combinatorial structure\n"\
            "     Call collect_mfold(s) to extract geometry\n"
            )
+      .def("compute_arr",&mscomplex_pyms3d_t::compute_arr,
+           "Compute the Mscomplex from a structured grid with scalars given \n"\
+           "in a 3D numpy array \n"\
+           "\n"\
+           "Parameters  : \n"\
+           "    arr     : the 3D numpy array containing the scalar function\n"\
+           "\n"\
+           "Note: This only computes the combinatorial structure\n"\
+           "     Call collect_mfold(s) to extract geometry\n"
+           "Note: A copy of the data is made for computations\n"\
+
+           )
+
       .def("collect_geom",&mscomplex_pyms3d_t::collect_mfolds,
            (bp::arg("dir")=2,bp::arg("dim")=-1),
            "Collect the geometry of all survivng critical points\n"\
