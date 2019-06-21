@@ -50,8 +50,8 @@ inline std::string to_string_rng(rng_t rng,const char * delim = ", ")
 {
   std::stringstream ss;
 
-  BOOST_AUTO(b,boost::begin(rng));
-  BOOST_AUTO(e,boost::end(rng));
+  auto b = boost::begin(rng);
+  auto e = boost::end(rng);
 
   ss<<"["; for(; b!=e ; b) ss << *b++ << delim; ss<<"]";
   return ss.str();
@@ -83,7 +83,7 @@ np::ndarray range_to_ndarray(const rng_t & rng)
   bp::tuple   dim = (NCOL==1)?(bp::make_tuple(N)):(bp::make_tuple(N,NCOL));
   np::ndarray arr = np::zeros(dim,dt);
   char       *ptr = arr.get_data();
-  BOOST_AUTO(iter,boost::begin(rng));
+  auto iter = boost::begin(rng);
 
   for(;iter!=boost::end(rng);)
   {
@@ -288,8 +288,8 @@ public:
   {
     TLOG << "Entered :";
 
-    BOOST_AUTO(rng,cpno_range()|ba::filtered
-                    (bind(&mscomplex_pyms3d_t::is_not_canceled,this,_1)));
+    auto rng = cpno_range()|ba::filtered
+                    (bind(&mscomplex_pyms3d_t::is_not_canceled,this,_1));
 
     TLOG << "Computed:";
 

@@ -130,10 +130,8 @@ inline void make_is_inc_ext(const mscomplex_t &msc, vector<bool> &inc_on_ext)
 {
   inc_on_ext.resize(msc.get_num_critpts(),false);
 
-  using boost::ref;
-  using boost::cref;
 
-  BOOST_AUTO(ftor,bind(&set_vec_value<bool>,ref(inc_on_ext),_1,true));
+  auto ftor = bind(&set_vec_value<bool>,std::ref(inc_on_ext),_1,true);
 
   for(int i = 0 ;i < msc.get_num_critpts();++i)
   {
@@ -171,7 +169,7 @@ inline void update_is_inc_ext
 
 void mscomplex_t::simplify_pers_outcore(double f_tresh, double f_range)
 {
-  BOOST_AUTO(cmp,bind(&mscomplex_t::persistence_cmp,this,_2,_1));
+  auto cmp = bind(&mscomplex_t::persistence_cmp,this,_2,_1);
 
   priority_queue<int_pair_t,int_pair_list_t,typeof(cmp)> pq(cmp);
 
@@ -688,11 +686,9 @@ inline void copy_into_new_adj
 {
   int N = idx_map.size();
 
-  using boost::ref;
-  using boost::cref;
 
-  BOOST_AUTO(ac_ftr,bind(adj_converter,_1,ref(idx_map),ref(ridx_map)));
-  BOOST_AUTO(surv_ftor,bind(is_surv,_1,cref(msc),cref(idx_map)));
+  auto ac_ftr = bind(adj_converter,_1,std::ref(idx_map),std::ref(ridx_map));
+  auto surv_ftor = bind(is_surv,_1,std::cref(msc),std::cref(idx_map));
 
   int_int_list_t::iterator a,b,c = adj.begin();
 

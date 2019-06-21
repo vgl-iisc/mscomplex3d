@@ -260,7 +260,7 @@ void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
 {
   DLOG << "Entered :" << SVAR(thresh) <<SVAR(is_nrm) << SVAR(nmax)<<SVAR(nmin);
 
-  BOOST_AUTO(cmp,bind(&mscomplex_t::persistence_cmp,this,_2,_1));
+  auto cmp = bind(&mscomplex_t::persistence_cmp,this,_2,_1);
 
   priority_queue<int_pair_t,int_pair_list_t,typeof(cmp)> pq(cmp);
 
@@ -374,11 +374,10 @@ void getCanceledCpContrib(mscomplex_ptr_t msc,contrib_list_t& ccp_contrib)
 
   std::map<int,int> ccp_map;
 
-  BOOST_AUTO(ccp_rng,msc->m_canc_list
+  auto ccp_rng = msc->m_canc_list
              |ba::sliced(0,msc->m_hversion)
              |ba::transformed(bind(order_pair<dir>,msc,_1))
-             |ba::filtered(bind(is_dim_pair<dim,odim>,msc,_1))
-             );
+             |ba::filtered(bind(is_dim_pair<dim,odim>,msc,_1));
 
   BOOST_FOREACH(int_pair_t pr,ccp_rng)
       ccp_map.insert(int_int_t(pr[0],ccp_map.size()));
@@ -456,9 +455,9 @@ void getSurvivingCpContrib(mscomplex_ptr_t msc,contrib_list_t& scp_contrib)
   // Construct an index mapping for each surviving dim-cp and allocate data
   std::map<int,int> scp_map;
 
-  BOOST_AUTO(scp_rng, msc->cpno_range()
+  auto scp_rng = msc->cpno_range()
              |ba::filtered(bind(&mscomplex_t::is_not_canceled,msc,_1))
-             |ba::filtered(bind(&mscomplex_t::is_index_i_cp<dim>,msc,_1)));
+             |ba::filtered(bind(&mscomplex_t::is_index_i_cp<dim>,msc,_1));
 
   BOOST_FOREACH(int cp,scp_rng)
       scp_map.insert(int_int_t(cp,scp_map.size()));

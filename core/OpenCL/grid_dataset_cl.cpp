@@ -512,15 +512,7 @@ namespace grid
       }
       catch(cl::Error err)
       {
-        FLOG <<"OpenCL ERROR: "<< err.what() <<" Errcode:"<< err.err();
-        if (err.err() == CL_MEM_OBJECT_ALLOCATION_FAILURE)
-        {
-          FLOG<<"CL_MEM_OBJECT_ALLOCATION_FAILURE" << endl
-              <<"Possible causes:" <<endl
-              <<"  Buffer size tried to allocate:"<<cell_ct <<endl
-              <<"  DeviceMaxMemAlloc : " << s_device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>() << endl
-              ;
-        }
+        ENSURES(false)<<"ERROR: "<< err.what()<< "("<< err.err()<< ")"<< std::endl;
         throw;
       }
     }

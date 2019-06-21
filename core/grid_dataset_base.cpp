@@ -3,7 +3,7 @@
 
 using namespace std;
 
-#define static_assert BOOST_STATIC_ASSERT
+#define static_assert(a, b) BOOST_STATIC_ASSERT_MSG(a, b)
 
 namespace grid
 {
@@ -75,7 +75,7 @@ void  dataset_t::init(const cell_fn_t * dptr, bool is_fortran_order)
 
 void dataset_t::init_storage()
 {
-  static_assert(gc_grid_dim == 3 && "defined for 3-manifolds only");
+  static_assert(gc_grid_dim == 3 , "defined for 3-manifolds only");
 
   rect_size_t   span   = m_ext_rect.span() + 1;
   rect_size_t  pt_span = (m_ext_rect.span()/2)+1;
@@ -203,9 +203,9 @@ cellid_t dataset_t::getCellSecondMaxFacetId (cellid_t c) const
 
 uint dataset_t::getCellPoints (cellid_t c,cellid_t  *p) const
 {
-  static_assert(gc_grid_dim == 3 && "defined for 3-manifolds only");
+  static_assert(gc_grid_dim == 3 , "defined for 3-manifolds only");
 
-  static_assert(((cell_coord_t)-1) < 0 && "coord_t needs to support -1 ");
+  static_assert(((cell_coord_t)-1) < 0 , "coord_t needs to support -1 ");
 
   uint pos = 0;
 
@@ -229,9 +229,9 @@ uint dataset_t::getCellPoints (cellid_t c,cellid_t  *p) const
 
 uint dataset_t::getCellCubes (cellid_t c,cellid_t  *p) const
 {
-  static_assert(gc_grid_dim == 3 && "defined for 3-manifolds only");
+  static_assert(gc_grid_dim == 3 , "defined for 3-manifolds only");
 
-  static_assert(((cell_coord_t)-1) < 0 && "coord_t needs to support -1 ");
+  static_assert(((cell_coord_t)-1) < 0 , "coord_t needs to support -1 ");
 
   uint pos = 0;
 
@@ -297,9 +297,9 @@ uint dataset_t::getCellCofaces (cellid_t c,cellid_t *cf) const
 {
   uint cf_ct = std::pow(3,(gc_grid_dim - getCellDim (c))) ;
 
-  static_assert(gc_grid_dim == 3 && "defined for 3-manifolds only");
+  static_assert(gc_grid_dim == 3 , "defined for 3-manifolds only");
 
-  static_assert(((cell_coord_t)-1) < 0 && "coord_t needs to support -1 ");
+  static_assert(((cell_coord_t)-1) < 0 , "coord_t needs to support -1 ");
 
   uint pos = 0;
 
@@ -496,7 +496,7 @@ void dataset_t::load_bin(istream &is)
 
 void dataset_t::log_flags()
 {
-  static_assert(gc_grid_dim == 3 && "defined for 3-manifolds only");
+  static_assert(gc_grid_dim == 3 , "defined for 3-manifolds only");
 
   cellid_t c;
 
@@ -568,7 +568,7 @@ char get_dir_txt(cellid_t c,cellid_t p)
 
 void dataset_t::log_pairs(std::ostream &os)
 {
-  static_assert(gc_grid_dim == 3 && "defined for 3-manifolds only");
+  static_assert(gc_grid_dim == 3 , "defined for 3-manifolds only");
 
   cellid_t c;
 
@@ -601,7 +601,7 @@ void dataset_t::log_pairs(std::ostream &os)
 
 void dataset_t::log_visits(std::ostream &os)
 {
-  static_assert(gc_grid_dim == 3 && "defined for 3-manifolds only");
+  static_assert(gc_grid_dim == 3 , "defined for 3-manifolds only");
 
   cellid_t c;
 
@@ -626,7 +626,7 @@ void dataset_t::log_visits(std::ostream &os)
 
 void dataset_t::log_pair_visits(std::ostream &os)
 {
-  static_assert(gc_grid_dim == 3 && "defined for 3-manifolds only");
+  static_assert(gc_grid_dim == 3 , "defined for 3-manifolds only");
 
   cellid_t c;
 
@@ -651,7 +651,7 @@ void dataset_t::log_pair_visits(std::ostream &os)
 
 void dataset_t::log_owner_extrema(eGDIR dir, std::ostream &os)
 {
-  static_assert(gc_grid_dim == 3 && "defined for 3-manifolds only");
+  static_assert(gc_grid_dim == 3 , "defined for 3-manifolds only");
 
   rect_t ex_rect               = (dir == GDIR_DES)?(rect_t(m_rect.lc()+1,m_rect.uc()-1)):(m_rect);
   int_marray_t &owner_extrema  = (dir == GDIR_DES)?(m_owner_maxima):(m_owner_minima);
@@ -723,7 +723,7 @@ void dataset_t::log_visits(const std::string &s)
 
 void dataset_t::log_max_facets()
 {
-  static_assert(gc_grid_dim == 3 && "defined for 3-manifolds only");
+  static_assert(gc_grid_dim == 3 , "defined for 3-manifolds only");
 
   cellid_t c;
 
@@ -759,7 +759,7 @@ void dataset_t::extract_vdata_subarray(rect_t r,const std::string &filename)
   if(ofs.is_open() == false)
     throw std::runtime_error("unable to open file");
 
-  static_assert(gc_grid_dim == 3 && "defined for 3-manifolds only");
+  static_assert(gc_grid_dim == 3 , "defined for 3-manifolds only");
 
   cellid_t c;
 

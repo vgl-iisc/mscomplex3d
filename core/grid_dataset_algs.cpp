@@ -109,8 +109,8 @@ inline void compute_inc_pairs_pq
       ((dim==1) && (dir==DES)) || (dim==0) ||
       ((dim==2) && (dir==ASC)) || (dim==3);
 
-  BOOST_AUTO(cmp_dim , bind(cellid_int_pair_cmp< dim, dir>,ds,_1,_2));
-  BOOST_AUTO(cmp_pdim, bind(cellid_int_pair_cmp<pdim, dir>,ds,_1,_2));
+  auto cmp_dim = bind(cellid_int_pair_cmp< dim, dir>,ds,_1,_2);
+  auto cmp_pdim = bind(cellid_int_pair_cmp<pdim, dir>,ds,_1,_2);
 
   priority_queue<cellid_int_pair_t,cellid_int_pair_list_t,typeof(cmp_dim) >
       pq(cmp_dim );
@@ -178,7 +178,7 @@ inline void collect_reachable_saddle
 
   const int pdim = (dir == DES)?(dim - 1):(dim + 1);
 
-  BOOST_AUTO(cmp_dim , bind(cellid_int_pair_cmp< dim, dir>,ds_ptr,_1,_2));
+  auto cmp_dim = bind(cellid_int_pair_cmp< dim, dir>,ds_ptr,_1,_2);
 
   priority_queue<cellid_int_pair_t,cellid_int_pair_list_t,typeof(cmp_dim) >
       pq(cmp_dim);
@@ -268,7 +268,7 @@ template <int dim, eGDIR dir>
 void computeConnections(mscomplex_ptr_t msc,dataset_ptr_t ds,
                         mscomplex_connector_t &msc_connector)
 {
-  static_assert(!(dim == 1 && dir == ASC));
+  ENSURES(!(dim == 1 && dir == ASC));
 
   if(dim == 2 && dir == DES)
   {

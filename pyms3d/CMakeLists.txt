@@ -7,8 +7,8 @@ find_package(Boost 1.48 COMPONENTS python system date_time REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(OpenCL REQUIRED)
 
-find_package(PythonInterp 2.7 REQUIRED)
-find_package(PythonLibs 2.7 REQUIRED)
+find_package(PythonInterp REQUIRED)
+find_package(PythonLibs REQUIRED)
 find_package(NumPy REQUIRED)
 
 include_directories(

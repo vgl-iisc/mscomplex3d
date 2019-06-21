@@ -25,8 +25,8 @@ inline cellid_t cellid_of_pair(mscomplex_t &msc,int i)
 template<eGDIR dir>
 inline void collect_contrib_cps(mscomplex_t &msc,cellid_list_t &cplist, int i)
 {
-  BOOST_AUTO(cop_ftr,bind(cellid_of_pair,boost::ref(msc),_1));
-  BOOST_AUTO(in_rect_ftr,bind(&rect_t::contains_point,&msc.m_rect,_1));
+  auto cop_ftr = bind(cellid_of_pair,std::ref(msc),_1);
+  auto in_rect_ftr = bind(&rect_t::contains_point,&msc.m_rect,_1);
 
   if(msc.m_rect.contains(msc.cellid(i)))
     cplist.push_back(msc.cellid(i));
@@ -187,13 +187,12 @@ void  dataset_t::saveManifolds(mscomplex_ptr_t msc,const std::string &bn)
 template<int dim,eGDIR dir,typename cmp_t,typename Titer>
 inline cellid_list_ptr_t compute_mfold(dataset_t &ds,mscomplex_t &msc,Titer b,Titer e,cmp_t cmp)
 {
-  using boost::ref;
 
   cellid_list_ptr_t mfold(new cellid_list_t);
 
   cellid_list_t cplist;
 
-  for_each(b,e,bind(collect_contrib_cps<dir>,ref(msc),ref(cplist),_1));
+  for_each(b,e,bind(collect_contrib_cps<dir>,std::ref(msc),std::ref(cplist),_1));
 
   const bool trp = (dim==1 && dir==GDIR_ASC)||(dim==2 && dir==GDIR_DES);
 
