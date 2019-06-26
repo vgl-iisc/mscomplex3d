@@ -149,41 +149,30 @@ public:
     rect_t prect = (ccTYPE == CC_PRIM)?(m_rect):(rect_t(m_rect.lc()+1,m_rect.uc()-1));
 
     int_list_t points;
-    int_list_t point_idxs(mfold.size(),-1);
 
-    int num_pts;
-
-    #pragma omp parallel for
-    for(int i = 0; i < mfold.size(); ++i)
+    for(int i = 0 ; i < mfold.size(); ++i)
     {
       cellid_t c = mfold[i],j;
+
+      bool need_cell = true;
 
       for(    j[2] = -((c[2]+O)&1) ; j[2] <= ((c[2]+O)&1) ;j[2]+=2)
         for(  j[1] = -((c[1]+O)&1) ; j[1] <= ((c[1]+O)&1) ;j[1]+=2)
           for(j[0] = -((c[0]+O)&1) ; j[0] <= ((c[0]+O)&1) ;j[0]+=2)
             if(!prect.contains(c+j))
-              point_idxs[i] = __sync_fetch_and_add(&num_pts,1);
-    }
+              need_cell = false;
 
-    points.resize(num_pts);
-
-    #pragma omp parallel for
-    for(int i = 0; i < mfold.size(); ++i)
-    {
-      cellid_t c = mfold[i],j;
-      if(point_idxs[i] != -1)
+      if(need_cell)
         for(    j[2] = -((c[2]+O)&1) ; j[2] <= ((c[2]+O)&1) ;j[2]+=2)
           for(  j[1] = -((c[1]+O)&1) ; j[1] <= ((c[1]+O)&1) ;j[1]+=2)
             for(j[0] = -((c[0]+O)&1) ; j[0] <= ((c[0]+O)&1) ;j[0]+=2)
-              points[point_idxs[i]] =  c_to_i2(prect,c+j);
+              points.push_back(c_to_i2(prect,c+j));
     }
-    TLOG << "Transformed:";
 
     np::ndarray arr = vector_to_ndarray<int,1>(points);
+
     if (nCellPoints != 1)
       arr = arr.reshape(bp::make_tuple(points.size()/nCellPoints,nCellPoints));
-    TLOG << "Copied  :";
-
     return arr;
   }
 
