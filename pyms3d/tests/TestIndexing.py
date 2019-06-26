@@ -17,3 +17,4 @@ for arr in [arr1,arr2]:
             for z in range(Z):
                 if (arr[x,y,z]-msc.vert_func(x,y,z)) > 0.000001:
                     raise "Something went wrong with your indexing"
+                    

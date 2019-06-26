@@ -62,6 +62,10 @@ add_executable(pyms3d-exe $<TARGET_OBJECTS:mscomplex3d-core>
 target_link_libraries(pyms3d-exe ${Boost_LIBRARIES} ${OPENCL_LIBRARIES}
     ${PYTHON_LIBRARIES})
 
+  add_custom_command(TARGET pyms3d POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy #copy the 
+    $<TARGET_FILE:pyms3d> ${CMAKE_CURRENT_SOURCE_DIR}/examples)
+  
+
 
 if(PYTHON_SITE_PACKAGES_INSTALL_DIR)
 install(TARGETS pyms3d DESTINATION ${PYTHON_SITE_PACKAGES_INSTALL_DIR})
