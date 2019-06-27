@@ -4,7 +4,7 @@ The project page is hosted [here](http://vgl.csa.iisc.ac.in/mscomplex/). More de
 
 The mscomplex3d computes the Morse-Smale complexes on 3d grids. Its available in two modules, either of wich can be used. 
 
-- A python loadable module named **pyms3d**. See [pyms3d](pyms3d/) for more details and examples. Use of this module is recommended. 
+- A python loadable module named **pyms3d**. Use of this module is recommended. See [pyms3d/examples](pyms3d/examples/).
 - A command line tool named **mscomplex3d**. This is older and more cumbersome to use.
 
 # Installation #
