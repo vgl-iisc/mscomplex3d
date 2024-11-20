@@ -1,6 +1,10 @@
 #include <boost/range/adaptors.hpp>
 #include <boost/foreach.hpp>
 
+#include <boost/bind.hpp>
+#include <boost/phoenix/core.hpp>
+#include <boost/phoenix/operator.hpp>
+
 #include <grid_dataset.h>
 #include <grid_mscomplex.h>
 
@@ -112,9 +116,9 @@ inline void compute_inc_pairs_pq
   auto cmp_dim = bind(cellid_int_pair_cmp< dim, dir>,ds,_1,_2);
   auto cmp_pdim = bind(cellid_int_pair_cmp<pdim, dir>,ds,_1,_2);
 
-  priority_queue<cellid_int_pair_t,cellid_int_pair_list_t,typeof(cmp_dim) >
+  priority_queue<cellid_int_pair_t,cellid_int_pair_list_t, decltype (cmp_dim) >
       pq(cmp_dim );
-  priority_queue<cellid_int_pair_t,cellid_int_pair_list_t,typeof(cmp_pdim)>
+  priority_queue<cellid_int_pair_t,cellid_int_pair_list_t, decltype (cmp_pdim)>
       inc_pq(cmp_pdim);
 
   cellid_t f[40];
@@ -180,7 +184,7 @@ inline void collect_reachable_saddle
 
   auto cmp_dim = bind(cellid_int_pair_cmp< dim, dir>,ds_ptr,_1,_2);
 
-  priority_queue<cellid_int_pair_t,cellid_int_pair_list_t,typeof(cmp_dim) >
+  priority_queue<cellid_int_pair_t,cellid_int_pair_list_t,decltype (cmp_dim) >
       pq(cmp_dim);
 
   BOOST_FOREACH(cellid_t c, rng) {pq.push(cellid_int_pair_t(c,1));}
@@ -279,7 +283,7 @@ void computeConnections(mscomplex_ptr_t msc,dataset_ptr_t ds,
              ba::transformed(bind(&mscomplex_t::cellid,msc,_1)),
              std::back_inserter(cps_1asc));
 
-    mark_reachable<1,GDIR_ASC,typeof(cps_1asc)>(cps_1asc,ds);
+    mark_reachable<1,GDIR_ASC,decltype (cps_1asc)>(cps_1asc,ds);
   }
 
   cellid_list_t cps;

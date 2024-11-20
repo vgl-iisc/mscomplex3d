@@ -7,6 +7,8 @@
 
 #include <n_vector.h>
 
+typedef uint32_t uint;
+
 namespace aabb
 {
   template <typename coord_type>
@@ -15,8 +17,8 @@ namespace aabb
     aabb_range_t ( const coord_type &l,const coord_type &u)
     {
 
-      (*this)[0] = std::min ( l,u);
-      (*this)[1] = std::max ( l,u);
+      (*this)[0] = (std::min) ( l,u);
+      (*this)[1] = (std::max) ( l,u);
     }
 
     aabb_range_t ():n_vector_t<coord_type,2>(0,0){}
@@ -50,7 +52,7 @@ namespace aabb
     {
       ASSERT(((*this)[0] <= r[1])||(r[0] <= (*this)[1]));
 
-      return aabb_range_t(std::max(r[0],(*this)[0]),std::min(r[1],(*this)[1]));
+      return aabb_range_t((std::max)(r[0],(*this)[0]),(std::min)(r[1],(*this)[1]));
     }
 
     inline bool is_valid()

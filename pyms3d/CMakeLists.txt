@@ -2,7 +2,21 @@ project(mscomplex3d-pyms3d)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/Boost.Numpy/libs/numpy/cmake ${CMAKE_MODULE_PATH})
 
-find_package(Boost 1.48 COMPONENTS python system date_time REQUIRED)
+
+# Manually set the Boost include and library paths
+set(Boost_INCLUDE_DIR "C://Users//sachi//OneDrive//Documents//vcpckg//vcpkg//installed//x64-windows//include")
+set(Boost_LIBRARY_DIR "C://Users//sachi//OneDrive//Documents//vcpckg//vcpkg//installed//x64-windows//lib")
+set(Boost_PYTHON_LIBRARY "C://Users//sachi//OneDrive//Documents//vcpckg//vcpkg//installed//x64-windows//lib//boost_python311-vc143-mt-x64-1_85.lib")
+
+# Manually specify the OpenCL include directory
+set(CUDA_INCLUDE_DIRS "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.5\\include")
+
+
+# Manually specify the OpenCL library path
+set(OPENCL_LIBRARIES "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.5\\lib\\x64\\OpenCL.lib")
+
+
+find_package(Boost COMPONENTS python system date_time REQUIRED)
 
 find_package(OpenMP REQUIRED)
 find_package(OpenCL REQUIRED)
@@ -65,6 +79,12 @@ target_link_libraries(pyms3d-exe ${Boost_LIBRARIES} ${OPENCL_LIBRARIES}
   add_custom_command(TARGET pyms3d POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy #copy the 
     $<TARGET_FILE:pyms3d> ${CMAKE_CURRENT_SOURCE_DIR}/examples)
   
+# Set properties to generate a .pyd file
+set_target_properties(pyms3d PROPERTIES
+    PREFIX ""
+    SUFFIX ".pyd"
+)
+
 
 
 if(PYTHON_SITE_PACKAGES_INSTALL_DIR)

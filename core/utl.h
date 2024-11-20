@@ -270,6 +270,19 @@ inline void bin_write_vec(std::ostream &os, const std::vector<T> &v)
       __utl_lm_v__.first ;__utl_lm_v__.first=false,\
   utl::logger::get().push(__utl_lm_v__.second.str())) __utl_lm_v__.second
 
+
+
+/*--------------------*/
+
+// Define a macro for different compilers
+#ifdef _MSC_VER
+#define MY_PRETTY_FUNCTION __FUNCSIG__  // MSVC uses __FUNCSIG__
+#elif defined(__GNUC__) || defined(__clang__)
+#define MY_PRETTY_FUNCTION __PRETTY_FUNCTION__  // GCC and Clang use __PRETTY_FUNCTION__
+#else
+#define MY_PRETTY_FUNCTION __func__  // Fallback: __func__ is part of C++ standard
+#endif
+
 /*---------------------------------------------------------------------------*/
 
 #define ELOG  \
@@ -278,7 +291,7 @@ inline void bin_write_vec(std::ostream &os, const std::vector<T> &v)
       __utl_lm_v__.first ;__utl_lm_v__.first=false,\
   utl::logger::get().push_ts(__utl_lm_v__.second.str())) \
   __utl_lm_v__.second \
-  <<utl::detail::__classFunction__(__PRETTY_FUNCTION__) << " "
+  <<utl::detail::__classFunction__(MY_PRETTY_FUNCTION) << " "
 
 /*---------------------------------------------------------------------------*/
 
@@ -288,7 +301,7 @@ inline void bin_write_vec(std::ostream &os, const std::vector<T> &v)
       __utl_lm_v__.first ;__utl_lm_v__.first=false,\
   utl::logger::get().push_ts(__utl_lm_v__.second.str())) \
   __utl_lm_v__.second \
-  <<utl::detail::__classFunction__(__PRETTY_FUNCTION__) << " "
+  <<utl::detail::__classFunction__(MY_PRETTY_FUNCTION) << " "
 
 
 
@@ -300,7 +313,7 @@ inline void bin_write_vec(std::ostream &os, const std::vector<T> &v)
       __utl_lm_v__.first ;__utl_lm_v__.first=false,\
   utl::logger::get().push_ts(__utl_lm_v__.second.str())) \
   __utl_lm_v__.second \
-  <<utl::detail::__classFunction__(__PRETTY_FUNCTION__) << " "
+  <<utl::detail::__classFunction__(MY_PRETTY_FUNCTION) << " "
 
 /*---------------------------------------------------------------------------*/
 
@@ -310,7 +323,7 @@ inline void bin_write_vec(std::ostream &os, const std::vector<T> &v)
       __utl_lm_v__.first ;__utl_lm_v__.first=false,\
   utl::logger::get().push_ts(__utl_lm_v__.second.str())) \
   __utl_lm_v__.second \
-  <<utl::detail::__classFunction__(__PRETTY_FUNCTION__) << " "
+  <<utl::detail::__classFunction__(MY_PRETTY_FUNCTION) << " "
 
 /*---------------------------------------------------------------------------*/
 
@@ -320,7 +333,7 @@ inline void bin_write_vec(std::ostream &os, const std::vector<T> &v)
       __utl_lm_v__.first ;__utl_lm_v__.first=false,\
   utl::logger::get().push_ts(__utl_lm_v__.second.str())) \
   __utl_lm_v__.second << utl::detail::__trace_indenter_t__::get_indent()\
-  <<utl::detail::__classFunction__(__PRETTY_FUNCTION__) << " "
+  <<utl::detail::__classFunction__(MY_PRETTY_FUNCTION) << " "
 
 
 #define TLOG_INDENT utl::detail::__trace_indenter_t__ __trace_indenter__; \

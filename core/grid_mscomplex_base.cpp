@@ -1,4 +1,5 @@
 #include <boost/range/adaptors.hpp>
+#include <boost/bind.hpp>
 
 #include <grid_mscomplex.h>
 

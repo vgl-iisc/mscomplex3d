@@ -10,10 +10,12 @@
 
 namespace grid
 {
+
+    typedef uint32_t uint;
   const uint gc_grid_dim = 3;
 
   typedef int16_t                                         cell_coord_t;
-  typedef u_int8_t                                        cell_flag_t;
+  typedef uint8_t                                        cell_flag_t;
   typedef float                                           cell_fn_t;
   typedef boost::shared_ptr<cell_fn_t >                   cell_fn_ptr_t;
   typedef aabb::aabb_t<cell_coord_t,gc_grid_dim>          rect_t;
@@ -56,7 +58,7 @@ namespace grid
   /// \brief cell complex type
   enum eCCTYPE
   {
-    CC_NONE=0,
+    CC_NON=0,
     CC_PRIM=1, // primal
     CC_DUAL=2, // Dual
     CC_BOTH=3
@@ -81,7 +83,7 @@ namespace grid
   {
     cellid_t s = r.span()+1;
     cellid_t c = r.lc() + (cellid_t(i%s[0],(i%(s[0]*s[1]))/s[0],i/(s[0]*s[1])));
-    ASSERT(r.contains(c));
+    ASSERT(r.contains(c))
     return c;
   }
 

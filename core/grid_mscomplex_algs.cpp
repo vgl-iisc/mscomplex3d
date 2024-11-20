@@ -3,15 +3,40 @@
 #include <boost/foreach.hpp>
 #include <boost/range/adaptors.hpp>
 #include <boost/range/algorithm.hpp>
+#include <boost/bind.hpp>
+
 
 #include <grid_dataset.h>
 #include <grid_mscomplex.h>
 #include <grid_dataset_cl.h>
 
+#define NOMINMAX // To prevent Windows.h from defining min and max macros
+#include "cl.hpp"
+
 using namespace std;
 
 namespace br = boost::range;
 namespace ba = boost::adaptors;
+
+
+#ifdef _MSC_VER
+//#include <Windows.h> // Include Windows-specific headers
+
+//#include <cstddef> // This is where std::byte is defined in C++17
+
+// Define atomic increment macro for MSVC
+#define ATOMIC_INCREMENT(ptr) InterlockedIncrement(ptr)
+
+// Define atomic decrement macro for MSVC
+#define ATOMIC_DECREMENT(ptr) InterlockedDecrement(ptr)
+#else
+// Define atomic increment macro for GCC/Clang
+#define ATOMIC_INCREMENT(ptr) __sync_add_and_fetch(ptr, 1)
+
+// Define atomic decrement macro for GCC/Clang
+#define ATOMIC_DECREMENT(ptr) __sync_sub_and_fetch(ptr, 1)
+#endif
+
 
 namespace grid
 {
@@ -260,9 +285,9 @@ void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
 {
   DLOG << "Entered :" << SVAR(thresh) <<SVAR(is_nrm) << SVAR(nmax)<<SVAR(nmin);
 
-  auto cmp = bind(&mscomplex_t::persistence_cmp,this,_2,_1);
+  auto cmp = bind(&mscomplex_t::persistence_cmp,this, _2, _1);
 
-  priority_queue<int_pair_t,int_pair_list_t,typeof(cmp)> pq(cmp);
+  priority_queue<int_pair_t,int_pair_list_t,decltype (cmp)> pq(cmp);
 
   if(is_nrm)
     thresh *= (*br::max_element(m_cp_fn) - *br::min_element(m_cp_fn));
@@ -563,6 +588,9 @@ inline void __collect_extrema_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
     if(msc->index(i)==dim)
       oarr(msc->cellid(i)/2) = i;
 
+
+
+
   #pragma omp parallel for
   for(    int z = lc[2]; z <= uc[2]; z +=2 )
     for(  int y = lc[1]; y <= uc[1]; y +=2 )
@@ -572,7 +600,8 @@ inline void __collect_extrema_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
         int oe   = oarr(c/2 );
         int oe_i = (ds->isCellCritical(c))?(oe):(oarr(i_to_c2(r,oe)/2));
         int i    = scp_id[oe_i];
-        __sync_add_and_fetch(&scp_ncells[i],1);
+        //InterlockedIncrement(&scp_ncells[i]);
+        InterlockedIncrement(reinterpret_cast<LONG*>(&scp_ncells[i]));
       }
 
   #pragma omp parallel for
@@ -590,7 +619,8 @@ inline void __collect_extrema_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
         int oe   = oarr(c/2 );
         int oe_i = (ds->isCellCritical(c))?(oe):(oarr(i_to_c2(r,oe)/2));
         int i    = scp_id[oe_i];
-        int p    = __sync_sub_and_fetch(&scp_ncells[i],1);
+        //int p    = InterlockedDecrement(&scp_ncells[i]);
+        int p    = InterlockedDecrement(reinterpret_cast<LONG*>(&scp_ncells[i]));
         msc->m_mfolds[dir][i][p] = c;
       }
 

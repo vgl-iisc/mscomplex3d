@@ -5,24 +5,38 @@
 
 #include <vector>
 
-#include <tr1/functional>
+//#include <tr1/functional>
+#include<functional>
 
 
 /*===========================================================================*/
 
+
 using namespace std;
+#undef _HAS_STD_BYTE
 
 namespace utl {
 /*---------------------------------------------------------------------------*/
 
 void trim(std::string &s)
 {
+    /*
   s.erase(s.begin(), std::find_if
           (s.begin(), s.end(),
-           std::not1(std::ptr_fun<int, int>(std::isspace))));
+//           std::not1(std::ptr_fun<int, int>(std::isspace))));
+  std::not1([](int ch) { return std::isspace(ch); });
+  */
+  s.erase(s.begin(), std::find_if(
+      s.begin(), s.end(),
+      [](int ch) { return !std::isspace(ch); })); // Lambda replacing std::not1
+  /*
   s.erase(std::find_if
           (s.rbegin(), s.rend(),
            std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+           */
+  s.erase(std::find_if(
+      s.rbegin(), s.rend(),
+      [](int ch) { return !std::isspace(ch); }).base(), s.end());
 }
 
 /*---------------------------------------------------------------------------*/
