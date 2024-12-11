@@ -19,30 +19,40 @@
 
 =========================================================================*/
 
-#include <boost/python.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/bind.hpp>
-#include <boost/foreach.hpp>
-#include <boost/numpy.hpp>
-#include <boost/range/algorithm.hpp>
-#include <boost/range/adaptors.hpp>
-#include <boost/range/iterator_range.hpp>
+//#include <boost/python.hpp>
+//#include <boost/shared_ptr.hpp>
+//#include <boost/bind.hpp>
+//#include <boost/foreach.hpp>
+//#include <boost/numpy.hpp>
+//#include <boost/range/algorithm.hpp>
+//#include <boost/range/adaptors.hpp>
+//#include <boost/range/iterator_range.hpp>
 
 #include <iostream>
+
+#include <pybind11/pybind11.h>
+#include <pybind11/numpy.h>
 
 
 #include <grid_dataset.h>
 #include <grid_mscomplex.h>
 
+#ifdef _WIN32
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
+
 using namespace std;
-using namespace boost::python;
+//using namespace boost::python;
 using namespace grid;
 using namespace utl;
 
-namespace bp = boost::python;
-namespace np = boost::numpy;
-namespace br = boost::range;
-namespace ba = boost::adaptors;
+namespace py = pybind11;
+
+//namespace bp = boost::python;
+//namespace np = boost::numpy;
+//namespace br = boost::range;
+//namespace ba = boost::adaptors;
 
 namespace utl {
 template<class rng_t>
@@ -50,14 +60,15 @@ inline std::string to_string_rng(rng_t rng,const char * delim = ", ")
 {
   std::stringstream ss;
 
-  auto b = boost::begin(rng);
-  auto e = boost::end(rng);
+  auto b = std::begin(rng);
+  auto e = std::end(rng);
 
   ss<<"["; for(; b!=e ; b) ss << *b++ << delim; ss<<"]";
   return ss.str();
 }
 }
 
+/*
 template<typename DTYPE,int NCOL,typename T>
 np::ndarray vector_to_ndarray(const std::vector<T> & vec)
 {
@@ -70,7 +81,36 @@ np::ndarray vector_to_ndarray(const std::vector<T> & vec)
   br::copy(vec,reinterpret_cast<T*>(arr.get_data()));
   return arr;
 }
+*/
 
+template<typename DTYPE, int NCOL, typename T>
+py::array_t<DTYPE> vector_to_ndarray(const std::vector<T>& vec) {
+    // Ensure the sizes match
+    static_assert(sizeof(DTYPE) * NCOL == sizeof(T), "Size mismatch between DTYPE and T");
+
+    // Get the size of the vector
+    int N = vec.size();
+
+    // Define the shape of the NumPy array
+    py::array_t<DTYPE> arr;
+    if (NCOL == 1) {
+        arr = py::array_t<DTYPE>({ N });
+    }
+    else {
+        arr = py::array_t<DTYPE>({ N, NCOL });
+    }
+
+    // Access raw data buffer for writing
+    auto buf = arr.request();
+    DTYPE* ptr = static_cast<DTYPE*>(buf.ptr);
+
+    // Copy data from the vector into the NumPy array
+    std::memcpy(ptr, vec.data(), vec.size() * sizeof(T));
+
+    return arr;
+}
+
+/*
 template<typename DTYPE,int NCOL,typename rng_t>
 np::ndarray range_to_ndarray(const rng_t & rng)
 {
@@ -92,6 +132,41 @@ np::ndarray range_to_ndarray(const rng_t & rng)
     ptr += sizeof(T);
   }
   return arr;
+}
+*/
+
+template <typename DTYPE, int NCOL, typename rng_t>
+py::array_t<DTYPE> range_to_ndarray(rng_t& rng) {
+    // Ensure that rng_t is a valid range
+    //static_assert(std::ranges::range<rng_t>, "rng_t must be a valid range.");
+
+    // Deduce the value type from the range
+    //using T = std::iter_value_t<std::ranges::iterator_t<rng_t>>;
+
+    // Ensure size compatibility between the data types
+    //static_assert(sizeof(DTYPE) * NCOL == sizeof(T), "Size mismatch between DTYPE * NCOL and T.");
+    //static_assert(NCOL > 0, "NCOL must be a positive integer.");
+
+    // Get the number of elements in the range
+    //ssize_t N = std::ranges::distance(rng);
+
+    // Determine the shape of the array
+    //std::vector<ssize_t> shape = (NCOL == 1) ? std::vector<ssize_t>{N} : std::vector<ssize_t>{ N, NCOL };
+
+    // Create a zero-initialized NumPy array
+    py::array_t<DTYPE> arr(1);
+
+    // Get a pointer to the data in the array
+    //auto buf = arr.request(); // Get buffer information
+    //char* ptr = static_cast<char*>(buf.ptr);
+
+    // Copy data from the range into the array
+    //for (const auto& v : rng) { // Range-based for loop works for all ranges
+      //  static_assert(std::is_trivially_copyable_v<T>, "T must be trivially copyable.");
+        //std::memcpy(ptr, &v, sizeof(T));
+        //ptr += sizeof(T);
+    //}
+    return arr;
 }
 
 
@@ -130,16 +205,23 @@ public:
   }
 
   /*-------------------------------------------------------------------------*/
-
+  /*
   template <eGDIR dir>
   np::ndarray conn(int cp)
   {
     ENSURES(is_in_range(cp,0,get_num_critpts())) << "out of range "<<SVAR(cp);
     TLOG <<SVAR(cp); return range_to_ndarray<int,2>(m_conn[dir][cp]);
   }
+  */
+
+  template <eGDIR dir>
+  py::array_t<int> conn(int cp) {
+      ENSURES(is_in_range(cp, 0, get_num_critpts())) << "out of range " << SVAR(cp);
+      TLOG << SVAR(cp); return range_to_ndarray<int, 2>(m_conn[dir][cp]);
+  }
 
   /*-------------------------------------------------------------------------*/
-
+  /*
   template <eCCTYPE ccTYPE,int dim>
   np::ndarray __mfold_to_point_indices(const mfold_t & mfold)
   {
@@ -175,6 +257,59 @@ public:
       arr = arr.reshape(bp::make_tuple(points.size()/nCellPoints,nCellPoints));
     return arr;
   }
+  */
+  template <eCCTYPE ccTYPE, int dim>
+  py::array_t<int> __mfold_to_point_indices(const mfold_t& mfold) {
+      const int nCellPoints = (ccTYPE == CC_PRIM) ? (1 << dim) : (1 << (gc_grid_dim - dim));
+      const int O = (ccTYPE == CC_PRIM) ? (0) : (1);
+
+      rect_t prect = (ccTYPE == CC_PRIM) ? (m_rect) : (rect_t(m_rect.lc() + 1, m_rect.uc() - 1));
+
+      std::vector<int> points;
+
+      for (int i = 0; i < mfold.size(); ++i) {
+          cellid_t c = mfold[i];
+          std::array<int, 3> j;
+
+          bool need_cell = true;
+
+          // Loop over neighbors (3D case, can be extended for different dimensions)
+          for (j[2] = -((c[2] + O) & 1); j[2] <= ((c[2] + O) & 1); j[2] += 2) {
+              for (j[1] = -((c[1] + O) & 1); j[1] <= ((c[1] + O) & 1); j[1] += 2) {
+                  for (j[0] = -((c[0] + O) & 1); j[0] <= ((c[0] + O) & 1); j[0] += 2) {
+                      if (!prect.contains(c + j)) {
+                          need_cell = false;
+                      }
+                  }
+              }
+          }
+
+          if (need_cell) {
+              for (j[2] = -((c[2] + O) & 1); j[2] <= ((c[2] + O) & 1); j[2] += 2) {
+                  for (j[1] = -((c[1] + O) & 1); j[1] <= ((c[1] + O) & 1); j[1] += 2) {
+                      for (j[0] = -((c[0] + O) & 1); j[0] <= ((c[0] + O) & 1); j[0] += 2) {
+                          points.push_back(c_to_i2(prect, c + j));
+                      }
+                  }
+              }
+          }
+      }
+
+      // Create a NumPy array from the vector of points
+      py::array_t<int> arr(points.size(), points.data());
+
+      if (nCellPoints != 1) {
+
+          // Create a ShapeContainer using std::vector<std::size_t>
+          py::array::ShapeContainer shape = { static_cast<std::size_t>(points.size() / nCellPoints), static_cast<std::size_t>(nCellPoints) };
+
+          // Resize the array with the new shape
+          arr.resize(shape);
+          
+      }
+
+      return arr;
+  }
 
   /// \brief get the geometry of a critical point cp
   ///
@@ -199,6 +334,7 @@ public:
   ///     Here NC  #cells in Asc/Des mfold of cp.
   ///          NC' #cells in Asc/Des mfold of cp whose all dual pts are in Primal Grid
 
+    /*
   template <eGDIR dir> np::ndarray geom(int cp,int hver=-1,bool ToPts=true)
   {
     TLOG <<"Entered :" << SVAR(cp) << SVAR(hver);
@@ -239,11 +375,58 @@ public:
     }
 
     return vector_to_ndarray<cell_coord_t,gc_grid_dim>(mfold);
+  }*/
+  template <eGDIR dir> py::array geom(int cp, int hver = -1, bool ToPts = true)
+  {
+      TLOG << "Entered :" << SVAR(cp) << SVAR(hver);
+
+      if (hver == -1) hver = get_hversion();
+
+      ENSURES(is_in_range(cp, 0, get_num_critpts()))
+          << "out of range " << SVAR(cp);
+      ENSURES(is_in_range(hver, 0, m_canc_list.size() + 1))
+          << "hversion not in range " << SVAR(hver);
+      BOOST_STATIC_ASSERT(dir == ASC || dir == DES);
+
+      int_list_t l;
+
+      int dim = index(cp);
+
+      m_merge_dag->get_contrib_cps
+      (l, dir, cp, hver, m_geom_hversion[dir][dim]);
+
+      mfold_t mfold;
+
+      for (int j = 0; j < l.size(); ++j) {
+          const auto& sublist = m_mfolds[dir][l[j]];
+
+      	  std::ranges::copy(sublist, std::back_inserter(mfold));
+      }
+
+      TLOG << "Computed:" << SVAR(mfold.size());
+
+      if (ToPts)
+      {
+          if (dir == ASC && dim == 0) return __mfold_to_point_indices<CC_PRIM, 0>(mfold);
+          if (dir == ASC && dim == 1) return __mfold_to_point_indices<CC_DUAL, 1>(mfold);
+          if (dir == ASC && dim == 2) return __mfold_to_point_indices<CC_DUAL, 2>(mfold);
+
+          if (dir == DES && dim == 1) return __mfold_to_point_indices<CC_PRIM, 1>(mfold);
+          if (dir == DES && dim == 2) return __mfold_to_point_indices<CC_PRIM, 2>(mfold);
+          if (dir == DES && dim == 3) return __mfold_to_point_indices<CC_DUAL, 3>(mfold);
+
+          ENSURES(false) << "Should never reach here";
+      }
+
+      return vector_to_ndarray<cell_coord_t, gc_grid_dim>(mfold);
   }
+ 
+
 
   /*-------------------------------------------------------------------------*/
 
-  template <eCCTYPE pTYPE> np::ndarray points()
+    /*
+  template <eCCTYPE pTYPE> py::array_t<int> points()
   {
     rect_t prect = m_rect;
 
@@ -251,8 +434,9 @@ public:
       prect = rect_t(m_rect.lc()+1,m_rect.uc()-1);
 
     int           N = 1 + c_to_i2(prect,prect.uc());
-    np::dtype    dt = np::dtype::get_builtin<float>();
-    np::ndarray arr = np::zeros(bp::make_tuple(N,gc_grid_dim),dt);
+    py::dtype    dt = np::dtype::get_builtin<float>();
+    py::array_t<int> arr = py::zeros(py::make_tuple(N,gc_grid_dim),dt);
+    py::
     float    *  iter= reinterpret_cast<float*>(arr.get_data());
 
     BOOST_STATIC_ASSERT(gc_grid_dim == 3 && "defined for 3-manifolds only");
@@ -270,9 +454,57 @@ public:
 
     return arr;
   }
+  */
+
+  template <eCCTYPE pTYPE>
+  py::array_t<float> points() {
+      // Assuming m_rect and other data structures are defined appropriately
+      rect_t prect = m_rect;
+
+      // Adjust prect if the pTYPE is CC_DUAL
+      if (pTYPE == CC_DUAL) {
+          prect = rect_t(m_rect.lc() + 1, m_rect.uc() - 1);
+      }
+
+      // Calculate N based on prect
+      int N = 1 + c_to_i2(prect, prect.uc());
+
+      // Create a numpy array with the dtype of float32
+		// Create a NumPy array with the given shape
+      py::array_t<float> arr({ N, 3 });
+
+      // Access the raw pointer to the data and initialize it with zeros
+      auto r = arr.mutable_unchecked<2>(); // 2D array accessor for modification
+      for (ssize_t i = 0; i < r.shape(0); ++i) {
+          for (ssize_t j = 0; j < r.shape(1); ++j) {
+              r(i, j) = 0.0f; // Set all elements to zero
+          }
+      }
+      // Pointer to the data of the numpy array
+      float* iter = arr.mutable_data();
+
+      // Static assert for 3-manifolds
+      static_assert(gc_grid_dim == 3, "Defined for 3-manifolds only");
+
+      cellid_t c;
+
+      // Loop through the grid and populate the array with coordinates
+      for (c[2] = prect.lc()[2]; c[2] <= prect.uc()[2]; c[2] += 2) {
+          for (c[1] = prect.lc()[1]; c[1] <= prect.uc()[1]; c[1] += 2) {
+              for (c[0] = prect.lc()[0]; c[0] <= prect.uc()[0]; c[0] += 2) {
+                  // Store the coordinates in the array (scaled by 1/2)
+                  *iter++ = static_cast<float>(c[0]) / 2;
+                  *iter++ = static_cast<float>(c[1]) / 2;
+                  *iter++ = static_cast<float>(c[2]) / 2;
+              }
+          }
+      }
+
+      return arr;
+  }
 
   /*-------------------------------------------------------------------------*/
-
+  /*
   np::ndarray cps(int i)
   {
     TLOG << "Entered :";
@@ -289,15 +521,48 @@ public:
     TLOG << "Exited  :";
 
   }
+  */
+
+  py::array cps(int i)
+  {
+      TLOG << "Entered :";
+
+      auto rng = cpno_range()
+          | std::ranges::views::filter([this](const auto& item) {
+          return this->is_not_canceled(item);
+              });
+
+      TLOG << "Computed:";
+
+      if (i == -1) return range_to_ndarray<int, 1>(rng);
+      else {
+
+          auto filtered_rng= std::ranges::views::filter(rng, [this, i](int x) {
+              return this->is_index_i_cp_(x, i);
+              });
+          std::vector<int> filtered_vector(filtered_rng.begin(), filtered_rng.end());
+          return range_to_ndarray<int, 1>(filtered_rng);
+      }
+  	TLOG << "Exited  :";
+
+  }
 
   /*-------------------------------------------------------------------------*/
-
+   /*
   np::ndarray canc_pairs() {TLOG;return vector_to_ndarray<int,2>         (m_canc_list);}
   np::ndarray cps_func()   {TLOG;return vector_to_ndarray<cell_fn_t,1>   (m_cp_fn);}
   np::ndarray cps_index()  {TLOG;return vector_to_ndarray<int8_t,1>      (m_cp_index);}
   np::ndarray cps_pairid() {TLOG;return vector_to_ndarray<int,1>         (m_cp_pair_idx);}
   np::ndarray cps_cellid() {TLOG;return vector_to_ndarray<cell_coord_t,3>(m_cp_cellid);}
   np::ndarray cps_vertid() {TLOG;return vector_to_ndarray<cell_coord_t,3>(m_cp_vertid);}
+  */
+
+  py::array_t<int> canc_pairs() { TLOG; return vector_to_ndarray<int, 2>(m_canc_list); }
+  py::array_t<int> cps_func() { TLOG; return vector_to_ndarray<cell_fn_t, 1>(m_cp_fn); }
+  py::array_t<int> cps_index() { TLOG; return vector_to_ndarray<int8_t, 1>(m_cp_index); }
+  py::array_t<int> cps_pairid() { TLOG; return vector_to_ndarray<int, 1>(m_cp_pair_idx); }
+  py::array_t<int> cps_cellid() { TLOG; return vector_to_ndarray<cell_coord_t, 3>(m_cp_cellid); }
+  py::array_t<int> cps_vertid() { TLOG; return vector_to_ndarray<cell_coord_t, 3>(m_cp_vertid); }
 
   /*-------------------------------------------------------------------------*/
 
@@ -309,7 +574,7 @@ public:
     DLOG << "Exited  :";
   }
   /*-------------------------------------------------------------------------*/
-
+  /*
   void compute_arr(np::ndarray  arr)
   {
     ENSURES(arr.get_nd() == 3) << " 3D array expected " << std::endl;
@@ -343,6 +608,43 @@ public:
 
     DLOG << "Exited  :";
   }
+  */
+
+  void compute_arr(py::array arr)
+  {
+      ENSURES(arr.ndim() == 3) << " 3D array expected " << std::endl;
+
+      ENSURES(arr.flags())// & np::ndarray::ALIGNED) we dont need to check for aligned with pybind
+          << "Contiguous array expected " << std::endl;
+
+      //arr = arr.astype(np::dtype::get_builtin<float>());
+
+  	  py::array float_arr = arr.cast<py::array_t<float>>();
+
+  	  //  ENSURES(bin_fmt == "float32") <<"Only float32 is supported" <<endl;
+      int x = arr.shape(0);
+      int y = arr.shape(1);
+      int z = arr.shape(2);
+      cellid_t size = cellid_t(x, y, z);
+
+      rect_t dom(cellid_t::zero, (size - cellid_t::one) * 2);
+
+      DLOG << "Entered :"
+          << endl << "\t" << SVAR(size);
+
+      m_rect = dom;
+      m_domain_rect = dom;
+      m_ext_rect = dom;
+
+      bool is_fortran = (arr.flags() & py::array::f_style);
+
+      ds.reset(new dataset_t(dom, dom, dom));
+      const cell_fn_t* data = reinterpret_cast<const cell_fn_t*>(arr.data());
+      ds->init(data, is_fortran);
+      ds->computeMsGraph(shared_from_this());
+
+      DLOG << "Exited  :";
+  }
 
   /*-------------------------------------------------------------------------*/
 
@@ -363,7 +665,7 @@ void ping()
 
 namespace pyms3d {
 
-typedef  boost::shared_ptr<mscomplex_pyms3d_t> mscomplex_pyms3d_ptr_t;
+typedef  std::shared_ptr<mscomplex_pyms3d_t> mscomplex_pyms3d_ptr_t;
 
 mscomplex_pyms3d_ptr_t new_msc()
 {
@@ -371,6 +673,7 @@ mscomplex_pyms3d_ptr_t new_msc()
   return msc;
 }
 
+	/*
 void mscomplex_compute_bin
 (mscomplex_pyms3d_ptr_t msc, 
  std::string            bin_file,
@@ -398,8 +701,39 @@ void mscomplex_compute_bin
 
   DLOG << "Exited  :";
 }
+*/
+
+void mscomplex_compute_bin
+(mscomplex_pyms3d_ptr_t msc,
+    std::string            bin_file,
+    py::tuple              tp)
+{
+    //  ENSURES(bin_fmt == "float32") <<"Only float32 is supported" <<endl;
+    int x = tp[0].cast<int>();
+    int y = tp[1].cast<int>();
+    int z = tp[2].cast<int>();
+	
+    cellid_t size = cellid_t(x, y, z);
+
+    rect_t dom(cellid_t::zero, (size - cellid_t::one) * 2);
+
+    DLOG << "Entered :"
+        << endl << "\t" << SVAR(bin_file)
+        << endl << "\t" << SVAR(size);
+
+    msc->m_rect = dom;
+    msc->m_domain_rect = dom;
+    msc->m_ext_rect = dom;
+
+    msc->ds.reset(new dataset_t(dom, dom, dom));
+    msc->ds->init(bin_file);
+    msc->ds->computeMsGraph(msc);
+
+    DLOG << "Exited  :";
+}
 
 
+/*
 void wrap_mscomplex_t()
 {
   docstring_options local_docstring_options(true, false, false);
@@ -606,34 +940,82 @@ void wrap_mscomplex_t()
            "get all cancellation pairs \n")
 
       ;
+}*/
+
+
+#include <pybind11/pybind11.h>
+
+namespace py = pybind11;
+
+void init_mscomplex(py::module_& m) {
+
+
+    py::class_<mscomplex_t, std::shared_ptr<mscomplex_t>>(m, "MsComplex")
+        .def("num_cps", &mscomplex_t::get_num_critpts, "Number of Critical Points")
+        .def("cp_func", &mscomplex_t::fn, "Function value at critical point i")
+        .def("cp_index", &mscomplex_t::index, "Morse index of critical point i")
+        .def("cp_pairid", &mscomplex_t::pair_idx, "Index of the paired critical point i (-1 if unpaired)")
+        .def("cp_vertid", &mscomplex_t::vertid, "Vertex id of the critical cell")
+        .def("cp_cellid", &mscomplex_t::cellid, "Cell id of the critical cell");
+
+    py::class_<mscomplex_pyms3d_t, mscomplex_t, std::shared_ptr<mscomplex_pyms3d_t>>(m, "MsComplexPyms3D")
+        .def(py::init<>())
+        .def("cps", &mscomplex_pyms3d_t::cps, py::arg("dim") = -1,
+            "Returns a list of surviving critical points based on dimension")
+        .def("cps_func", &mscomplex_pyms3d_t::cps_func, "Get function values of all critical points")
+        .def("cps_index", &mscomplex_pyms3d_t::cps_index, "Get Morse indices of all critical points")
+        .def("cps_pairid", &mscomplex_pyms3d_t::cps_pairid, "Get cancellation pair ids of all critical points")
+        .def("cps_vertid", &mscomplex_pyms3d_t::cps_vertid, "Get maximal vertex ids of all critical points")
+        .def("cps_cellid", &mscomplex_pyms3d_t::cps_cellid, "Get cell ids of all critical points")
+        .def("asc", &mscomplex_pyms3d_t::conn<ASC>, "List of ascending cps connected to a critical point")
+        .def("des", &mscomplex_pyms3d_t::conn<DES>, "List of descending cps connected to a critical point")
+        .def("primal_points", &mscomplex_pyms3d_t::points<CC_PRIM>, "Get primal grid point coordinates")
+        .def("dual_points", &mscomplex_pyms3d_t::points<CC_DUAL>, "Get dual grid point coordinates")
+        //.def("compute_bin", &mscomplex_pyms3d_t::compute_bin, "Compute the MsComplex from a raw/bin file")
+        .def("compute_arr", &mscomplex_pyms3d_t::compute_arr, "Compute the MsComplex from a 3D numpy array");
 }
 
+
+
+
+/*
 struct cellid_to_tup
 {
   static PyObject* convert(cellid_t v)
   {return boost::python::incref(bp::make_tuple(v[0],v[1],v[2]).ptr());}
 };
+*/
 
+struct cellid_to_tup {
+    static py::tuple convert(const cellid_t& v) {
+        return py::make_tuple(v[0], v[1], v[2]);
+    }
+};
 
 /*****************************************************************************/
 /******** Define the pyms3d module                                    ********/
 /*****************************************************************************/
-
+/*
 BOOST_PYTHON_MODULE(pyms3d)
 {
-  boost::python::to_python_converter<cellid_t,cellid_to_tup>();
+  //boost::python::to_python_converter<cellid_t,cellid_to_tup>();
 
-  np::initialize();
+  //np::initialize();
 
-  grid::opencl::init();
+  //grid::opencl::init();
 
-  def("get_hw_info",&get_hw_info);
+  //def("get_hw_info",&get_hw_info);
 
-  def("ping",&pyms3d::ping);
+  //def("ping",&pyms3d::ping);
 
-  wrap_mscomplex_t();
+  //wrap_mscomplex_t();
+}*/
+
+PYBIND11_MODULE(mscomplex, m) {
+    // Call the function that registers the bindings
+    init_mscomplex(m);
 }
-
+/*
 int main(int argc, char **argv)
 {
     // This line makes our module available to the embedded Python intepreter.
@@ -659,7 +1041,7 @@ int main(int argc, char **argv)
 
     return 0;
 }
-
+*/
 
 }/****************************************************************************/
 
