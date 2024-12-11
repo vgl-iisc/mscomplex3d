@@ -1,12 +1,15 @@
-#include <boost/range/adaptors.hpp>
-#include <boost/bind.hpp>
+//#include <
+// /range/adaptors.hpp>
+//#include <boost/bind.hpp>
 
 #include <grid_mscomplex.h>
+#include <ranges>
+#include <algorithm>
 
 using namespace std;
 
-namespace br = boost::range;
-namespace ba = boost::adaptors;
+//namespace br = boost::range;
+//namespace ba = boost::adaptors;
 
 namespace grid
 {
@@ -28,7 +31,7 @@ mscomplex_t::mscomplex_t(rect_t r,rect_t e,rect_t d):
 
 /*---------------------------------------------------------------------------*/
 
-mscomplex_t::~mscomplex_t(){clear();}
+	mscomplex_t::~mscomplex_t(){clear();}
 
 /*---------------------------------------------------------------------------*/
 
@@ -115,14 +118,29 @@ std::string mscomplex_t::cp_conn (int i) const
   std::stringstream ss;
 
   ss<<std::endl<<"des = ";
-
-  br::copy(m_des_conn[i]|ba::map_keys|ba::transformed(bind(&mscomplex_t::cellid,this,_1)),
+  /*
+  br::copy(m_des_conn[i]|ba::map_keys|ba::transformed(std::bind(&mscomplex_t::cellid,this,std::placeholders::_1)),
            ostream_iterator<cellid_t>(ss));
 
   ss<<std::endl<<"asc = ";
 
-  br::copy(m_asc_conn[i]|ba::map_keys|ba::transformed(bind(&mscomplex_t::cellid,this,_1)),
+  br::copy(m_asc_conn[i]|ba::map_keys|ba::transformed(std::bind(&mscomplex_t::cellid,this,std::placeholders::_1)),
            ostream_iterator<cellid_t>(ss));
+	*/
+
+  std::ranges::copy(
+      m_des_conn[i]
+      | std::ranges::views::keys
+      | std::ranges::views::transform([this](const auto& key) { return this->cellid(key); }),  // Lambda instead of std::bind
+      std::ostream_iterator<cellid_t>(ss));
+
+  ss << std::endl << "asc = ";
+
+  std::ranges::copy(
+      m_asc_conn[i]
+      | std::ranges::views::keys
+      | std::ranges::views::transform([this](const auto& key) { return this->cellid(key); }),  // Lambda
+      std::ostream_iterator<cellid_t>(ss));
 
   ss<<std::endl;
 
@@ -154,8 +172,15 @@ void mscomplex_t::save_bin(ostream &os) const
     nconn[2*i]   = m_des_conn[i].size();
     nconn[2*i+1] = m_asc_conn[i].size();
 
-    br::copy(m_des_conn[i],back_inserter(adj));
-    br::copy(m_asc_conn[i],back_inserter(adj));
+    //br::copy(m_des_conn[i],back_inserter(adj));
+
+
+    //br::copy(m_asc_conn[i],back_inserter(adj));
+
+    copy(m_des_conn[i].begin(), m_des_conn[i].end(), std::back_inserter(adj));
+    copy(m_asc_conn[i].begin(), m_asc_conn[i].end(), std::back_inserter(adj));
+
+
   }
 
   utl::bin_write_vec(os,nconn);

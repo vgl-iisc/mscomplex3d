@@ -21,15 +21,16 @@
 #ifndef __GRID_MSCOMPLEX_H_INCLUDED_
 #define __GRID_MSCOMPLEX_H_INCLUDED_
 
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/iterator/counting_iterator.hpp>
-#include <boost/range/iterator_range.hpp>
+//#include <
+// /enable_shared_from_this.hpp>
+//#include <boost/iterator/counting_iterator.hpp>
+//#include <boost/range/iterator_range.hpp>
 
 #include <grid.h>
-
+#include <ranges>
 namespace grid
 {
-class mscomplex_t:public boost::enable_shared_from_this<mscomplex_t>
+class mscomplex_t:public std::enable_shared_from_this<mscomplex_t>
 {
 public:
 
@@ -58,13 +59,14 @@ public:
   mfold_list_t &m_des_mfolds;
   mfold_list_t &m_asc_mfolds;
 
-  boost::shared_ptr<merge_dag_t> m_merge_dag;
+  std::shared_ptr<merge_dag_t> m_merge_dag;
 
 public:
 
   mscomplex_t();
   mscomplex_t(rect_t r,rect_t e,rect_t d);
-  ~mscomplex_t();
+  virtual ~mscomplex_t();
+
   void clear();
 
   // save/load data
@@ -97,9 +99,11 @@ public:
 
 
   // iterator range to go over the set of critical points
-  typedef boost::counting_iterator<int> iterator_t;
-  inline boost::iterator_range<iterator_t> cpno_range() const;
-
+//  typedef boost::counting_iterator<int> iterator_t;
+	//  inline boost::iterator_range<iterator_t> cpno_range() const;
+  using iterator_t = int;
+  //inline std::ranges::iota_view<iterator_t,iterator_t> cpno_range() const;
+  inline std::ranges::iota_view<int,int> cpno_range() const;
   // functions to create a mscomplex from a dataset
   void  resize(int i);
   void  set_critpt(int i,cellid_t c,char idx,cell_fn_t f,cellid_t vert_cell);

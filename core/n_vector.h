@@ -6,22 +6,22 @@
 #include <ostream>
 #include <cmath>
 
-#include <boost/array.hpp>
-
+//#include <boost/array.hpp>
+#include <array>
 #include <utl.h>
 
 // this is designed for a vector of numbers of any type.
 // dont get oversmart and define a matrix as a vector of vectors..
 // you'll be surprised by the behavior of the arithmetic operators
 template<typename T, std::size_t N,bool O= true>
-class n_vector_t: public boost::array<T,N>
+class n_vector_t: public std::array<T,N>
 {
 
   public:
 
-    typedef typename boost::array<T,N>              base_t;
+    typedef typename std::array<T,N>              base_t;
 
-    typedef typename base_t::value_type             value_type;
+	typedef typename base_t::value_type             value_type;
     typedef typename base_t::iterator               iterator;
     typedef typename base_t::const_iterator         const_iterator;
     typedef typename base_t::reference              reference;
@@ -54,7 +54,7 @@ class n_vector_t: public boost::array<T,N>
     n_vector_t( const OT1 &e1,const OT2 &e2,const OT3 &e3 )
     {
       ASSERT(N==3);
-
+      
       (*this)[0] = e1;
       (*this)[1] = e2;
       (*this)[2] = e3;
@@ -77,8 +77,8 @@ class n_vector_t: public boost::array<T,N>
     {
       n_vector_t r;
 
-      r.assign((T)o);
-
+      //r.assign((T)o);
+      r.s_assign((T)o);
       return r;
     }
 
@@ -213,10 +213,12 @@ class n_vector_t: public boost::array<T,N>
       stream<<"(";
       if(N > 0)
       {
-        stream<<e.elems[0];
+        //stream<<e.elems[0];
+        stream<<e[0];
         for(unsigned int i = 1 ; i < N ; ++i)
         {
-          stream<<","<<e.elems[i];
+          //stream<<","<<e.elems[i];
+          stream<<","<<e[i];
         }
       }
       stream<<")";
@@ -230,11 +232,11 @@ class n_vector_t: public boost::array<T,N>
       stream>>bracket;
       if(N > 0)
       {
-        stream>>e.elems[0];
+        stream>>e[0];
         for(unsigned int i = 1 ; i < N ; ++i)
         {
           stream>>comma;
-          stream>>e.elems[i];
+          stream>>e[i];
         }
       }
       stream>>bracket;

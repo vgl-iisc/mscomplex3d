@@ -8,7 +8,6 @@
 //#include <tr1/functional>
 #include<functional>
 
-
 /*===========================================================================*/
 
 
@@ -40,14 +39,22 @@ void trim(std::string &s)
 }
 
 /*---------------------------------------------------------------------------*/
-
+/*
 file_line_iterator::file_line_iterator(const char * f,char c_char):
   is(new std::ifstream(f)),c_char(c_char)
 {
   ENSUREV(is->is_open(),"cannot read the file",f);
   increment();
 }
-
+*/
+file_line_iterator::file_line_iterator(const char* file_name, char c_char)
+    : is(std::make_shared<std::ifstream>(file_name)), c_char(c_char)
+{
+    if (!is->is_open()) {
+        throw std::runtime_error(std::string("Cannot read the file: ") + file_name);
+    }
+    increment();
+}
 /*---------------------------------------------------------------------------*/
 
 void file_line_iterator::increment()
@@ -136,8 +143,11 @@ std::string __trace_indenter_t__::get_indent()
 
 /*---------------------------------------------------------------------------*/
 
-boost::mutex logger::s_mutex;
-logger       logger::s_logger;
+//boost::mutex logger::s_mutex;
+//logger       logger::s_logger;
+
+std::mutex logger::s_mutex;
+logger logger::s_logger;
 
 int    detail::__trace_indenter_t__::s_indent = 0;
 

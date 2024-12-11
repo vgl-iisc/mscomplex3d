@@ -3,7 +3,8 @@
 
 #include <iterator>
 
-#include <boost/iterator/reverse_iterator.hpp>
+//#include <boost/iterator/reverse_iterator.hpp>
+
 
 #include <n_vector.h>
 
@@ -95,7 +96,7 @@ namespace aabb
 
     aabb_t(const point_t &p1,const point_t &p2)
     {
-      for(uint i = 0 ; i < base_t::static_size; ++i)
+      for(uint i = 0 ; i < base_t::size(); ++i)
         (*this)[i] = range_t(p1[i],p2[i]);
     }
 
@@ -106,7 +107,7 @@ namespace aabb
     {
       bool ret = true;
 
-      for(size_t i = 0 ; i < base_t::static_size;++i )
+      for(size_t i = 0 ; i < base_t::size();++i )
         ret &= (*this)[i].isInOpen(p[i]);
 
       return ret;
@@ -116,7 +117,7 @@ namespace aabb
     {
       bool ret = true;
 
-      for(size_t i = 0 ; i < base_t::static_size;++i )
+      for(size_t i = 0 ; i < base_t::size();++i )
         ret &= (*this)[i].isInClosed(p[i]);
 
       return ret;
@@ -133,7 +134,7 @@ namespace aabb
     {
       int ret = 0;
 
-      for(size_t i = 0 ; i < base_t::static_size;++i )
+      for(size_t i = 0 ; i < base_t::size();++i )
         ret += ((*this)[i].isOnBndry(p[i]))?(1):(0);
 
       return ret;
@@ -144,7 +145,7 @@ namespace aabb
     {
       bool ret = true;
 
-      for(size_t i = 0 ; i < base_t::static_size;++i )
+      for(size_t i = 0 ; i < base_t::size();++i )
         ret &= (*this)[i].contains(r[i]);
 
       return ret;
@@ -184,7 +185,7 @@ namespace aabb
     {
       point_t c;
 
-      for(size_t i = 0 ; i < base_t::static_size;++i )
+      for(size_t i = 0 ; i < base_t::size();++i )
         c[i]= (*this)[i][0];
 
       return c;
@@ -194,7 +195,7 @@ namespace aabb
     {
       point_t c;
 
-      for(size_t i = 0 ; i < base_t::static_size;++i )
+      for(size_t i = 0 ; i < base_t::size();++i )
         c[i]= (*this)[i][1];
 
       return c;
@@ -214,7 +215,7 @@ namespace aabb
     {
       point_t c;
 
-      for(size_t i = 0 ; i < base_t::static_size;++i )
+      for(size_t i = 0 ; i < base_t::size(); ++i)
         c[i]= (*this)[i].span();
 
       return c;
@@ -224,16 +225,16 @@ namespace aabb
 
     inline offset_t point_offset(const point_t &p) const
     {
-      n_vector_t<offset_t,base_t::static_size> slice_size;
+      n_vector_t<offset_t,base_t::size()> slice_size;
 
       slice_size[0] = 1;
 
-      for(size_t i = 1 ; i < base_t::static_size;++i )
+      for(size_t i = 1 ; i < base_t::size();++i )
         slice_size[i] = span()[i-1]*slice_size[i-1];
 
       offset_t o = 0;
 
-      for(size_t i = 0 ; i < base_t::static_size;++i )
+      for(size_t i = 0 ; i < base_t::size();++i )
         o += slice_size[i]*p[i];
 
       return o;
@@ -256,7 +257,7 @@ namespace aabb
     {
       coord_type d = 0 ;
 
-      for(size_t i = 0 ; i < base_t::static_size;++i )
+      for(size_t i = 0 ; i < base_t::size();++i )
         d += ((*this)[i][1] != (*this)[i][0]) ?(1):(0);
 
       return d;
@@ -264,11 +265,11 @@ namespace aabb
 
     point_t get_normal() const
     {
-      ASSERT(eff_dim() ==base_t::static_size-1);
+      ASSERT(eff_dim() ==base_t::size()-1);
 
       point_t n;
 
-      for( int d = 0 ; d < base_t::static_size;++d)
+      for( int d = 0 ; d < base_t::size();++d)
         n[d] = ((*this)[d][0] == (*this)[d][1])?(1):(0);
 
       return n;
@@ -332,7 +333,9 @@ namespace aabb
       {ASSERT(m_aabb == rhs.m_aabb); return m_i-rhs.m_i;}
     };
 
-    typedef boost::reverse_iterator<pt_iterator> pt_riterator;
+    typedef std::reverse_iterator<pt_iterator> pt_riterator;
+
+    //typedef boost::reverse_iterator<pt_iterator> pt_riterator;
 
     inline pt_iterator pt_begin() const
     {return pt_iterator(*this,0);}

@@ -27,15 +27,16 @@
 #include <fstream>
 #include <stack>
 
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/function.hpp>
+//#include <boost/enable_shared_from_this.hpp>
+//#include <boost/function.hpp>
+#include <functional>
 
 #include <grid.h>
 
 
 namespace grid
 {
-class dataset_t:public boost::enable_shared_from_this<dataset_t>
+class dataset_t:public std::enable_shared_from_this<dataset_t>
 {
 
 public:
@@ -54,9 +55,13 @@ public:
   // bit 7 .. is cell critical or not.
 
 
-  typedef boost::multi_array<cellid_t,gc_grid_dim>        cellid_array_t;
-  typedef boost::multi_array<cell_flag_t,gc_grid_dim>     cellflag_array_t;
-  typedef boost::multi_array<cell_fn_t,gc_grid_dim>       varray_t;
+  //typedef boost::multi_array<cellid_t,gc_grid_dim>        cellid_array_t;
+  //typedef  boost::multi_array<cell_flag_t,gc_grid_dim>     cellflag_array_t;
+  //typedef boost::multi_array<cell_fn_t,gc_grid_dim>       varray_t;
+
+  typedef Array3D<cellid_t>                                      cellid_array_t;
+  typedef Array3D<cell_flag_t>                                   cellflag_array_t;
+  typedef Array3D<cell_fn_t>                                     varray_t;
 
 
 public:

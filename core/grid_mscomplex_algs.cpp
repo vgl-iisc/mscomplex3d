@@ -1,10 +1,11 @@
 #include <queue>
 
-#include <boost/foreach.hpp>
-#include <boost/range/adaptors.hpp>
-#include <boost/range/algorithm.hpp>
-#include <boost/bind.hpp>
+//#include <boost/foreach.hpp>
+//#include <boost/range/adaptors.hpp>
+//#include <boost/range/algorithm.hpp>
+//#include <boost/bind.hpp>
 
+#include<ranges>
 
 #include <grid_dataset.h>
 #include <grid_mscomplex.h>
@@ -15,8 +16,8 @@
 
 using namespace std;
 
-namespace br = boost::range;
-namespace ba = boost::adaptors;
+//namespace br = boost::range;
+//namespace ba = boost::adaptors;
 
 
 #ifdef _MSC_VER
@@ -87,7 +88,7 @@ void mscomplex_t::cancel_pair ()
 
   m_des_conn[p].erase(q);
   m_asc_conn[q].erase(p);
-
+  /*
   BOOST_FOREACH(int_int_t i,m_des_conn[p])
       BOOST_FOREACH(int_int_t j,m_asc_conn[q])
   {
@@ -100,11 +101,28 @@ void mscomplex_t::cancel_pair ()
 
     BTRACE_ERROR(connect_cps(u,v,m));
   }
+  */
+  for (const auto& i : m_des_conn[p]) {
+      for (const auto& j : m_asc_conn[q]) {
+          int u = i.first;
+          int v = j.first;
+          int m = i.second * j.second;
 
-  BOOST_FOREACH(int_int_t pr,m_des_conn[p]) m_asc_conn[pr.first].erase(p);
-  BOOST_FOREACH(int_int_t pr,m_asc_conn[p]) m_des_conn[pr.first].erase(p);
-  BOOST_FOREACH(int_int_t pr,m_des_conn[q]) m_asc_conn[pr.first].erase(q);
-  BOOST_FOREACH(int_int_t pr,m_asc_conn[q]) m_des_conn[pr.first].erase(q);
+          ASSERT(is_canceled(u) == false);
+          ASSERT(is_canceled(v) == false);
+
+          BTRACE_ERROR(connect_cps(u, v, m));
+      }
+  }
+
+  for (const auto& pr : m_des_conn[p]) { m_asc_conn[pr.first].erase(p); }
+  for (const auto& pr : m_asc_conn[p]) { m_des_conn[pr.first].erase(p); }
+  for (const auto& pr : m_des_conn[q]) { m_asc_conn[pr.first].erase(q); }
+  for (const auto& pr : m_asc_conn[q]) { m_des_conn[pr.first].erase(q); }
+  //BOOST_FOREACH(int_int_t pr,m_des_conn[p]) m_asc_conn[pr.first].erase(p);
+  //BOOST_FOREACH(int_int_t pr,m_asc_conn[p]) m_des_conn[pr.first].erase(p);
+  //BOOST_FOREACH(int_int_t pr,m_des_conn[q]) m_asc_conn[pr.first].erase(q);
+  //BOOST_FOREACH(int_int_t pr,m_asc_conn[q]) m_des_conn[pr.first].erase(q);
 
   m_cp_is_cancelled[p] =true;
   m_cp_is_cancelled[q] =true;
@@ -126,6 +144,7 @@ void mscomplex_t::anticancel_pair()
   ASSERT(m_cp_pair_idx[p] == q);
   ASSERT(m_cp_pair_idx[q] == p);
 
+    /*
   BOOST_FOREACH(int_int_t pr,m_des_conn[p]) m_asc_conn[pr.first][p] = pr.second;
   BOOST_FOREACH(int_int_t pr,m_asc_conn[p]) m_des_conn[pr.first][p] = pr.second;
   BOOST_FOREACH(int_int_t pr,m_des_conn[q]) m_asc_conn[pr.first][q] = pr.second;
@@ -143,6 +162,39 @@ void mscomplex_t::anticancel_pair()
     ASSERT(is_canceled(v) == false);
 
     BTRACE_ERROR(connect_cps(u,v,-m));
+  }
+
+  */
+
+  // Update m_asc_conn and m_des_conn with values from each other
+  for (const auto& pr : m_des_conn[p]) {
+      m_asc_conn[pr.first][p] = pr.second;
+  }
+
+  for (const auto& pr : m_asc_conn[p]) {
+      m_des_conn[pr.first][p] = pr.second;
+  }
+
+  for (const auto& pr : m_des_conn[q]) {
+      m_asc_conn[pr.first][q] = pr.second;
+  }
+
+  for (const auto& pr : m_asc_conn[q]) {
+      m_des_conn[pr.first][q] = pr.second;
+  }
+
+  // Connect cps in lower of u except l
+  for (const auto& i : m_des_conn[p]) {
+      for (const auto& j : m_asc_conn[q]) {
+          int u = i.first;
+          int v = j.first;
+          int m = i.second * j.second;
+
+          ASSERT(is_canceled(u) == false);
+          ASSERT(is_canceled(v) == false);
+
+          BTRACE_ERROR(connect_cps(u, v, -m));
+      }
   }
 
   BTRACE_ERROR(connect_cps(p,q,1));
@@ -170,11 +222,20 @@ void mscomplex_t::set_hversion(int hver)
 
 int mscomplex_t::get_hversion_nextrema(int nmax, int nmin) const
 {
+    /*
   int ns_max = boost::distance(cpno_range()
     |ba::filtered(bind(&mscomplex_t::is_index_i_cp<gc_grid_dim>,this,_1)));
 
   int ns_min = boost::distance(cpno_range()
     |ba::filtered(bind(&mscomplex_t::is_index_i_cp<0>,this,_1)));
+    */
+    
+    int ns_max = std::ranges::distance(cpno_range()
+        | std::views::filter(std::bind(&mscomplex_t::is_index_i_cp<gc_grid_dim>, this, std::placeholders::_1)));
+
+    int ns_min = std::ranges::distance(cpno_range()
+        | std::views::filter(std::bind(&mscomplex_t::is_index_i_cp<0>, this, std::placeholders::_1)));
+    
 
   int hver = 0;
 
@@ -285,15 +346,21 @@ void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
 {
   DLOG << "Entered :" << SVAR(thresh) <<SVAR(is_nrm) << SVAR(nmax)<<SVAR(nmin);
 
-  auto cmp = bind(&mscomplex_t::persistence_cmp,this, _2, _1);
-
+  //auto cmp = bind(&mscomplex_t::persistence_cmp,this, _2, _1);
+  auto cmp = std::bind(&mscomplex_t::persistence_cmp, this, std::placeholders::_2, std::placeholders::_1);
   priority_queue<int_pair_t,int_pair_list_t,decltype (cmp)> pq(cmp);
 
-  if(is_nrm)
-    thresh *= (*br::max_element(m_cp_fn) - *br::min_element(m_cp_fn));
+  //if(is_nrm)
+    //thresh *= (*br::max_element(m_cp_fn) - *br::min_element(m_cp_fn));
+
+  if (is_nrm)
+      thresh *= (*std::ranges::max_element(m_cp_fn) - *std::ranges::min_element(m_cp_fn));
+	
+
 
   for(int i = 0 ;i < get_num_critpts();++i)
   {
+    /*
     BOOST_FOREACH(int_int_t j,m_des_conn[i])
     {
       int_pair_t pr(i,j.first);
@@ -301,15 +368,32 @@ void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
       if(is_valid_canc_edge(*this,pr,thresh))
         pq.push(pr);
     }
-  }
+    */
+    for (const auto& j : m_des_conn[i]) {
+        int_pair_t pr(i, j.first);
 
+        if (is_valid_canc_edge(*this, pr, thresh)) {
+            pq.push(pr);
+        }
+    }
+  }
+  /*
   int ns_max = boost::distance(cpno_range()
     |ba::filtered(bind(&mscomplex_t::is_index_i_cp<gc_grid_dim>,this,_1))
     |ba::filtered(bind(&mscomplex_t::is_not_canceled,this,_1)));
   int ns_min = boost::distance(cpno_range()
     |ba::filtered(bind(&mscomplex_t::is_index_i_cp<0>,this,_1))
     |ba::filtered(bind(&mscomplex_t::is_not_canceled,this,_1)));
+    */
 
+  int ns_max = std::ranges::distance(cpno_range()
+      | std::views::filter(std::bind(&mscomplex_t::is_index_i_cp<gc_grid_dim>, this, std::placeholders::_1))
+      | std::views::filter(std::bind(&mscomplex_t::is_not_canceled, this, std::placeholders::_1)));
+
+  int ns_min = std::ranges::distance(cpno_range()
+      | std::views::filter(std::bind(&mscomplex_t::is_index_i_cp<0>, this, std::placeholders::_1))
+      | std::views::filter(std::bind(&mscomplex_t::is_not_canceled, this, std::placeholders::_1)));
+  
   while (pq.size() !=0)
   {
     int_pair_t pr = pq.top();
@@ -328,7 +412,7 @@ void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
     if(index(pr[1]) == 0          ) --ns_min;
 
     cancel_pair(pr[0],pr[1]);
-
+    /*
     BOOST_FOREACH(int_int_t i,m_des_conn[pr[0]])
     BOOST_FOREACH(int_int_t j,m_asc_conn[pr[1]])
     {
@@ -337,6 +421,18 @@ void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
       if(is_valid_canc_edge(*this,e,thresh))
         pq.push(e);
     }
+    */
+
+    for (const auto& i : m_des_conn[pr[0]]) {
+        for (const auto& j : m_asc_conn[pr[1]]) {
+            int_pair_t e(j.first, i.first);
+
+            if (is_valid_canc_edge(*this, e, thresh)) {
+                pq.push(e);
+            }
+        }
+    }
+
   }
 
   m_merge_dag->update(shared_from_this());
@@ -350,8 +446,11 @@ int mscomplex_t::get_hversion_pers(double thresh, bool is_nrm) const
 {
   int hver = 0;
 
-  if(is_nrm)
-    thresh *= (*br::max_element(m_cp_fn) - *br::min_element(m_cp_fn));
+  //if(is_nrm)
+    //thresh *= (*br::max_element(m_cp_fn) - *br::min_element(m_cp_fn));
+
+  if (is_nrm)
+      thresh *= (*std::ranges::max_element(m_cp_fn) - *std::ranges::min_element(m_cp_fn));
 
   for(hver = 0 ; hver < m_canc_list.size() ; ++hver)
   {
@@ -359,7 +458,7 @@ int mscomplex_t::get_hversion_pers(double thresh, bool is_nrm) const
 
     order_pr_by_cp_index(*this,p,q);
 
-    if (!(std::abs<double>(fn(p)-fn(q)) < thresh))
+    if (!(abs(fn(p)-fn(q)) < thresh))
       break;
   }
 
@@ -398,25 +497,45 @@ void getCanceledCpContrib(mscomplex_ptr_t msc,contrib_list_t& ccp_contrib)
   // III)  Allocate data and ddd in the id of the canceled cp at the last
 
   std::map<int,int> ccp_map;
-
+  /*
   auto ccp_rng = msc->m_canc_list
              |ba::sliced(0,msc->m_hversion)
              |ba::transformed(bind(order_pair<dir>,msc,_1))
              |ba::filtered(bind(is_dim_pair<dim,odim>,msc,_1));
+  */
 
+    
+  auto ccp_rng = msc->m_canc_list
+      | std::views::drop(0) // Start from index 0
+      | std::views::take(msc->m_hversion) // Take `msc->m_hversion` elements
+      | std::views::transform(std::bind(order_pair<dir>, msc, std::placeholders::_1))
+      | std::views::filter(std::bind(is_dim_pair<dim, odim>, msc, std::placeholders::_1));
+      
+
+    /*
   BOOST_FOREACH(int_pair_t pr,ccp_rng)
       ccp_map.insert(int_int_t(pr[0],ccp_map.size()));
+      */
+  for (const auto& pr : ccp_rng) {
+      ccp_map.insert(int_int_t(pr[0], ccp_map.size()));
+  }
+
 
   ccp_contrib.resize(ccp_map.size());
-
+  /*
   BOOST_FOREACH(int_int_t pr,ccp_map)
     ccp_contrib[pr.second].push_back(pr.first);
+    */
+	for (const auto& pr : ccp_map) {
+      ccp_contrib[pr.second].push_back(pr.first);
+  }
 
 
   // Stage 2:
   // This part computes for each cancelled critical point,
   // the surviving critical points to which it contributes its
   // finest resolution geometry .
+    /*
   BOOST_FOREACH(int_pair_t pr,ccp_rng|ba::reversed)
   {
     int p = pr[0],q = pr[1];
@@ -465,6 +584,55 @@ void getCanceledCpContrib(mscomplex_ptr_t msc,contrib_list_t& ccp_contrib)
       ASSERTS(msc->is_not_canceled(scp)) << scp << " should be calcelled";
     }
   }
+  */
+
+  //for (const auto& pr : ccp_rng | ba::reversed)
+  for (const auto& pr : ccp_rng | std::views::reverse) 
+  {
+	int p = pr[0], q = pr[1];
+  	int_list_t& pcontrib = ccp_contrib[ccp_map.at(p)];
+  	// For each qa in the asc conn of q:
+    //for (const auto& qa : msc->m_conn[odir][q] | ba::map_keys) {
+  	for (const auto& [qa, _] : msc->m_conn[odir][q]) {
+        // a) If qa is not canceled ...
+        if (msc->is_not_canceled(qa)) {
+            // .. p contributes to qa.
+            pcontrib.push_back(qa);
+
+        }
+        // b) If qa is paired and qa's pair and q have the same index ...
+        else if (msc->index(q) == msc->index(msc->pair_idx(qa)))
+        {
+            int_list_t& qa_contrib = ccp_contrib[ccp_map.at(qa)];
+            // .. then foreach qaqa that qa contributes to ..
+            for (size_t idx = 1; idx < qa_contrib.size(); ++idx) {
+                const int qaqa = qa_contrib[idx];
+                // .. p contributes to qaqa.
+                pcontrib.push_back(qaqa);
+                // pdpd has to be a surviving cp
+                ASSERT(msc->is_not_canceled(qaqa));
+            }
+        }
+    }
+  }
+
+
+    // Stage 3: Debug sanity checks
+    for (auto& ccp_l : ccp_contrib) {
+        int ccp = ccp_l.front();
+
+        ASSERTS(msc->index(ccp) == dim) << "incorrect dim";
+        ASSERTS(msc->is_canceled(ccp)) << ccp << " should be canceled";
+
+        for (size_t idx = 1; idx < ccp_l.size(); ++idx) {
+            const int scp = ccp_l[idx];
+
+            ASSERTS(msc->index(scp) == dim) << "incorrect dim";
+            ASSERTS(msc->is_not_canceled(scp)) << scp << " should be canceled";
+        }
+    }
+
+  
 }
 
 /* -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - */
@@ -479,11 +647,15 @@ void getSurvivingCpContrib(mscomplex_ptr_t msc,contrib_list_t& scp_contrib)
   // Stage 1:
   // Construct an index mapping for each surviving dim-cp and allocate data
   std::map<int,int> scp_map;
-
+  /*
   auto scp_rng = msc->cpno_range()
              |ba::filtered(bind(&mscomplex_t::is_not_canceled,msc,_1))
              |ba::filtered(bind(&mscomplex_t::is_index_i_cp<dim>,msc,_1));
-
+  */
+	auto scp_rng = msc->cpno_range()
+	| std::views::filter([msc](auto cp) { return msc->is_not_canceled(cp); })
+	| std::views::filter([msc](auto cp) { return msc->is_index_i_cp<dim>(cp); });
+    /*
   BOOST_FOREACH(int cp,scp_rng)
       scp_map.insert(int_int_t(cp,scp_map.size()));
 
@@ -491,6 +663,17 @@ void getSurvivingCpContrib(mscomplex_ptr_t msc,contrib_list_t& scp_contrib)
 
   BOOST_FOREACH(int_int_t pr,scp_map)
     scp_contrib[pr.second].push_back(pr.first);
+    */
+
+  for (int cp : scp_rng) {
+      scp_map.insert(int_int_t(cp, scp_map.size()));
+  }
+
+  scp_contrib.resize(scp_map.size());
+
+  for (const auto& pr : scp_map) {
+      scp_contrib[pr.second].push_back(pr.first);
+  }
 
 
   // Stage 2:
@@ -501,7 +684,7 @@ void getSurvivingCpContrib(mscomplex_ptr_t msc,contrib_list_t& scp_contrib)
   // Stage 3:
   // Invert the above data i.e.  for each surviving cp get a list of
   // canceled cps that contribute to it.
-  BOOST_FOREACH(int_list_t & ccp_l, ccp_contrib)
+  /*BOOST_FOREACH(int_list_t & ccp_l, ccp_contrib)
   {
     int ccp = ccp_l.front();
 
@@ -509,10 +692,23 @@ void getSurvivingCpContrib(mscomplex_ptr_t msc,contrib_list_t& scp_contrib)
     {
       scp_contrib[scp_map.at(scp)].push_back(ccp);
     }
+  }*/
+  for (auto& ccp_l : ccp_contrib)
+  {
+      int ccp = ccp_l.front();
+
+      /*for (int scp : ccp_l | ba::sliced(1, ccp_l.size())) {
+          scp_contrib[scp_map.at(scp)].push_back(ccp);
+      }*/
+      for (int scp : std::ranges::subrange(ccp_l.begin() + 1, ccp_l.end())) {
+          scp_contrib[scp_map.at(scp)].push_back(ccp);
+      }
   }
+
 
   // Stage 4:
   // Debug sanity checks
+    /*
   BOOST_FOREACH(int_list_t & scp_l, scp_contrib)
   {
     int scp = scp_l.front();
@@ -526,6 +722,28 @@ void getSurvivingCpContrib(mscomplex_ptr_t msc,contrib_list_t& scp_contrib)
       ASSERTS(msc->is_canceled(ccp)) << ccp << " should be calcelled";
     }
   }
+  */
+
+  for (auto& scp_l : scp_contrib)
+  {
+      int scp = scp_l.front();
+
+      ASSERTS(msc->index(scp) == dim) << "incorrect dim";
+      ASSERTS(msc->is_not_canceled(scp)) << scp << " should be cancelled";
+
+      /*
+      for (int ccp : scp_l | ba::sliced(1, scp_l.size()))
+      {
+          ASSERTS(msc->index(ccp) == dim) << "incorrect dim";
+          ASSERTS(msc->is_canceled(ccp)) << ccp << " should be cancelled";
+      }
+      */
+      for (int ccp : std::ranges::subrange(scp_l.begin() + 1, scp_l.end())) {
+          ASSERTS(msc->index(ccp) == dim) << "incorrect dim";
+          ASSERTS(msc->is_canceled(ccp)) << ccp << " should be cancelled";
+      }
+  }
+
 }
 
 
@@ -544,8 +762,19 @@ inline void __collect_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
 
     cellid_list_t contrib_cells;
 
-    br::copy(contrib[i]|ba::transformed(bind(&mscomplex_t::cellid,msc,_1)),
-             back_inserter(contrib_cells));
+
+    //br::copy(contrib[i]|ba::transformed(bind(&mscomplex_t::cellid,msc,_1)),
+      //  back_inserter(contrib_cells));
+
+    // Transform each element using the `cellid` function
+    std::transform(
+        contrib[i].begin(),
+        contrib[i].end(),
+        std::back_inserter(contrib_cells),
+        [&msc](const auto& elem) {
+            return msc->cellid(elem);
+        });
+
 
     contrib[i].clear();
 

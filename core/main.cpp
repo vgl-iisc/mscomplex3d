@@ -78,6 +78,7 @@ void compute_mscomplex_basic(std::string filename, cellid_t size, double simp_tr
 }
 
 
+
 int main(int ac , char **av)
 {
   string         filename;
@@ -96,6 +97,7 @@ int main(int ac , char **av)
     setrlimit (RLIMIT_AS, &rl);
   }
   */
+
 
   bpo::options_description desc("Allowed options");
   desc.add_options()
@@ -142,3 +144,136 @@ int main(int ac , char **av)
 //    gdm->work();
 //  }
 }
+
+
+
+/*
+#include <iostream>
+#include <string>
+#include <filesystem>
+#include <optional>
+#include <stdexcept>
+
+//namespace fs = std::filesystem;
+
+void parse_arguments(int argc, char* argv[], std::string& filename, cellid_t& size, double& simp_tresh)
+{
+    for (int i = 1; i < argc; ++i)
+    {
+        std::string arg = argv[i];
+        if (arg == "--help" || arg == "-h")
+        {
+            std::cout << "Usage: " << argv[0] << " [options]" << std::endl
+                << "--file,-f  : grid file name (required)" << std::endl
+                << "--dim,-d   : dim of grid entered as [x,y,z] (required)" << std::endl
+                << "--simp-tresh,-t : simplification threshold (default: 0.0)" << std::endl;
+            std::exit(0);
+        }
+        else if (arg == "--file" || arg == "-f")
+        {
+            if (i + 1 < argc)
+            {
+                filename = argv[++i];
+            }
+            else
+            {
+                throw std::invalid_argument("Missing filename argument.");
+            }
+        }
+        else if (arg == "--dim" || arg == "-d")
+        {
+            if (i + 1 < argc)
+            {
+                // Assuming cellid_t can be constructed from string, adjust as needed
+                size = std::stoi(argv[++i]);
+            }
+            else
+            {
+                throw std::invalid_argument("Missing grid dimension argument.");
+            }
+        }
+        else if (arg == "--simp-tresh" || arg == "-t")
+        {
+            if (i + 1 < argc)
+            {
+                simp_tresh = std::stod(argv[++i]);
+            }
+            else
+            {
+                throw std::invalid_argument("Missing simplification threshold argument.");
+            }
+        }
+    }
+
+    // Validate required parameters
+    if (filename.empty() || size == cellid_t(0))
+    {
+        throw std::invalid_argument("Filename and size are required.");
+    }
+}
+
+void compute_mscomplex_basic(const std::string& filename, cellid_t size, double simp_tresh)
+{
+    g_timer.restart();
+
+    LOG(info) << get_hw_info();
+    LOG(info) << "====================================" << std::endl
+        << "         Starting Processing        " << std::endl
+        << "------------------------------------" << std::endl;
+
+    rect_t d(cellid_t::zero, (size - cellid_t::one) * 2);
+    dataset_ptr_t ds(new dataset_t(d, d, d));
+    mscomplex_ptr_t msc(new mscomplex_t(d, d, d));
+
+    std::string basename(filename);
+    int ext_pos = basename.size() - 4;
+    if (ext_pos >= 0 && basename.substr(ext_pos, 4) == ".raw")
+        basename = basename.substr(0, ext_pos);
+
+    ds->init(filename);
+    LOG(info) << "data read ---------------- " << g_timer.elapsed() << std::endl;
+
+    ds->computeMsGraph(msc);
+    LOG(info) << "msgraph done ------------- " << g_timer.elapsed() << std::endl;
+
+    if (simp_tresh >= 0)
+    {
+        msc->simplify_pers(simp_tresh);
+        LOG(info) << "simplification done ------ " << g_timer.elapsed() << std::endl;
+    }
+    msc->collect_mfolds(ds);
+
+    LOG(info) << "mfold collection done ---- " << g_timer.elapsed() << std::endl;
+
+    msc->save(basename + ".msc");
+
+    LOG(info) << "write data done ---------- " << g_timer.elapsed() << std::endl;
+
+    LOG(info) << "------------------------------------" << std::endl
+        << "        Finished Processing         " << std::endl
+        << "====================================" << std::endl;
+}
+
+int main(int argc, char* argv[])
+{
+    std::string filename;
+    cellid_t size;
+    double simp_tresh = 0.0;
+
+    try
+    {
+        parse_arguments(argc, argv, filename, size, simp_tresh);
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1;
+    }
+
+    opencl::init();
+
+    compute_mscomplex_basic(filename, size, simp_tresh);
+
+    return 0;
+}
+*/

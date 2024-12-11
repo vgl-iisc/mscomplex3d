@@ -627,7 +627,8 @@ namespace grid
       cell_pair_t dom = to_cell_pair(ds->m_domain_rect);
 
       __assign_gradient(rct,ext,dom,func_img,*flag_img,
-                        ds->m_vert_fns.data(),ds->m_cell_flags.data());
+                        //ds->m_vert_fns.data(),ds->m_cell_flags.data());
+                        ds->m_vert_fns.getData(),ds->m_cell_flags.getData());
 
       if(msc)
       {
@@ -698,8 +699,10 @@ namespace grid
       cell_pair_t max_rect = to_cell_pair(ds->get_extrema_rect<GDIR_DES>());
       cell_pair_t min_rect = to_cell_pair(ds->get_extrema_rect<GDIR_ASC>());
 
-      __owner_extrema(rct,ext,dom,max_rect,*flag_img,ds->m_owner_maxima.data());
-      __owner_extrema(rct,ext,dom,min_rect,*flag_img,ds->m_owner_minima.data());
+      //__owner_extrema(rct,ext,dom,max_rect,*flag_img,ds->m_owner_maxima.data());
+      __owner_extrema(rct,ext,dom,max_rect,*flag_img,ds->m_owner_maxima.getData());
+     // __owner_extrema(rct,ext,dom,min_rect,*flag_img,ds->m_owner_minima.data());
+      __owner_extrema(rct,ext,dom,min_rect,*flag_img,ds->m_owner_minima.getData());
     }
 
 //    void assign_gradient_and_owner_extrema(dataset_ptr_t ds)
@@ -789,10 +792,12 @@ namespace grid
       }
 
       __update_to_surv_extrema(rct,ext,dom,max_rect,cp_cellid_buf,surv_cp_no_buf,
-                               msc->get_num_critpts(),ds->m_owner_maxima.data());
+                               //msc->get_num_critpts(),ds->m_owner_maxima.data());
+                               msc->get_num_critpts(),ds->m_owner_maxima.getData());
 
       __update_to_surv_extrema(rct,ext,dom,min_rect,cp_cellid_buf,surv_cp_no_buf,
-                               msc->get_num_critpts(),ds->m_owner_minima.data());
+                               //msc->get_num_critpts(),ds->m_owner_minima.data());
+                               msc->get_num_critpts(),ds->m_owner_minima.getData());
 
     }
   }

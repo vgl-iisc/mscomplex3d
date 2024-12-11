@@ -1,16 +1,16 @@
 #include <stack>
 #include <set>
 
-#include <boost/foreach.hpp>
-#include <boost/range/adaptors.hpp>
-#include <boost/range/counting_range.hpp>
+//#include <boost/foreach.hpp>
+//#include <boost/range/adaptors.hpp>
+//#include <boost/range/counting_range.hpp>
 
 #include <grid_mscomplex.h>
 
 using namespace std;
 
-namespace br = boost::range;
-namespace ba = boost::adaptors;
+//namespace br = boost::range;
+//namespace ba = boost::adaptors;
 
 namespace grid
 {
@@ -82,7 +82,8 @@ void mscomplex_t::merge_dag_t::update(mscomplex_ptr_t msc)
          <<"earlier pnode has formed from a later cancellation"
          <<SVAR(get_node(pnode).hversion) << SVAR(m_last_hversion);
 
-      BOOST_FOREACH(int r,msc->m_conn[odir][q]|ba::map_keys)
+      /*
+      BOOST_FOREACH(int r, msc->m_conn[odir][q] | ba::map_keys)
       {
         int rnode         = m_cp_geom[dir][r];
         m_cp_geom[dir][r] = m_nodes.size();
@@ -91,6 +92,19 @@ void mscomplex_t::merge_dag_t::update(mscomplex_ptr_t msc)
         ENSURES(get_node(rnode).hversion < m_last_hversion)
             <<"earlier rnode has formed from a later cancellation";
       }
+      */
+      for (const auto& [r, _] : msc->m_conn[odir][q]) // Range-based for loop over map keys
+      {
+          int rnode = m_cp_geom[dir][r];
+          m_cp_geom[dir][r] = m_nodes.size();
+          m_nodes.emplace_back(r, rnode, pnode, m_last_hversion);
+
+          ENSURES(get_node(rnode).hversion < m_last_hversion)
+              << "earlier rnode has formed from a later cancellation";
+      }
+
+
+
       std::swap(p,q);
     }
   }

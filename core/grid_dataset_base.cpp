@@ -3,22 +3,25 @@
 
 using namespace std;
 
-#define static_assert(a, b) BOOST_STATIC_ASSERT_MSG(a, b)
+//#define static_assert(a, b) BOOST_STATIC_ASSERT_MSG(a, b)
 
 namespace grid
 {
 
 /*===========================================================================*/
 
-dataset_t::dataset_t (const rect_t &r,const rect_t &e,const rect_t &d) :
-  m_rect (r),
-  m_ext_rect (e),
-  m_domain_rect(d),
-  m_vert_fns(cellid_t::zero,boost::fortran_storage_order()),
-  m_cell_flags(cellid_t::zero,boost::fortran_storage_order()),
-  m_owner_maxima(cellid_t::zero,boost::fortran_storage_order()),
-  m_owner_minima(cellid_t::zero,boost::fortran_storage_order())
-
+    dataset_t::dataset_t(const rect_t& r, const rect_t& e, const rect_t& d) :
+        m_rect(r),
+        m_ext_rect(e),
+        m_domain_rect(d),
+        //m_vert_fns(cellid_t::zero,boost::fortran_storage_order()),
+        //m_cell_flags(cellid_t::zero,boost::fortran_storage_order()),
+        //m_owner_maxima(cellid_t::zero,boost::fortran_storage_order()),
+        //m_owner_minima(cellid_t::zero,boost::fortran_storage_order())
+        m_vert_fns(0,0,0,0),
+        m_cell_flags(0, 0, 0, 0),
+        m_owner_maxima(0, 0, 0, 0),
+        m_owner_minima(0, 0, 0, 0)
 {
   // TODO: assert that the given rect is of even size..
   //       since each vertex is in the even positions
@@ -40,7 +43,7 @@ void dataset_t::init(const string &filename)
   ifstream ifs(filename.c_str(),ios::in|ios::binary);
   ENSURE(ifs.is_open(),"unable to open file");
 
-  ifs.read((char*)(void*)m_vert_fns.data(),sizeof(cell_fn_t)*num_pts);
+  ifs.read((char*)(void*)m_vert_fns.getData(),sizeof(cell_fn_t)*num_pts);
   ENSURE(ifs.fail()==false,"failed to read some data");
 
   ifs.seekg(0,ios::end);
@@ -60,12 +63,12 @@ void  dataset_t::init(const cell_fn_t * dptr, bool is_fortran_order)
 
 
   if(is_fortran_order)
-    std::memcpy(m_vert_fns.data(),dptr,num_pts*sizeof(cell_fn_t));
+    std::memcpy(m_vert_fns.getData(),dptr,num_pts*sizeof(cell_fn_t));
   else
     for(int x = 0 ; x < pt_span[0] ; ++ x)
       for(int y = 0 ; y < pt_span[1] ; ++ y)
         for(int z = 0 ; z < pt_span[2] ; ++ z)
-          m_vert_fns[x][y][z] = *dptr++;
+          m_vert_fns(x,y,z) = *dptr++;
 
 
 }
@@ -84,7 +87,8 @@ void dataset_t::init_storage()
   m_cell_flags.resize(span);
   m_vert_fns.resize(pt_span);
 
-  std::fill_n(m_cell_flags.data(),span[0]*span[1]*span[2],0);
+  //std::fill_n(m_cell_flags.data(),span[0]*span[1]*span[2],0);
+  std::fill_n(m_cell_flags.getData(),span[0]*span[1]*span[2],0);
 
   m_cell_flags.reindex(bl);
   m_vert_fns.reindex(bl/2);
@@ -467,7 +471,7 @@ void dataset_t::save_bin(ostream &os) const
   rect_size_t  pt_span = (m_ext_rect.span()/2)+1;
   uint npts            = pt_span[0]*pt_span[1]*pt_span[2];
 
-  utl::bin_write_raw(os,m_vert_fns.data(),npts);
+  utl::bin_write_raw(os,m_vert_fns.getData(),npts);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -483,7 +487,7 @@ void dataset_t::load_bin(istream &is)
   rect_size_t  pt_span = (m_ext_rect.span()/2)+1;
   uint npts            = pt_span[0]*pt_span[1]*pt_span[2];
 
-  utl::bin_read_raw(is,m_vert_fns.data(),npts);
+  utl::bin_read_raw(is,m_vert_fns.getData(),npts);
 
   compute_owner_grad();
 }

@@ -13,7 +13,7 @@ namespace opencl
 class worker
 {
 protected:
-  boost::shared_ptr<cl::Image3D> flag_img;
+  std::shared_ptr<cl::Image3D> flag_img;
 public:
   void assign_gradient(dataset_ptr_t ds, mscomplex_ptr_t msc=mscomplex_ptr_t());
   void owner_extrema(dataset_ptr_t ds);

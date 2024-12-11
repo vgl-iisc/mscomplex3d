@@ -79,11 +79,19 @@ inline void from_string(std::string s,T1& t1,T2& t2,T3& t3,T4& t4)
 /* Misc utility classes
 /*---------------------------------------------------------------------------*/
 
-#include <boost/iterator/iterator_facade.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/thread.hpp>
+//#include <boost/iterator/iterator_facade.hpp>
+//#include <boost/shared_ptr.hpp>
+//#include <boost/date_time/posix_time/posix_time.hpp>
+//#include <boost/thread/mutex.hpp>
+//#include <boost/thread/thread.hpp>
+
+#include <iostream>
+#include <string>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
+#include <mutex>
+
 
 namespace utl {
 
@@ -103,55 +111,70 @@ namespace utl {
 **/
 
 class file_line_iterator
-    : public boost::iterator_facade<
+    /* : public boost::iterator_facade<
     file_line_iterator
     , std::string const
     , boost::forward_traversal_tag
-    >
+    >*/
 {
 public:
+    
+
   file_line_iterator(const char * f,char c_char='#');
-  file_line_iterator(){}
+	file_line_iterator();
 
 private:
-  friend class boost::iterator_core_access;
+  //friend class boost::iterator_core_access;
   void increment();
   bool equal(file_line_iterator const& other) const;
   const std::string &dereference() const;
 
 private:
-  boost::shared_ptr<std::ifstream> is;
+  //boost::shared_ptr<std::ifstream> is;
+  std::shared_ptr<std::ifstream> is;
   std::string                      value;
   char                             c_char;
 };
 
-/*---------------------------------------------------------------------------*/
+	/*---------------------------------------------------------------------------*/
 
 /** \brief Simple stopwatch timer (to measure wall clock time NOT cpu time) **/
-class timer
+
+	class timer
 {
  public:
   timer()
   {restart();}
 
   inline void   restart()
-  { _start_time = boost::posix_time::microsec_clock::local_time(); }
+  {
+	//  _start_time = boost::posix_time::microsec_clock::local_time();
+      _start_time = std::chrono::steady_clock::now();
+
+  }
 
   inline double elapsed() const
   {
-    boost::posix_time::time_duration td =
-        boost::posix_time::microsec_clock::local_time() - _start_time;
+    //boost::posix_time::time_duration td =
+      //  boost::posix_time::microsec_clock::local_time() - _start_time;
 
-    return double(td.total_milliseconds())/1000;
+    auto now = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsed_time = now - _start_time;
+    return elapsed_time.count();
+    //return double(td.total_milliseconds())/1000;
   }
 
  private:
-  boost::posix_time::ptime _start_time;
+  //boost::posix_time::ptime _start_time;
+  std::chrono::steady_clock::time_point _start_time;
+
 }; // timer
+
 
 /*---------------------------------------------------------------------------*/
 
 /** \brief A simple multi-threaded logger                                   **/
+    /*
 class logger
 {
  public:
@@ -183,6 +206,50 @@ private:
   static boost::mutex s_mutex;
   static logger       s_logger;
 }; // logger
+*/
+
+
+class logger {
+public:
+    enum severity_level { trace, debug, info, warning, error, fatal };
+	inline bool isOpen(severity_level severity) {
+        return severity >= UTL_LOG_LEVEL;
+    }
+
+    inline void push_ts(const std::string& log) {
+        auto tstr = get_current_time();
+        std::lock_guard<std::mutex> lock(s_mutex);
+        std::clog << "[" << tstr << "] " << log << std::endl;
+    }
+
+    inline void push(const std::string& log) {
+        std::lock_guard<std::mutex> lock(s_mutex);
+        std::clog << log;
+    }
+
+    static inline logger& get() {
+        return s_logger;
+    }
+
+private:
+    static std::string get_current_time() {
+        auto now = std::chrono::system_clock::now();
+        auto in_time_t = std::chrono::system_clock::to_time_t(now);
+        auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(
+            now.time_since_epoch()) % 1000;
+
+        std::ostringstream oss;
+        oss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %H:%M:%S");
+        oss << '.' << std::setfill('0') << std::setw(3) << milliseconds.count();
+        return oss.str();
+    }
+
+    static std::mutex s_mutex;
+    static logger s_logger;
+};
+
+
+
 
 namespace detail
 {

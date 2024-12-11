@@ -3,10 +3,12 @@
 
 #include <fstream>
 
-#include <boost/range/algorithm.hpp>
+//#include <boost/range/algorithm.hpp>
 
 #include <grid_mscomplex.h>
 
+#include <ranges> // For ranges and views
+#include <iterator> // For iterator-related utilities
 
 namespace grid {
 
@@ -135,13 +137,21 @@ inline int mscomplex_t::surv_extrema(int i) const
 
 /*---------------------------------------------------------------------------*/
 
-inline cell_fn_t mscomplex_t::fn_min() const
-{return *boost::range::min_element(m_cp_fn);}
+//inline cell_fn_t mscomplex_t::fn_min() const
+//{return *boost::range::min_element(m_cp_fn);}
+
+inline cell_fn_t mscomplex_t::fn_min() const {
+    return *std::ranges::min_element(m_cp_fn);
+}
 
 /*---------------------------------------------------------------------------*/
 
-inline cell_fn_t mscomplex_t::fn_max() const
-{return *boost::range::max_element(m_cp_fn);}
+//inline cell_fn_t mscomplex_t::fn_max() const
+//{return *boost::range::max_element(m_cp_fn);}
+
+inline cell_fn_t mscomplex_t::fn_max() const {
+    return *std::ranges::max_element(m_cp_fn);
+}
 
 /*---------------------------------------------------------------------------*/
 
@@ -163,8 +173,29 @@ inline std::string mscomplex_t::cp_info (int cp_no) const
 
 /*---------------------------------------------------------------------------*/
 
-inline boost::iterator_range<mscomplex_t::iterator_t> mscomplex_t::cpno_range() const
-{return boost::make_iterator_range(iterator_t(0),iterator_t(get_num_critpts()));}
+//inline boost::iterator_range<mscomplex_t::iterator_t> mscomplex_t::cpno_range() const
+//{return boost::make_iterator_range(iterator_t(0),iterator_t(get_num_critpts()));}
+/*
+inline auto mscomplex_t::cpno_range() const {
+    /*return std::ranges::subrange(
+        std::ranges::iota_view<int>(0, this->get_num_critpts()).begin(),
+        std::ranges::iota_view<int>(0, this->get_num_critpts().end());
+
+    return std::ranges::iota_view<int,int>(0, this->get_num_critpts());
+}
+*/
+inline std::ranges::iota_view<int, int> mscomplex_t::cpno_range() const {
+   /* using iterator_tt = decltype(std::ranges::iota_view<int, int>(0, this->get_num_critpts()).begin());    return std::ranges::subrange(
+        iterator_tt(0),
+        iterator_tt(this->get_num_critpts())
+    );
+    */
+
+    int num_critpts = this->get_num_critpts();
+    return std::views::iota(0, num_critpts);
+    //return std::views::iota(0, this->get_num_critpts());
+}
+
 
 /*---------------------------------------------------------------------------*/
 

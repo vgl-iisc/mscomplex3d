@@ -9,7 +9,15 @@ namespace grid
 /*===========================================================================*/
 
 inline cell_fn_t dataset_t::get_cell_fn(cellid_t c) const
-{return m_vert_fns(get_cell_vert(c)/2);}
+{
+	return m_vert_fns(
+
+    get_cell_vert(c)[0] / 2,
+    get_cell_vert(c)[1] / 2,
+    get_cell_vert(c)[2] / 2
+
+	);
+}
 
 /*---------------------------------------------------------------------------*/
 
@@ -161,8 +169,13 @@ inline bool dataset_t::compare_cells_orig<0>(const cellid_t & c1, const cellid_t
   ASSERT(get_cell_dim(c1) == 0);
   ASSERT(get_cell_dim(c2) == 0);
 
-  cell_fn_t f1 = m_vert_fns(c1/2);
-  cell_fn_t f2 = m_vert_fns(c2/2);
+  //cell_fn_t f1 = m_vert_fns(c1/2);
+  //cell_fn_t f2 = m_vert_fns(c2/2);
+  cell_fn_t f1 = m_vert_fns(c1[0] / 2, c1[1] / 2, c1[2] / 2);
+  cell_fn_t f2 = m_vert_fns(c2[0] / 2, c2[1] / 2, c2[2] / 2);
+
+
+
 
   if (f1 != f2)
     return f1 < f2;
