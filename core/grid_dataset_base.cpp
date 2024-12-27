@@ -1,6 +1,12 @@
 #include <grid_dataset.h>
 #include <grid_dataset_cl.h>
 
+#include "grid_dataset.h"
+#include "grid_dataset.h"
+
+#include <filesystem>
+
+
 using namespace std;
 
 //#define static_assert(a, b) BOOST_STATIC_ASSERT_MSG(a, b)
@@ -39,15 +45,25 @@ void dataset_t::init(const string &filename)
 
   rect_size_t  pt_span = (m_ext_rect.span()/2)+1;
   uint num_pts   = pt_span[0]*pt_span[1]*pt_span[2];
+  auto wd = std::filesystem::current_path();
 
   ifstream ifs(filename.c_str(),ios::in|ios::binary);
-  ENSURE(ifs.is_open(),"unable to open file");
+  //ENSURE(ifs.is_open(),"unable to open file " + filename);
+  ENSUREV2(ifs.is_open(),"unable to open file ", filename,wd);
 
-  ifs.read((char*)(void*)m_vert_fns.getData(),sizeof(cell_fn_t)*num_pts);
+
+  m_vert_fns.resize(num_pts, 1, 1);
+  ifs.read((char*)(void*)m_vert_fns.data.data(),sizeof(cell_fn_t)*num_pts);
   ENSURE(ifs.fail()==false,"failed to read some data");
+
+  std::cout << "\nDATA HAS BEEN READ\n";
+    	auto max_iter = std::max_element(m_vert_fns.data.begin(), m_vert_fns.data.end());
+    	std::cout << "\n max value in data: " << *max_iter;
 
   ifs.seekg(0,ios::end);
   ENSURE(uint(ifs.tellg())==num_pts*sizeof(cell_fn_t),"file/piece size mismatch");
+
+  //load_bin(ifs);
 
   ifs.close();
 }
@@ -63,7 +79,7 @@ void  dataset_t::init(const cell_fn_t * dptr, bool is_fortran_order)
 
 
   if(is_fortran_order)
-    std::memcpy(m_vert_fns.getData(),dptr,num_pts*sizeof(cell_fn_t));
+    std::memcpy(m_vert_fns.data.data(),dptr,num_pts*sizeof(cell_fn_t));
   else
     for(int x = 0 ; x < pt_span[0] ; ++ x)
       for(int y = 0 ; y < pt_span[1] ; ++ y)
@@ -88,7 +104,7 @@ void dataset_t::init_storage()
   m_vert_fns.resize(pt_span);
 
   //std::fill_n(m_cell_flags.data(),span[0]*span[1]*span[2],0);
-  std::fill_n(m_cell_flags.getData(),span[0]*span[1]*span[2],0);
+  std::fill_n(m_cell_flags.data.data(),span[0]*span[1]*span[2],0);
 
   m_cell_flags.reindex(bl);
   m_vert_fns.reindex(bl/2);
@@ -471,7 +487,7 @@ void dataset_t::save_bin(ostream &os) const
   rect_size_t  pt_span = (m_ext_rect.span()/2)+1;
   uint npts            = pt_span[0]*pt_span[1]*pt_span[2];
 
-  utl::bin_write_raw(os,m_vert_fns.getData(),npts);
+  utl::bin_write_raw(os,m_vert_fns.data.data(),npts);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -487,7 +503,7 @@ void dataset_t::load_bin(istream &is)
   rect_size_t  pt_span = (m_ext_rect.span()/2)+1;
   uint npts            = pt_span[0]*pt_span[1]*pt_span[2];
 
-  utl::bin_read_raw(is,m_vert_fns.getData(),npts);
+  utl::bin_read_raw(is,m_vert_fns.data.data(),npts);
 
   compute_owner_grad();
 }

@@ -338,6 +338,8 @@ void computeConnections(mscomplex_ptr_t msc,dataset_ptr_t ds,
       }
   );
 
+    
+  std::cout << " cpno range: " << msc->cpno_range().size();
 
 
   #pragma omp parallel for
@@ -398,34 +400,37 @@ void computeExtremaConnections(mscomplex_ptr_t msc,dataset_ptr_t ds,
 
 void  dataset_t::computeMsGraph(mscomplex_ptr_t msc)
 {
-  opencl::worker w;
-  w.assign_gradient(shared_from_this(),msc);
+    opencl::worker w;
+    w.assign_gradient(shared_from_this(), msc);
 
-  mscomplex_connector_t msc_connector(msc);
-  msc_connector.init();
+    mscomplex_connector_t msc_connector(msc);
+    msc_connector.init();
+    /*
+    std::cout << "\nComputing MS Graph: \n";
 
-  #pragma omp sections
-  {
-    #pragma omp section
-    {computeConnections<2,DES>(msc,shared_from_this(),msc_connector);}
-
-    #pragma omp section
+    #pragma omp sections
     {
-      if(opencl::is_gpu_context())
-      {
-        w.owner_extrema(shared_from_this());
-        computeExtremaConnections<DES>(msc,shared_from_this(),msc_connector);
-        computeExtremaConnections<ASC>(msc,shared_from_this(),msc_connector);
-      }
-      else
-      {
-        computeConnections<2,ASC>(msc,shared_from_this(),msc_connector);
-        computeConnections<1,DES>(msc,shared_from_this(),msc_connector);
-      }
-    }
-  }
-}
+      #pragma omp section
+      {computeConnections<2,DES>(msc,shared_from_this(),msc_connector);}
 
+      #pragma omp section
+      {
+        if(opencl::is_gpu_context())
+        {
+          w.owner_extrema(shared_from_this());
+          computeExtremaConnections<DES>(msc,shared_from_this(),msc_connector);
+          computeExtremaConnections<ASC>(msc,shared_from_this(),msc_connector);
+        }
+        else
+        {
+          computeConnections<2,ASC>(msc,shared_from_this(),msc_connector);
+          computeConnections<1,DES>(msc,shared_from_this(),msc_connector);
+        }
+      }
+
+    }
+  */
+}
 /*---------------------------------------------------------------------------*/
 
 void  dataset_t::getManifold

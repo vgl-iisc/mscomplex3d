@@ -71,14 +71,15 @@ class n_vector_t: public std::array<T,N>
       (*this)[3] = e4;
     }
 
-
+    void assign(const T& value) {
+        this->fill(value); // std::array provides a 'fill' method to assign a value to all elements
+    }
     template<typename OT>
     static n_vector_t s_assign( const OT &o)
     {
       n_vector_t r;
 
-      //r.assign((T)o);
-      r.s_assign((T)o);
+      r.assign((T)o);
       return r;
     }
 

@@ -14,7 +14,6 @@
 template <typename T, std::size_t N=3>
 class Array3D {
 private:
-    std::vector<T> data; // Flattened 3D data
     size_t dim1, dim2, dim3;
 
     // Compute linear index from 3D indices
@@ -26,45 +25,47 @@ private:
     }
 
 public:
+    std::vector<T> data; // Flattened 3D data
+
     // Constructor: Initialize dimensions and fill with default value
     Array3D(size_t d1, size_t d2, size_t d3, T default_value = T())
         : dim1(d1), dim2(d2), dim3(d3), data(d1* d2* d3, default_value) {}
 
 
     Array3D(n_vector_t<T, N> n)
-    {
-        //todo fill this up by taking n[0],n[1], n[2] and using that to determine dimensions of vertex
-        Array3D(n[0], n[1], n[2]);
-    }
+        : Array3D(n[0], n[1], n[2]) // Delegate to the main constructor
+    {}
 
 
-    // Function to reindex the array
-    // todo this should not return an array but remake the object instead
-    Array3D<T, N> reindex(const std::array<short, N>& new_indices) const {
-        // Create a new Array3D with the same dimensions
-        Array3D<T, N> new_array(dim1, dim2, dim3);
+    // Function to reindex the array (modifies the current object)
+    void reindex(const std::array<short, N>& new_indices) {
+        // Create a temporary copy of the original data
+        std::vector<T> new_data(data.size(), T());
 
-        // Iterate over the original array and assign new indices to the new array
+        // Iterate over the original array and assign new indices in the temporary data
         for (size_t i = 0; i < dim1; ++i) {
             for (size_t j = 0; j < dim2; ++j) {
                 for (size_t k = 0; k < dim3; ++k) {
                     // Remap the indices based on new_indices
-                    size_t new_i = i + new_indices[0];
-                    size_t new_j = j + new_indices[1];
-                    size_t new_k = k + new_indices[2];
+                    int new_i = static_cast<int>(i) + new_indices[0];
+                    int new_j = static_cast<int>(j) + new_indices[1];
+                    int new_k = static_cast<int>(k) + new_indices[2];
 
                     // Ensure that the new indices are within bounds
-                    if (new_i >= dim1 || new_j >= dim2 || new_k >= dim3) {
-                        throw std::out_of_range("Reindexed index out of bounds");
+                    if (new_i >= 0 && new_i < static_cast<int>(dim1) &&
+                        new_j >= 0 && new_j < static_cast<int>(dim2) &&
+                        new_k >= 0 && new_k < static_cast<int>(dim3)) {
+                        // Compute indices and transfer the value
+                        new_data[index(new_i, new_j, new_k)] = data[index(i, j, k)];
                     }
-
-                    // Set the value at the new index
-                    new_array(new_i, new_j, new_k) = (*this)(i, j, k);
                 }
             }
         }
-        return new_array;
+
+        // Replace the original data with the reindexed data
+        data = std::move(new_data);
     }
+
 
 
     T* getData()
@@ -107,6 +108,8 @@ public:
         dim1 = d1;
         dim2 = d2;
         dim3 = d3;
+        //data.resize(d1 * d2 * d3);
+        //data.
         data.assign(d1 * d2 * d3, default_value);
     }
 
@@ -247,7 +250,11 @@ namespace openmp {
 std::string get_info();
 }
 
-inline std::string get_hw_info(){return opencl::get_info()+openmp::get_info();}
+inline std::string get_hw_info()
+{
+    opencl::init();
+	return opencl::get_info()+openmp::get_info();
+}
 }
 
 #endif

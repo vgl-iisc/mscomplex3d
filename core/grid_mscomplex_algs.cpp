@@ -11,8 +11,9 @@
 #include <grid_mscomplex.h>
 #include <grid_dataset_cl.h>
 
-#define NOMINMAX // To prevent Windows.h from defining min and max macros
-#include "cl.hpp"
+
+//#include "cl.hpp"
+#include <opencl.hpp>
 
 using namespace std;
 
@@ -21,9 +22,12 @@ using namespace std;
 
 
 #ifdef _MSC_VER
-//#include <Windows.h> // Include Windows-specific headers
+#define NOMINMAX // To prevent Windows.h from defining min and max macros
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h> // Include Windows-specific headers
 
 //#include <cstddef> // This is where std::byte is defined in C++17
+//#include <winnt.h>
 
 // Define atomic increment macro for MSVC
 #define ATOMIC_INCREMENT(ptr) InterlockedIncrement(ptr)
@@ -351,12 +355,11 @@ void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
   priority_queue<int_pair_t,int_pair_list_t,decltype (cmp)> pq(cmp);
 
   //if(is_nrm)
-    //thresh *= (*br::max_element(m_cp_fn) - *br::min_element(m_cp_fn));
+  //  thresh *= (*br::max_element(m_cp_fn) - *br::min_element(m_cp_fn));
 
   if (is_nrm)
       thresh *= (*std::ranges::max_element(m_cp_fn) - *std::ranges::min_element(m_cp_fn));
 	
-
 
   for(int i = 0 ;i < get_num_critpts();++i)
   {
@@ -369,7 +372,7 @@ void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
         pq.push(pr);
     }
     */
-    for (const auto& j : m_des_conn[i]) {
+	for (const auto& j : m_des_conn[i]) {
         int_pair_t pr(i, j.first);
 
         if (is_valid_canc_edge(*this, pr, thresh)) {
@@ -385,7 +388,7 @@ void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
     |ba::filtered(bind(&mscomplex_t::is_index_i_cp<0>,this,_1))
     |ba::filtered(bind(&mscomplex_t::is_not_canceled,this,_1)));
     */
-
+  
   int ns_max = std::ranges::distance(cpno_range()
       | std::views::filter(std::bind(&mscomplex_t::is_index_i_cp<gc_grid_dim>, this, std::placeholders::_1))
       | std::views::filter(std::bind(&mscomplex_t::is_not_canceled, this, std::placeholders::_1)));
@@ -410,7 +413,7 @@ void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
 
     if(index(pr[0]) == gc_grid_dim) --ns_max;
     if(index(pr[1]) == 0          ) --ns_min;
-
+    
     cancel_pair(pr[0],pr[1]);
     /*
     BOOST_FOREACH(int_int_t i,m_des_conn[pr[0]])
@@ -422,7 +425,7 @@ void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
         pq.push(e);
     }
     */
-
+    
     for (const auto& i : m_des_conn[pr[0]]) {
         for (const auto& j : m_asc_conn[pr[1]]) {
             int_pair_t e(j.first, i.first);
@@ -432,7 +435,7 @@ void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
             }
         }
     }
-
+    
   }
 
   m_merge_dag->update(shared_from_this());
@@ -830,7 +833,8 @@ inline void __collect_extrema_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
         int oe_i = (ds->isCellCritical(c))?(oe):(oarr(i_to_c2(r,oe)/2));
         int i    = scp_id[oe_i];
         //InterlockedIncrement(&scp_ncells[i]);
-        InterlockedIncrement(reinterpret_cast<LONG*>(&scp_ncells[i]));
+        //InterlockedIncrement(reinterpret_cast<LONG*>(&scp_ncells[i]));
+        //ATOMIC_INCREMENT(reinterpret_cast<LONG*>(&scp_ncells[i]));
       }
 
   #pragma omp parallel for
@@ -850,6 +854,7 @@ inline void __collect_extrema_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
         int i    = scp_id[oe_i];
         //int p    = InterlockedDecrement(&scp_ncells[i]);
         int p    = InterlockedDecrement(reinterpret_cast<LONG*>(&scp_ncells[i]));
+        //int p = atomic_fetch_add(&scp_ncells[i], 1);
         msc->m_mfolds[dir][i][p] = c;
       }
 
