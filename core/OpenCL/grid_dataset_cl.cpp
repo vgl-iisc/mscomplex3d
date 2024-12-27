@@ -8,7 +8,8 @@
 #if defined(__APPLE__) || defined(__MACOSX)
 #include <OpenCL/cl.hpp>
 #else
-#include <cl.hpp>
+//#include <cl.hpp>
+#include<opencl.hpp>
 #endif
 
 #include <utl.h>
@@ -26,6 +27,7 @@ cl::Device        s_device;
 cl::Context       s_context;
 cl::CommandQueue  s_queue;
 
+/*
 cl::KernelFunctor s_assign_max_facet_edge;
 cl::KernelFunctor s_assign_max_facet_face;
 cl::KernelFunctor s_assign_max_facet_cube;
@@ -38,7 +40,8 @@ cl::KernelFunctor s_mark_boundry_cps;
 cl::KernelFunctor s_count_cps;
 cl::KernelFunctor s_count_boundry_cps;
 cl::KernelFunctor s_save_boundry_cps;
-cl::KernelFunctor s_save_cps;
+cl::KernelFunctor s_save_boundry_cps;
+
 
 cl::KernelFunctor s_scan_local_sums;
 cl::KernelFunctor s_scan_group_sums;
@@ -49,6 +52,33 @@ cl::KernelFunctor s_propagate;
 cl::KernelFunctor s_update_cp_cell_to_cp_no;
 cl::KernelFunctor s_init_update_to_surv_cp_no;
 cl::KernelFunctor s_update_to_surv_cp_no;
+*/
+
+// Declare kernels outside the scope for reuse
+cl::Kernel s_assign_max_facet_edge;
+cl::Kernel s_assign_max_facet_face;
+cl::Kernel s_assign_max_facet_cube;
+cl::Kernel s_assign_pairs;
+cl::Kernel s_assign_pairs2;
+cl::Kernel s_assign_pairs3;
+
+cl::Kernel s_mark_cps;
+cl::Kernel s_mark_boundry_cps;
+cl::Kernel s_count_cps;
+cl::Kernel s_count_boundry_cps;
+cl::Kernel s_save_boundry_cps;
+cl::Kernel s_save_cps;
+
+
+cl::Kernel s_scan_local_sums;
+cl::Kernel s_scan_group_sums;
+cl::Kernel s_scan_update_sums;
+
+cl::Kernel s_init_propagate;
+cl::Kernel s_propagate;
+cl::Kernel s_update_cp_cell_to_cp_no;
+cl::Kernel s_init_update_to_surv_cp_no;
+cl::Kernel s_update_to_surv_cp_no;
 
 
 extern const char *GRID_DATASET_CLH;
@@ -133,18 +163,26 @@ namespace grid
       return a;
     }
 
-    inline cl::size_t<3> to_size(const cellid_t & b)
+    //inline cl::size_t<3> to_size(const cellid_t & b)
+    inline std::array<size_t, 3> to_size(const cellid_t & b)
     {
-      cl::size_t<3> a;
+    	std::array<size_t, 3> a;
 
-      a.assign(b.begin(),b.end());
+      //a.assign(b.begin(),b.end());
+        for (size_t i = 0; i < 3; ++i) {
+            a[i] = static_cast<size_t>(b[i]);  // Convert from short to size_t
+        }
+
 
       return a;
     }
 
-    inline cl::size_t<3> to_size(int x,int y,int z)
+    //inline cl::size_t<3> to_size(int x,int y,int z)
+    inline std::array<size_t, 3> to_size(int x,int y,int z)
     {
-      cl::size_t<3> a;
+      //cl::size_t<3> a;
+
+        std::array<size_t, 3> a;
 
       a[0] = x;
       a[1] = y;
@@ -153,13 +191,18 @@ namespace grid
       return a;
     }
 
-    inline cl::size_t<3> get_size(const cell_pair_t &p)
+    //inline cl::size_t<3> get_size(const cell_pair_t &p)
+    inline std::array<size_t, 3> get_size(const cell_pair_t &p)
     {
-      cl::size_t<3> s;
+      //cl::size_t<3> s;
+      std::array<size_t, 3> s;
 
       s[0] = p.hi.x -p.lo.x +1;
       s[1] = p.hi.y -p.lo.y +1;
       s[2] = p.hi.z -p.lo.z +1;
+
+      std::cout << "Flag size in function get_size: "
+          << s[0] << " x " << s[1] << " x " << s[2] << std::endl;
 
       return s;
     }
@@ -296,16 +339,20 @@ namespace grid
        cerr<< "SETUP QUEUE ERROR: "<< err.what()<< "("<< err.err()<< ")"<< endl;
        throw;
       }
-
+      /*
       try
       {
+
+        
         cl::Program::Sources sources;
         sources.push_back(make_pair(headerCode.c_str(),headerCode.size()));
+
         sources.push_back(make_pair(sourceCode1.c_str(),sourceCode1.size()));
 
         program1 = cl::Program(s_context, sources);
         program1.build(devices);
 
+        
         s_assign_max_facet_edge =  cl::Kernel(program1, "assign_max_facet_edge").
             bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE));
 
@@ -323,8 +370,11 @@ namespace grid
 
         s_assign_pairs3 = cl::Kernel(program1, "assign_pairs3").
             bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE/2));
+            
 
       }
+
+      
       catch (cl::Error err)
       {
        cerr<< "PROGRAM1 ERROR: "<< err.what()<< "("<< err.err()<< ")"<< endl;
@@ -332,12 +382,108 @@ namespace grid
 
        throw;
       }
+      */
+        
+      try {
+          // Create program sources
+          cl::Program::Sources sources = {
+              { headerCode.c_str(), headerCode.size() },
+              { sourceCode1.c_str(), sourceCode1.size() }
+          };
 
+          // Build the program
+          cl::Program program1(s_context, sources);
+          program1.build(devices);
+
+          // Define NDRange sizes
+          cl::NDRange global(1024);  // 1024 work-items in total
+          cl::NDRange local(256);    // 256 work-items per work group
+
+          // Define and initialize kernels
+          s_assign_max_facet_edge=cl::Kernel (program1, "assign_max_facet_edge");
+          s_assign_max_facet_face=cl::Kernel (program1, "assign_max_facet_face");
+          s_assign_max_facet_cube=cl::Kernel (program1, "assign_max_facet_cube");
+          s_assign_pairs=cl::Kernel (program1, "assign_pairs");
+          s_assign_pairs2=cl::Kernel (program1, "assign_pairs2");
+          s_assign_pairs3=cl::Kernel (program1, "assign_pairs3");
+
+          // Enqueue kernels with specific NDRange settings
+          //s_queue.enqueueNDRangeKernel(s_assign_max_facet_edge, cl::NullRange, global, local);
+          //s_queue.enqueueNDRangeKernel(s_assign_max_facet_face, cl::NullRange, global, local);
+          //s_queue.enqueueNDRangeKernel(s_assign_max_facet_cube, cl::NullRange, global, local);
+          //s_queue.enqueueNDRangeKernel(s_assign_pairs, cl::NullRange, global, cl::NDRange(local[0] / 2));
+          //s_queue.enqueueNDRangeKernel(s_assign_pairs2, cl::NullRange, global, cl::NDRange(local[0] / 2));
+          //s_queue.enqueueNDRangeKernel(s_assign_pairs3, cl::NullRange, global, cl::NDRange(local[0] / 2));
+
+          // Wait for queue completion
+          //s_queue.finish();
+
+      }
+      catch (const cl::Error& e) {
+          std::cerr << "PROGRAM1 ERROR: " << e.what() << " (" << e.err() << ")\n";
+          std::cerr << program1.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]) << "\n";
+
+          throw;
+      }
+      
+      
+      try {
+          // Create program sources
+          cl::Program::Sources sources = {
+              { headerCode.c_str(), headerCode.size() },
+              { sourceCode2.c_str(), sourceCode2.size() }
+          };
+
+          // Build the program
+          cl::Program program2(s_context, sources);
+          program2.build(devices);
+
+          // Initialize kernels
+          s_count_cps = cl::Kernel(program2, "count_cps");
+          s_count_boundry_cps = cl::Kernel(program2, "count_boundry_cps");
+          s_scan_local_sums = cl::Kernel(program2, "scan_local_sums");
+          s_scan_group_sums = cl::Kernel(program2, "scan_group_sums");
+          s_scan_update_sums = cl::Kernel(program2, "scan_update_sums");
+          s_mark_cps = cl::Kernel(program2, "mark_cps");
+          s_save_cps=cl::Kernel(program2, "save_cps");
+          s_mark_boundry_cps= cl::Kernel(program2, "mark_boundry_cps");
+          s_save_boundry_cps = cl::Kernel(program2, "save_boundry_cps");
+
+
+
+          // Define NDRange sizes
+          //cl::NDRange globalWorkSize(WG_SIZE);
+          //cl::NDRange localWorkSize(WI_SIZE);
+          //cl::NDRange groupWorkSize(WG_NUM);
+
+          // Enqueue kernels with specific NDRange settings
+          //s_queue.enqueueNDRangeKernel(s_mark_cps, cl::NullRange, globalWorkSize, localWorkSize);
+          //s_queue.enqueueNDRangeKernel(s_count_cps, cl::NullRange, globalWorkSize, localWorkSize);
+          //s_queue.enqueueNDRangeKernel(s_save_cps, cl::NullRange, globalWorkSize, localWorkSize);
+          //s_queue.enqueueNDRangeKernel(s_mark_boundry_cps, cl::NullRange, globalWorkSize, localWorkSize);
+          //s_queue.enqueueNDRangeKernel(s_count_boundry_cps, cl::NullRange, globalWorkSize, localWorkSize);
+          //s_queue.enqueueNDRangeKernel(s_save_boundry_cps, cl::NullRange, globalWorkSize, localWorkSize);
+          //s_queue.enqueueNDRangeKernel(s_scan_local_sums, cl::NullRange, globalWorkSize, localWorkSize);
+          //s_queue.enqueueNDRangeKernel(s_scan_group_sums, cl::NullRange, groupWorkSize, groupWorkSize);
+          //s_queue.enqueueNDRangeKernel(s_scan_update_sums, cl::NullRange, globalWorkSize, localWorkSize);
+
+          // Wait for queue completion
+          //s_queue.finish();
+
+      }
+      catch (const cl::Error& e) {
+          std::cerr << "OpenCL error: " << e.what() << " (" << e.err() << ")\n";
+          throw;
+      }
+        /*
       try
       {
         cl::Program::Sources sources;
-        sources.push_back(make_pair(headerCode.c_str(),headerCode.size()));
-        sources.push_back(make_pair(sourceCode2.c_str(),sourceCode2.size()));
+        //sources.push_back(make_pair(headerCode.c_str(),headerCode.size()));
+        sources.push_back({ headerCode.c_str() ,(headerCode.size()) });
+
+        //sources.push_back(make_pair(sourceCode2.c_str(), sourceCode2.size()));
+        sources.push_back({ sourceCode2.c_str() ,(sourceCode2.size()) });
 
         program2 = cl::Program(s_context, sources);
         program2.build(devices);
@@ -369,6 +515,10 @@ namespace grid
         s_scan_update_sums = cl::Kernel(program2, "scan_update_sums").
             bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE));
 
+
+
+
+
       }
       catch (cl::Error err)
       {
@@ -377,7 +527,49 @@ namespace grid
 
        throw;
       }
+*/
 
+      try {
+          // Create program sources
+          cl::Program::Sources sources = {
+              { headerCode.c_str(), headerCode.size() },
+              { sourceCode3.c_str(), sourceCode3.size() }
+          };
+
+          // Build the program
+          cl::Program program3(s_context, sources);
+          program3.build(devices);
+
+          // Define and initialize kernels
+          s_init_propagate=cl::Kernel (program3, "init_propagate");
+          s_propagate=cl::Kernel (program3, "propagate");
+          s_update_cp_cell_to_cp_no=cl::Kernel (program3, "update_cp_cell_to_cp_no");
+          s_init_update_to_surv_cp_no=cl::Kernel (program3, "init_update_to_surv_cp_no");
+          s_update_to_surv_cp_no=cl::Kernel (program3, "update_to_surv_cp_no");
+
+          // Define NDRange sizes
+          //cl::NDRange globalWorkSize(WG_SIZE);
+          //cl::NDRange localWorkSize(WI_SIZE);
+
+          // Enqueue kernels with specific NDRange settings
+          //s_queue.enqueueNDRangeKernel(s_init_propagate, cl::NullRange, globalWorkSize, localWorkSize);
+          //s_queue.enqueueNDRangeKernel(s_propagate, cl::NullRange, globalWorkSize, localWorkSize);
+          //s_queue.enqueueNDRangeKernel(s_update_cp_cell_to_cp_no, cl::NullRange, globalWorkSize, localWorkSize);
+          //s_queue.enqueueNDRangeKernel(s_init_update_to_surv_cp_no, cl::NullRange, globalWorkSize, localWorkSize);
+          //s_queue.enqueueNDRangeKernel(s_update_to_surv_cp_no, cl::NullRange, globalWorkSize, localWorkSize);
+
+          // Wait for queue completion
+          //s_queue.finish();
+
+      }
+      catch (const cl::Error& e) {
+          std::cerr << "PROGRAM3 ERROR: " << e.what() << " (" << e.err() << ")\n";
+          std::cerr << program3.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]) << "\n";
+          throw;
+      }
+      
+
+        /*
       try
       {
         cl::Program::Sources sources;
@@ -410,6 +602,9 @@ namespace grid
 
        throw;
       }
+      */
+
+
     }
 
     bool is_gpu_context()
@@ -426,23 +621,220 @@ namespace grid
         cell_fn_t   *h_func,
         cell_flag_t *h_flag)
     {
-      cl::size_t<3> func_size = to_size(from_cell_pair(ext).span()/2+ 1);
-      cl::size_t<3> flag_size = get_size(ext);
+      //cl::size_t<3> func_size = to_size(from_cell_pair(ext).span()/2+ 1);
+      std::array<size_t,3> func_size = to_size(from_cell_pair(ext).span()/2+ 1);
+      //cl::size_t<3> flag_size = get_size(ext);
+      std::array<size_t, 3> flag_size = get_size(ext);
 
       int cell_ct = num_cells(ext);
 
+      std::cout << "Flag size before try: "
+          << flag_size[0] << " x " << flag_size[1] << " x " << flag_size[2] << std::endl;
+
+      cl::NDRange globalSize(1024); // Total number of work items
+      cl::NDRange localSize(256);          // Work items per work group
+
+      
       try
       {
         func_img = cl::Image3D(s_context,CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR,
                                cl::ImageFormat(CL_R,CL_FLOAT),
                                func_size[0],func_size[1],func_size[2],0,0,h_func);
 
-        flag_img = cl::Image3D(s_context,CL_MEM_READ_ONLY,
+
+
+        std::cout << "Flag size: "
+            << flag_size[0] << " x " << flag_size[1] << " x " << flag_size[2] << std::endl;
+
+        // Check device limits
+        cl::Device device = s_context.getInfo<CL_CONTEXT_DEVICES>()[0];
+        size_t max_width = device.getInfo<CL_DEVICE_IMAGE3D_MAX_WIDTH>();
+        size_t max_height = device.getInfo<CL_DEVICE_IMAGE3D_MAX_HEIGHT>();
+        size_t max_depth = device.getInfo<CL_DEVICE_IMAGE3D_MAX_DEPTH>();
+        std::cout << "Device max 3D image size: "
+            << max_width << " x " << max_height << " x " << max_depth << std::endl;
+        
+
+        // Check flag size validity
+        if (flag_size[0] == 0 || flag_size[1] == 0 || flag_size[2] == 0 ||
+            flag_size[0] > max_width || flag_size[1] > max_height || flag_size[2] > max_depth) {
+            throw std::runtime_error("Invalid image dimensions for flag_img!");
+        }
+
+        // Create image with alternative format for testing
+        try {
+            flag_img = cl::Image3D(s_context, CL_MEM_READ_ONLY,
+                cl::ImageFormat(CL_R, CL_UNSIGNED_INT8),
+                flag_size[0], flag_size[1], flag_size[2], 0, 0);
+            
+            std::cout << "Image created successfully." << std::endl;
+        }
+        catch (cl::Error& err) {
+            std::cerr << "Error creating image: " << err.what() << " (" << err.err() << ")" << std::endl;
+            throw;
+        }
+
+
+        
+        flag_img = cl::Image3D(s_context, CL_MEM_READ_ONLY,
                                cl::ImageFormat(CL_R,CL_UNSIGNED_INT8),
                                flag_size[0],flag_size[1],flag_size[2],0,0);
-
+                               
         cl::Buffer flag_buf(s_context,CL_MEM_READ_WRITE,cell_ct*sizeof(cell_flag_t));
 
+        s_assign_max_facet_edge.setArg(0, func_img);
+        s_assign_max_facet_edge.setArg(1, flag_img);
+        s_assign_max_facet_edge.setArg(2, rct.lo);
+        s_assign_max_facet_edge.setArg(3, rct.hi);
+        s_assign_max_facet_edge.setArg(4, ext.lo);
+        s_assign_max_facet_edge.setArg(5, ext.hi);
+        s_assign_max_facet_edge.setArg(6, dom.lo);
+        s_assign_max_facet_edge.setArg(7, dom.hi);
+        s_assign_max_facet_edge.setArg(8, flag_buf);
+        s_queue.enqueueNDRangeKernel(
+            s_assign_max_facet_edge,
+            cl::NullRange,
+            globalSize,
+            localSize
+        );
+        s_queue.finish();
+
+        s_queue.enqueueCopyBufferToImage
+        (flag_buf, flag_img, 0, to_size(0, 0, 0), flag_size);
+        s_queue.finish();
+
+
+        s_assign_max_facet_face.setArg(0, func_img);
+        s_assign_max_facet_face.setArg(1, flag_img);
+        s_assign_max_facet_face.setArg(2, rct.lo);
+        s_assign_max_facet_face.setArg(3, rct.hi);
+        s_assign_max_facet_face.setArg(4, ext.lo);
+        s_assign_max_facet_face.setArg(5, ext.hi);
+        s_assign_max_facet_face.setArg(6, dom.lo);
+        s_assign_max_facet_face.setArg(7, dom.hi);
+        s_assign_max_facet_face.setArg(8, flag_buf);
+        s_queue.enqueueNDRangeKernel(
+            s_assign_max_facet_face,
+            cl::NullRange,
+            globalSize,
+            localSize
+        );
+        s_queue.finish();
+        s_queue.enqueueCopyBufferToImage
+        (flag_buf, flag_img, 0, to_size(0, 0, 0), flag_size);
+        s_queue.finish();
+
+
+        s_assign_max_facet_cube.setArg(0, func_img);
+        s_assign_max_facet_cube.setArg(1, flag_img);
+        s_assign_max_facet_cube.setArg(2, rct.lo);
+        s_assign_max_facet_cube.setArg(3, rct.hi);
+        s_assign_max_facet_cube.setArg(4, ext.lo);
+        s_assign_max_facet_cube.setArg(5, ext.hi);
+        s_assign_max_facet_cube.setArg(6, dom.lo);
+        s_assign_max_facet_cube.setArg(7, dom.hi);
+        s_assign_max_facet_cube.setArg(8, flag_buf);
+        s_queue.enqueueNDRangeKernel(
+            s_assign_max_facet_cube,
+            cl::NullRange,
+            globalSize,
+            localSize
+        );
+        s_queue.finish();
+        s_queue.enqueueCopyBufferToImage
+        (flag_buf, flag_img, 0, to_size(0, 0, 0), flag_size);
+        s_queue.finish();
+
+        s_assign_pairs.setArg(0, func_img);
+        s_assign_pairs.setArg(1, flag_img);
+        s_assign_pairs.setArg(2, rct.lo);
+        s_assign_pairs.setArg(3, rct.hi);
+        s_assign_pairs.setArg(4, ext.lo);
+        s_assign_pairs.setArg(5, ext.hi);
+        s_assign_pairs.setArg(6, dom.lo);
+        s_assign_pairs.setArg(7, dom.hi);
+        s_assign_pairs.setArg(8, flag_buf);
+        s_queue.enqueueNDRangeKernel(
+            s_assign_pairs,
+            cl::NullRange,
+            globalSize,
+            localSize
+        );
+        s_queue.finish();
+        s_queue.enqueueCopyBufferToImage
+        (flag_buf, flag_img, 0, to_size(0, 0, 0), flag_size);
+        s_queue.finish();
+
+
+        s_assign_pairs2.setArg(0, func_img);
+        s_assign_pairs2.setArg(1, flag_img);
+        s_assign_pairs2.setArg(2, rct.lo);
+        s_assign_pairs2.setArg(3, rct.hi);
+        s_assign_pairs2.setArg(4, ext.lo);
+        s_assign_pairs2.setArg(5, ext.hi);
+        s_assign_pairs2.setArg(6, dom.lo);
+        s_assign_pairs2.setArg(7, dom.hi);
+        s_assign_pairs2.setArg(8, flag_buf);
+        s_queue.enqueueNDRangeKernel(
+            s_assign_pairs2,
+            cl::NullRange,
+            globalSize,
+            localSize
+        );
+        s_queue.finish();
+        s_queue.enqueueCopyBufferToImage
+        (flag_buf, flag_img, 0, to_size(0, 0, 0), flag_size);
+        s_queue.finish();
+
+        
+        s_mark_cps.setArg(0, rct);
+        s_mark_cps.setArg(1, ext);
+        s_mark_cps.setArg(2, dom);
+        s_mark_cps.setArg(3, flag_buf);
+
+      	s_queue.enqueueNDRangeKernel(
+            s_mark_cps,
+            cl::NullRange,
+            globalSize,
+            localSize
+        );
+        
+
+        //s_mark_cps(rct, ext, dom, flag_buf);
+        
+        rect_list_t bnds;
+
+        get_boundry_rects(from_cell_pair(rct), from_cell_pair(ext), bnds);
+
+        for (uint i = 0; i < bnds.size(); ++i)
+        {
+            cell_pair_t bnd = to_cell_pair(bnds[i]);
+            cell_t  bnd_dir = to_cell(bnds[i].get_normal());
+
+            s_mark_boundry_cps.setArg(0, rct);
+            s_mark_boundry_cps.setArg(1, ext);
+            s_mark_boundry_cps.setArg(2, dom);
+            s_mark_boundry_cps.setArg(3, bnd);
+            s_mark_boundry_cps.setArg(4, bnd_dir);
+            s_mark_boundry_cps.setArg(5, flag_buf);
+
+            //s_mark_boundry_cps(rct, ext, dom, bnd, bnd_dir, flag_buf);
+
+            s_queue.enqueueNDRangeKernel(
+                s_mark_boundry_cps,
+                cl::NullRange,
+                globalSize,
+                localSize
+            );
+        }
+
+        s_queue.enqueueCopyBufferToImage(flag_buf, flag_img, 0, to_size(0, 0, 0), flag_size);
+        s_queue.enqueueReadBuffer(flag_buf, false, 0, cell_ct * sizeof(cell_flag_t), h_flag);
+
+        s_queue.finish();
+        
+
+      	/*
         s_assign_max_facet_edge
             (func_img,flag_img,rct.lo,rct.hi,ext.lo,ext.hi,dom.lo,dom.hi,flag_buf);
         s_queue.finish();
@@ -509,12 +901,16 @@ namespace grid
         s_queue.enqueueReadBuffer(flag_buf,false,0,cell_ct*sizeof(cell_flag_t),h_flag);
 
         s_queue.finish();
+        */
+
+
       }
       catch(cl::Error err)
       {
         ENSURES(false)<<"ERROR: "<< err.what()<< "("<< err.err()<< ")"<< std::endl;
         throw;
       }
+      
     }
 
     void __count_and_scan_cps
@@ -530,7 +926,27 @@ namespace grid
         cp_count_buf = cl::Buffer(s_context,CL_MEM_READ_WRITE,sizeof(int)*WG_SIZE);
         cl::Buffer group_sums_buf(s_context,CL_MEM_READ_WRITE,sizeof(int)*(WG_NUM));
 
-        s_count_cps(rct,ext,dom,flag_img,cp_count_buf);
+        //s_count_cps(rct,ext,dom,flag_img,cp_count_buf);
+
+
+        s_count_cps.setArg(0, rct);
+        s_count_cps.setArg(1, ext);
+        s_count_cps.setArg(2, dom);
+        s_count_cps.setArg(3, flag_img);
+        s_count_cps.setArg(4, cp_count_buf);
+
+        cl::NDRange globalSize(1024); // Total number of work items
+        cl::NDRange localSize(256);          // Work items per work group
+
+      	s_queue.enqueueNDRangeKernel(
+            s_count_cps,
+            cl::NullRange,          
+            globalSize,            
+            localSize               
+        );
+
+        s_queue.finish();
+        
 
         rect_list_t bnds;
 
@@ -541,13 +957,54 @@ namespace grid
           cell_pair_t bnd = to_cell_pair(bnds[i]);
           cell_t  bnd_dir = to_cell(bnds[i].get_normal());
 
-          s_count_boundry_cps(rct,ext,dom,bnd,bnd_dir,flag_img,cp_count_buf);
+          s_count_boundry_cps.setArg(0, rct);
+          s_count_boundry_cps.setArg(1, ext);
+          s_count_boundry_cps.setArg(2, bnd);
+          s_count_boundry_cps.setArg(3, bnd_dir);
+          s_count_boundry_cps.setArg(4, dom);
+          s_count_boundry_cps.setArg(5, flag_img);
+          s_count_boundry_cps.setArg(6, cp_count_buf);
+          s_queue.enqueueNDRangeKernel(
+              s_count_boundry_cps,    
+              cl::NullRange,          
+              globalSize,            
+              localSize               
+          );
+          //s_count_boundry_cps(rct,ext,dom,bnd,bnd_dir,flag_img,cp_count_buf);
         }
-
-        s_scan_local_sums(cp_count_buf,group_sums_buf);
-        s_scan_group_sums(group_sums_buf);
-        s_scan_update_sums(cp_count_buf,group_sums_buf);
         s_queue.finish();
+
+        s_scan_local_sums.setArg(0, cp_count_buf);
+        s_scan_local_sums.setArg(1, group_sums_buf);
+        s_queue.enqueueNDRangeKernel(
+            s_scan_local_sums,
+            cl::NullRange,
+            globalSize,
+            localSize
+        );
+
+        s_scan_group_sums.setArg(0, group_sums_buf);
+        s_queue.enqueueNDRangeKernel(
+            s_scan_group_sums,
+            cl::NullRange,
+            globalSize,
+            localSize
+        );
+
+        s_scan_update_sums.setArg(0, cp_count_buf);
+        s_scan_update_sums.setArg(1, group_sums_buf);
+        s_queue.enqueueNDRangeKernel(
+            s_scan_update_sums,
+            cl::NullRange,
+            globalSize,
+            localSize
+        );
+
+
+        //s_scan_local_sums(cp_count_buf,group_sums_buf);
+        //s_scan_group_sums(group_sums_buf);
+        //s_scan_update_sums(cp_count_buf,group_sums_buf);
+        
         s_queue.enqueueReadBuffer(group_sums_buf,false,sizeof(int)*(WG_NUM-1),sizeof(int),&num_cps);
         s_queue.finish();
 
@@ -581,8 +1038,32 @@ namespace grid
         cl::Buffer cp_index_buf(s_context,CL_MEM_READ_WRITE,sizeof(int8_t)*num_cps);
         cl::Buffer cp_func_buf(s_context,CL_MEM_READ_WRITE,sizeof(cell_fn_t)*num_cps);
 
-        s_save_cps(rct,ext,dom,func_img,flag_img,cp_offset_buf,cp_cellid_buf,
-                   cp_index_buf,cp_pair_idx_buf,cp_vertid_buf,cp_func_buf);
+        cl::NDRange globalSize(1024); // Total number of work items
+        cl::NDRange localSize(256);          // Work items per work group
+
+        s_save_cps.setArg(0, rct);
+        s_save_cps.setArg(1, ext);
+        s_save_cps.setArg(2, dom);
+        s_save_cps.setArg(3, func_img);
+        s_save_cps.setArg(4, flag_img);
+        s_save_cps.setArg(5, cp_offset_buf);
+        s_save_cps.setArg(6, cp_cellid_buf);
+        s_save_cps.setArg(7, cp_index_buf);
+        s_save_cps.setArg(8, cp_pair_idx_buf);
+        s_save_cps.setArg(9, cp_vertid_buf);
+        s_save_cps.setArg(10, cp_func_buf);
+
+        s_queue.enqueueNDRangeKernel(
+            s_save_cps,
+            cl::NullRange,
+            globalSize,
+            localSize
+        );
+        s_queue.finish();
+
+
+        //s_save_cps(rct,ext,dom,func_img,flag_img,cp_offset_buf,cp_cellid_buf,
+        //           cp_index_buf,cp_pair_idx_buf,cp_vertid_buf,cp_func_buf);
 
         rect_list_t bnds;
 
@@ -594,9 +1075,31 @@ namespace grid
           cell_t  bnd_dir = to_cell(bnds[i].get_normal());
 
 
-          s_save_boundry_cps(rct,ext,dom,bnd,bnd_dir,func_img,flag_img,
-                             cp_offset_buf,cp_cellid_buf,cp_index_buf,
-                             cp_pair_idx_buf,cp_vertid_buf,cp_func_buf);
+
+          s_save_boundry_cps.setArg(0, rct);
+          s_save_boundry_cps.setArg(1, ext);
+          s_save_boundry_cps.setArg(2, dom);
+          s_save_boundry_cps.setArg(3, bnd);
+          s_save_boundry_cps.setArg(4, bnd_dir);
+          s_save_boundry_cps.setArg(5, func_img);
+          s_save_boundry_cps.setArg(6, flag_img);
+          s_save_boundry_cps.setArg(7, cp_offset_buf);
+          s_save_boundry_cps.setArg(8, cp_cellid_buf);
+          s_save_boundry_cps.setArg(9, cp_index_buf);
+          s_save_boundry_cps.setArg(10, cp_pair_idx_buf);
+          s_save_boundry_cps.setArg(11, cp_vertid_buf);
+          s_save_boundry_cps.setArg(12, cp_func_buf);
+
+          s_queue.enqueueNDRangeKernel(
+              s_save_boundry_cps,
+              cl::NullRange,
+              globalSize,
+              localSize
+          );
+
+          //s_save_boundry_cps(rct,ext,dom,bnd,bnd_dir,func_img,flag_img,
+          //                   cp_offset_buf,cp_cellid_buf,cp_index_buf,
+          //                   cp_pair_idx_buf,cp_vertid_buf,cp_func_buf);
         }
 
         s_queue.finish();
@@ -628,21 +1131,29 @@ namespace grid
 
       __assign_gradient(rct,ext,dom,func_img,*flag_img,
                         //ds->m_vert_fns.data(),ds->m_cell_flags.data());
-                        ds->m_vert_fns.getData(),ds->m_cell_flags.getData());
-
+                        ds->m_vert_fns.data.data(),ds->m_cell_flags.data.data());
+      
       if(msc)
       {
         cl::Buffer cp_offset_buf;
         int          num_cps;
 
-        __count_and_scan_cps(rct,ext,dom,*flag_img,cp_offset_buf,num_cps);
+       __count_and_scan_cps(rct,ext,dom,*flag_img,cp_offset_buf,num_cps);
 
         msc->resize(num_cps);
 
+        std::cout << "\nNUMBER OF CRITICAL POINTS: " << num_cps<<"\n";
+
+        
         __save_cps(rct,ext,dom,func_img,*flag_img,cp_offset_buf,num_cps,
                    msc->m_cp_cellid.data(),msc->m_cp_vertid.data(),
                    msc->m_cp_pair_idx.data(),msc->m_cp_index.data(),
                    msc->m_cp_fn.data());
+
+        for (int i = 0; i < std::min(10, msc->get_num_critpts()); ++i) {
+            std::cout << "Critical Point " << i << ": Cell ID = " << msc->m_cp_cellid[i] << std::endl;
+        }
+        
       }
     }
 
@@ -661,7 +1172,24 @@ namespace grid
         cl::Buffer own_buf2(s_context,CL_MEM_READ_WRITE,num_ex*sizeof(int));
         cl::Buffer is_updated_buf(s_context,CL_MEM_READ_WRITE,sizeof(int));
 
-        s_init_propagate(rct,ext,dom,ex_rect,flag_img,own_buf1);
+        cl::NDRange globalSize(1024); // Total number of work items
+        cl::NDRange localSize(256);          // Work items per work group
+
+        s_init_propagate.setArg(0, rct);
+        s_init_propagate.setArg(1, ext);
+        s_init_propagate.setArg(2, dom);
+        s_init_propagate.setArg(3, ex_rect);
+        s_init_propagate.setArg(4, flag_img);
+        s_init_propagate.setArg(5, own_buf1);
+
+        s_queue.enqueueNDRangeKernel(
+            s_init_propagate,
+            cl::NullRange,
+            globalSize,
+            localSize
+        );
+
+        //s_init_propagate(rct,ext,dom,ex_rect,flag_img,own_buf1);
 
         int is_updated;
 
@@ -670,8 +1198,25 @@ namespace grid
           is_updated = 0;
 
           s_queue.enqueueWriteBuffer(is_updated_buf,true,0,sizeof(int),&is_updated);
-          s_propagate(rct,ext,dom,ex_rect,own_buf1,own_buf2,is_updated_buf);
-          s_queue.finish();
+
+          s_propagate.setArg(0, rct);
+          s_propagate.setArg(1, ext);
+          s_propagate.setArg(2, dom);
+          s_propagate.setArg(3, ex_rect);
+          s_propagate.setArg(4, own_buf1);
+          s_propagate.setArg(5, own_buf2);
+          s_propagate.setArg(6, is_updated_buf);
+
+          s_queue.enqueueNDRangeKernel(
+              s_propagate,
+              cl::NullRange,
+              globalSize,
+              localSize
+          );
+        	//s_propagate(rct,ext,dom,ex_rect,own_buf1,own_buf2,is_updated_buf);
+
+
+        	s_queue.finish();
 
           s_queue.enqueueReadBuffer(is_updated_buf,true,0,sizeof(int),&is_updated);
           s_queue.finish();
@@ -700,9 +1245,9 @@ namespace grid
       cell_pair_t min_rect = to_cell_pair(ds->get_extrema_rect<GDIR_ASC>());
 
       //__owner_extrema(rct,ext,dom,max_rect,*flag_img,ds->m_owner_maxima.data());
-      __owner_extrema(rct,ext,dom,max_rect,*flag_img,ds->m_owner_maxima.getData());
+      __owner_extrema(rct,ext,dom,max_rect,*flag_img,ds->m_owner_maxima.data.data());
      // __owner_extrema(rct,ext,dom,min_rect,*flag_img,ds->m_owner_minima.data());
-      __owner_extrema(rct,ext,dom,min_rect,*flag_img,ds->m_owner_minima.getData());
+      __owner_extrema(rct,ext,dom,min_rect,*flag_img,ds->m_owner_minima.data.data());
     }
 
 //    void assign_gradient_and_owner_extrema(dataset_ptr_t ds)
@@ -738,14 +1283,50 @@ namespace grid
        )
     {
       int num_ex  = num_cells2(from_cell_pair(ex_rect));
-
+      cl::NDRange globalSize(1024); // Total number of work items
+      cl::NDRange localSize(256);          // Work items per work group
       try
       {
         cl::Buffer own_buf1(s_context,CL_MEM_READ_WRITE|CL_MEM_COPY_HOST_PTR,num_ex*sizeof(int),h_ex_own);
         cl::Buffer own_buf2(s_context,CL_MEM_READ_WRITE|CL_MEM_COPY_HOST_PTR,num_ex*sizeof(int),h_ex_own);
 
-        s_init_update_to_surv_cp_no(rct,ext,dom,ex_rect,cp_cellid_buf,surv_cp_no_buf,num_cps,own_buf1);
-        s_update_to_surv_cp_no(rct,ext,dom,ex_rect,own_buf1,own_buf2);
+
+        s_init_update_to_surv_cp_no.setArg(0, rct);
+        s_init_update_to_surv_cp_no.setArg(1,ext);
+        s_init_update_to_surv_cp_no.setArg(2,dom);
+        s_init_update_to_surv_cp_no.setArg(3,cp_cellid_buf);
+        s_init_update_to_surv_cp_no.setArg(4,surv_cp_no_buf);
+        s_init_update_to_surv_cp_no.setArg(5,num_cps);
+        s_init_update_to_surv_cp_no.setArg(6,own_buf1);
+
+        s_queue.enqueueNDRangeKernel(
+            s_init_update_to_surv_cp_no,
+            cl::NullRange,
+            globalSize,
+            localSize
+        );
+
+        //s_init_update_to_surv_cp_no(rct,ext,dom,ex_rect,cp_cellid_buf,surv_cp_no_buf,num_cps,own_buf1);
+
+
+        s_update_to_surv_cp_no.setArg(0, rct);
+        s_update_to_surv_cp_no.setArg(1, ext);
+        s_update_to_surv_cp_no.setArg(2, dom);
+        s_update_to_surv_cp_no.setArg(3, ex_rect);
+        s_update_to_surv_cp_no.setArg(4, own_buf1);
+        s_update_to_surv_cp_no.setArg(5, own_buf2);
+
+        s_queue.enqueueNDRangeKernel(
+            s_update_to_surv_cp_no,
+            cl::NullRange,
+            globalSize,
+            localSize
+        );
+
+
+      	//s_update_to_surv_cp_no(rct,ext,dom,ex_rect,own_buf1,own_buf2);
+
+
 
         s_queue.finish();
 
@@ -793,11 +1374,11 @@ namespace grid
 
       __update_to_surv_extrema(rct,ext,dom,max_rect,cp_cellid_buf,surv_cp_no_buf,
                                //msc->get_num_critpts(),ds->m_owner_maxima.data());
-                               msc->get_num_critpts(),ds->m_owner_maxima.getData());
+                               msc->get_num_critpts(),ds->m_owner_maxima.data.data());
 
       __update_to_surv_extrema(rct,ext,dom,min_rect,cp_cellid_buf,surv_cp_no_buf,
                                //msc->get_num_critpts(),ds->m_owner_minima.data());
-                               msc->get_num_critpts(),ds->m_owner_minima.getData());
+                               msc->get_num_critpts(),ds->m_owner_minima.data.data());
 
     }
   }

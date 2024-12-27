@@ -183,7 +183,7 @@ inline int cell_dim(const cell_t c)
   return (c.x&1) + (c.y&1) + (c.z&1);
 }
 
-inline cell_t flag_to_mxfct(const cell_t c,const flag_t f)
+inline cell_t flag_to_mxfct(cell_t c,const flag_t f)
 {
   short d = ((f&0x07) - 1)/2 ;
   short r = ((f&0x07) - 1)%2 ;
