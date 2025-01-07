@@ -47,7 +47,21 @@ ELSE (APPLE)
 	    # On Win32 search relative to the library
 	    FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h PATHS "${_OPENCL_INC_CAND}")
 	    FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp PATHS "${_OPENCL_INC_CAND}")
-	
+
+		
+		if(NOT DEFINED CUDA_PATH)
+		  
+		  message(STATUS "you may need to manually set your CUDA_PATH - find it by going to cmd and typing 'echo %CUDA_PATH%' ")
+		  message(STATUS "Assuming CUDA_PATH found at C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.5")
+		
+		  set(CUDA_PATH "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.5")
+		  
+		  message(STATUS "Cuda path = ${CUDA_PATH}")
+		  endif()
+
+		set(CUDA_INCLUDE_DIRS  "${CUDA_PATH}\\include")
+		set(OPENCL_LIBRARIES "${CUDA_PATH}\\lib\\x64\\OpenCL.lib")
+
 	ELSE (WIN32)
 
             # Unix style platforms
