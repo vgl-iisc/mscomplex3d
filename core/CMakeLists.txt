@@ -10,7 +10,7 @@ find_package(OpenCL REQUIRED)
 
 find_package(OpenMP REQUIRED)
 
-find_package(Boost 1.48 COMPONENTS program_options system date_time REQUIRED)
+#find_package(Boost 1.48 COMPONENTS program_options system date_time REQUIRED)
 
 set(OPENCL_NUM_WORK_ITEMS_PER_GROUP 256 CACHE STRING
       "number of work items in an opencl workgroup" )
@@ -19,7 +19,7 @@ set(OPENCL_NUM_WORK_GROUPS 32 CACHE STRING
       "number of work items in an opencl workgroup")
 
 include_directories(
-  ${Boost_INCLUDE_DIRS}
+#  ${Boost_INCLUDE_DIRS}
   ${OPENCL_INCLUDE_DIRS}
 
   ${CMAKE_CURRENT_BINARY_DIR}
@@ -90,7 +90,7 @@ set(${PROJECT_NAME}_SRCS ${${PROJECT_NAME}_SRCS}
 
     OpenCL/grid_dataset_cl.h
     OpenCL/grid_dataset_cl.cpp
-    OpenCL/cl.hpp
+    OpenCL/opencl.hpp
     grid_dataset_cl_sources.h
     grid_dataset_cl_sources.cpp
 )
@@ -110,6 +110,7 @@ add_library(${PROJECT_NAME} OBJECT ${${PROJECT_NAME}_SRCS})
 option(BUILD_TOOL "command line tool" ON)
 if(BUILD_TOOL)
     add_executable(mscomplex3d  $<TARGET_OBJECTS:mscomplex3d-core> main.cpp ${${PROJECT_NAME}_OPENCL_SRCS})
-    target_link_libraries(mscomplex3d  ${Boost_LIBRARIES} ${OPENCL_LIBRARIES})
+#    target_link_libraries(mscomplex3d  ${Boost_LIBRARIES} ${OPENCL_LIBRARIES})
+    target_link_libraries(mscomplex3d ${OPENCL_LIBRARIES})
     install(TARGETS mscomplex3d DESTINATION ${MSCOMPLEX3D_INSTALL_DIR_BIN})
 endif(BUILD_TOOL)

@@ -138,34 +138,37 @@ np::ndarray range_to_ndarray(const rng_t & rng)
 template <typename DTYPE, int NCOL, typename rng_t>
 py::array_t<DTYPE> range_to_ndarray(rng_t& rng) {
     // Ensure that rng_t is a valid range
-    //static_assert(std::ranges::range<rng_t>, "rng_t must be a valid range.");
+    static_assert(std::ranges::range<rng_t>, "rng_t must be a valid range.");
 
     // Deduce the value type from the range
-    //using T = std::iter_value_t<std::ranges::iterator_t<rng_t>>;
+    using T = std::iter_value_t<std::ranges::iterator_t<rng_t>>;
 
     // Ensure size compatibility between the data types
     //static_assert(sizeof(DTYPE) * NCOL == sizeof(T), "Size mismatch between DTYPE * NCOL and T.");
     //static_assert(NCOL > 0, "NCOL must be a positive integer.");
 
     // Get the number of elements in the range
-    //ssize_t N = std::ranges::distance(rng);
+    ssize_t N = std::ranges::distance(rng);
 
     // Determine the shape of the array
-    //std::vector<ssize_t> shape = (NCOL == 1) ? std::vector<ssize_t>{N} : std::vector<ssize_t>{ N, NCOL };
+    std::vector<ssize_t> shape = (NCOL == 1) ? std::vector<ssize_t>{N} : std::vector<ssize_t>{ N, NCOL };
 
     // Create a zero-initialized NumPy array
-    py::array_t<DTYPE> arr(1);
+    py::array_t<DTYPE> arr(shape);
+
+    //std::cout << "\nARRAY FOUND: \n";
+   // py::print(arr);
 
     // Get a pointer to the data in the array
-    //auto buf = arr.request(); // Get buffer information
-    //char* ptr = static_cast<char*>(buf.ptr);
+    auto buf = arr.request(); // Get buffer information
+    char* ptr = static_cast<char*>(buf.ptr);
 
     // Copy data from the range into the array
-    //for (const auto& v : rng) { // Range-based for loop works for all ranges
-      //  static_assert(std::is_trivially_copyable_v<T>, "T must be trivially copyable.");
-        //std::memcpy(ptr, &v, sizeof(T));
-        //ptr += sizeof(T);
-    //}
+    for (const auto& v : rng) { // Range-based for loop works for all ranges
+        static_assert(std::is_trivially_copyable_v<T>, "T must be trivially copyable.");
+        std::memcpy(ptr, &v, sizeof(T));
+        ptr += sizeof(T);
+    }
     return arr;
 }
 
@@ -200,7 +203,14 @@ public:
     std::fstream fs(f.c_str(),std::ios::in|std::ios::binary);
     ENSUREV(fs.is_open(),"file not found!!",f);
     load_bin(fs);
-    ds->load_bin(fs);
+
+    //ds->load_bin(fs);
+    if (!ds) {
+        throw std::runtime_error("ds is null");
+    }
+    else
+    ds->m_rect = m_rect;
+
     DLOG << "Exited  :";
   }
 
@@ -216,8 +226,12 @@ public:
 
   template <eGDIR dir>
   py::array_t<int> conn(int cp) {
-      ENSURES(is_in_range(cp, 0, get_num_critpts())) << "out of range " << SVAR(cp);
-      TLOG << SVAR(cp); return range_to_ndarray<int, 2>(m_conn[dir][cp]);
+
+  	ENSURES(is_in_range(cp, 0, get_num_critpts())) << "out of range " << SVAR(cp);
+
+  	TLOG << SVAR(cp);
+
+  	return range_to_ndarray<int, 2>(m_conn[dir][cp]);
   }
 
   /*-------------------------------------------------------------------------*/
@@ -386,7 +400,7 @@ public:
           << "out of range " << SVAR(cp);
       ENSURES(is_in_range(hver, 0, m_canc_list.size() + 1))
           << "hversion not in range " << SVAR(hver);
-      BOOST_STATIC_ASSERT(dir == ASC || dir == DES);
+      //BOOST_STATIC_ASSERT(dir == ASC || dir == DES);
 
       int_list_t l;
 
@@ -532,6 +546,9 @@ public:
           return this->is_not_canceled(item);
               });
 
+      
+      
+
       TLOG << "Computed:";
 
       if (i == -1) return range_to_ndarray<int, 1>(rng);
@@ -541,6 +558,13 @@ public:
               return this->is_index_i_cp_(x, i);
               });
           std::vector<int> filtered_vector(filtered_rng.begin(), filtered_rng.end());
+
+        /*
+          std::cout << "\nRNG:\n";
+          for (const auto& element : filtered_rng) {
+              std::cout << element << std::endl;
+          }
+          */
           return range_to_ndarray<int, 1>(filtered_rng);
       }
   	TLOG << "Exited  :";
@@ -704,7 +728,7 @@ void mscomplex_compute_bin
 */
 
 void mscomplex_compute_bin
-(mscomplex_pyms3d_ptr_t msc,
+(mscomplex_pyms3d_ptr_t &msc,
     std::string            bin_file,
     py::tuple              tp)
 {
@@ -718,16 +742,20 @@ void mscomplex_compute_bin
     rect_t dom(cellid_t::zero, (size - cellid_t::one) * 2);
 
     DLOG << "Entered :"
-        << endl << "\t" << SVAR(bin_file)
-        << endl << "\t" << SVAR(size);
+	<< endl << "\t" << SVAR(bin_file)
+	<< endl << "\t" << SVAR(size);
 
     msc->m_rect = dom;
     msc->m_domain_rect = dom;
     msc->m_ext_rect = dom;
-
+    
     msc->ds.reset(new dataset_t(dom, dom, dom));
-    msc->ds->init(bin_file);
-    msc->ds->computeMsGraph(msc);
+
+	msc->ds->init(bin_file);
+
+	msc->ds->computeMsGraph(msc);
+
+    std::cout << "crit point size: " <<  msc->m_cp_cellid.size();
 
     DLOG << "Exited  :";
 }
@@ -943,20 +971,36 @@ void wrap_mscomplex_t()
 }*/
 
 
-#include <pybind11/pybind11.h>
-
-namespace py = pybind11;
-
 void init_mscomplex(py::module_& m) {
 
-
+    
     py::class_<mscomplex_t, std::shared_ptr<mscomplex_t>>(m, "MsComplex")
         .def("num_cps", &mscomplex_t::get_num_critpts, "Number of Critical Points")
         .def("cp_func", &mscomplex_t::fn, "Function value at critical point i")
         .def("cp_index", &mscomplex_t::index, "Morse index of critical point i")
         .def("cp_pairid", &mscomplex_t::pair_idx, "Index of the paired critical point i (-1 if unpaired)")
         .def("cp_vertid", &mscomplex_t::vertid, "Vertex id of the critical cell")
-        .def("cp_cellid", &mscomplex_t::cellid, "Cell id of the critical cell");
+        .def("cp_cellid", &mscomplex_t::cellid, "Cell id of the critical cell")
+        .def("simplify_pers", &mscomplex_t::simplify_pers,
+            py::arg("thresh") = 1.0,
+            py::arg("is_nrm") = true,
+            py::arg("nmax") = 0,
+            py::arg("nmin") = 0,
+            R"doc(
+Simplify the Morse-Smale complex using topological persistence.
+
+Parameters:
+    thresh: Persistence threshold.
+    is_nrm: Indicates if the threshold is normalized to [0,1].
+            If false, the threshold is in the scale of the input function.
+    nmax, nmin: Number of maxima/minima that should be retained.
+                Set to 0 to ignore.
+
+Note:
+    Any combination of the above criteria may be set.
+    Simplification will stop when any of the criteria is reached.
+    Call only after the compute function is called.
+)doc");
 
     py::class_<mscomplex_pyms3d_t, mscomplex_t, std::shared_ptr<mscomplex_pyms3d_t>>(m, "MsComplexPyms3D")
         .def(py::init<>())
@@ -971,8 +1015,12 @@ void init_mscomplex(py::module_& m) {
         .def("des", &mscomplex_pyms3d_t::conn<DES>, "List of descending cps connected to a critical point")
         .def("primal_points", &mscomplex_pyms3d_t::points<CC_PRIM>, "Get primal grid point coordinates")
         .def("dual_points", &mscomplex_pyms3d_t::points<CC_DUAL>, "Get dual grid point coordinates")
-        //.def("compute_bin", &mscomplex_pyms3d_t::compute_bin, "Compute the MsComplex from a raw/bin file")
-        .def("compute_arr", &mscomplex_pyms3d_t::compute_arr, "Compute the MsComplex from a 3D numpy array");
+        .def("compute_bin", &mscomplex_compute_bin, "Compute the MsComplex from a raw/bin file")
+        .def("compute_arr", &mscomplex_pyms3d_t::compute_arr, "Compute the MsComplex from a 3D numpy array")
+        .def("load", &mscomplex_pyms3d_t::load, "Load mscomplex from file")
+        .def("save", &mscomplex_pyms3d_t::save, "Save mscomplex to file");
+		
+        
 }
 
 
@@ -1010,10 +1058,15 @@ BOOST_PYTHON_MODULE(pyms3d)
 
   //wrap_mscomplex_t();
 }*/
-
-PYBIND11_MODULE(mscomplex, m) {
+int add(int a, int b) {
+    return a + b;
+}
+PYBIND11_MODULE(pyms3d_core, m) {
     // Call the function that registers the bindings
     init_mscomplex(m);
+        m.def("add", &add, "A function that adds two numbers");
+        m.def("get_hw_info",&get_hw_info);
+
 }
 /*
 int main(int argc, char **argv)

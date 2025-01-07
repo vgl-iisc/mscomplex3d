@@ -47,6 +47,8 @@ void dataset_t::init(const string &filename)
   uint num_pts   = pt_span[0]*pt_span[1]*pt_span[2];
   auto wd = std::filesystem::current_path();
 
+  std::cout << "\nfile size: " << pt_span[0] <<" x " <<pt_span[1]<<" x "<< pt_span[2];
+
   ifstream ifs(filename.c_str(),ios::in|ios::binary);
   //ENSURE(ifs.is_open(),"unable to open file " + filename);
   ENSUREV2(ifs.is_open(),"unable to open file ", filename,wd);
@@ -62,8 +64,6 @@ void dataset_t::init(const string &filename)
 
   ifs.seekg(0,ios::end);
   ENSURE(uint(ifs.tellg())==num_pts*sizeof(cell_fn_t),"file/piece size mismatch");
-
-  //load_bin(ifs);
 
   ifs.close();
 }
@@ -149,7 +149,11 @@ inline cellid_t dataset_t::get_cell_vert(cellid_t c) const
 
 inline cellid_t flag_to_mxfct(cellid_t c,cell_flag_t f)
 {
+    	//debug here
   cell_flag_t d = f&0x07;
+        if(!(d>=1 && d<=7))
+  printf("\nf = 0x%x, d = %d\n", f, d);
+  //std::cout << f;
   ASSERT(is_in_range(d,1,7));
   c[(d-1)>>1] += (d&1)?(-1):(+1);
   return c;
@@ -212,7 +216,9 @@ cellid_t dataset_t::getCellPairId (cellid_t c) const
 /*---------------------------------------------------------------------------*/
 
 cellid_t dataset_t::getCellMaxFacetId (cellid_t c) const
-{return flag_to_mxfct(c,m_cell_flags(c));}
+    {
+	    return flag_to_mxfct(c,m_cell_flags(c));
+    }
 
 /*---------------------------------------------------------------------------*/
 

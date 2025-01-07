@@ -106,10 +106,15 @@ inline void mark_reachable(const range_t &rng,dataset_ptr_t ds)
 template <int dim,eGDIR dir>
 inline bool cellid_int_pair_cmp
 (dataset_ptr_t ds, cellid_int_pair_t c1,cellid_int_pair_t c2)
-{return ds->compare_cells_pp_<dir,dim>(c1.first,c2.first);}
+{
+	return ds->compare_cells_pp_<dir,dim>(c1.first,c2.first);
+}
+
+
+
 
 template <int dim,eGDIR dir>
-inline void compute_inc_pairs_pq
+inline void  compute_inc_pairs_pq
 (cellid_t s, dataset_ptr_t ds, mscomplex_connector_t &msc_connector)
 {
   const int pdim = (dir == DES)?(dim - 1):(dim + 1);
@@ -120,22 +125,45 @@ inline void compute_inc_pairs_pq
   //auto cmp_dim = bind(cellid_int_pair_cmp< dim, dir>,ds,_1,_2);
   //auto cmp_pdim = bind(cellid_int_pair_cmp<pdim, dir>,ds,_1,_2);
 
-  auto cmp_dim=std::bind(cellid_int_pair_cmp < dim,dir>, ds, std::placeholders::_1, std::placeholders::_2);
+  /*auto cmp_dim = std::bind(cellid_int_pair_cmp < dim, dir>, ds, std::placeholders::_1, std::placeholders::_2);
   auto cmp_pdim=std::bind(cellid_int_pair_cmp < pdim,dir>, ds, std::placeholders::_1, std::placeholders::_2);
-
+  
   priority_queue<cellid_int_pair_t,cellid_int_pair_list_t, decltype (cmp_dim) >
       pq(cmp_dim );
   priority_queue<cellid_int_pair_t,cellid_int_pair_list_t, decltype (cmp_pdim)>
       inc_pq(cmp_pdim);
+      */
+
+  auto cmp_dim = [ds](const cellid_int_pair_t& lhs, const cellid_int_pair_t& rhs) {
+      return cellid_int_pair_cmp<dim, dir>(ds, lhs, rhs);
+  };
+
+  //auto cmp_pdim = [ds](const cellid_int_pair_t& lhs, const cellid_int_pair_t& rhs) {
+  //    return cellid_int_pair_cmp<pdim, dir>(ds, lhs, rhs);
+  //};
+
+  //dir 0 dim 2
+
+  std::priority_queue<cellid_int_pair_t, cellid_int_pair_list_t, decltype(cmp_dim)> pq(cmp_dim);
+
+
+  //std::priority_queue<cellid_int_pair_t, cellid_int_pair_list_t, decltype(cmp_pdim)> inc_pq(cmp_pdim);
 
   cellid_t f[40];
 
-  pq.push(make_pair(s,1));
+  
+  int j = 0;
+  n_vector_t<short,3> a{ 1, 2, 3 };
+  cellid_t p;
+  pq.push(make_pair(a, 10));  
 
+	pq.push(make_pair(s,1));
+  
+
+  /*
   while(pq.size() != 0 )
   {
-    cellid_t c = pq.top().first;
-
+  	cellid_t c = pq.top().first;
     ASSERT(ds->getCellDim(c) == dim);
 
     int n = 0 ;
@@ -143,27 +171,37 @@ inline void compute_inc_pairs_pq
     do {n += pq.top().second; pq.pop();}
     while(pq.size() != 0 && pq.top().first == c);
 
+    
     for(cellid_t *b = f,*e = f + ds->get_cets<dir>(c,f);b != e; ++b)
     {
+        
       if(ds->isCellCritical(*b))
       {
         ASSERT(ds->getCellDim(*b) == pdim);
-        inc_pq.push(make_pair(*b,n));
+        std::cout << "Cell ID *b: " << *b << std::endl;
+        //inc_pq.push(make_pair(*b,n));
       }
       else
       {
         cellid_t p = ds->getCellPairId(*b);
-
+          
         if ((p != c) &&
             (no_vcheck||ds->isCellVisited(*b)) &&
             (ds->getCellDim(p) == dim ))
         {
-          pq.push(make_pair(p,n));
+            std::cout << "Paired Cell ID p: " << p << std::endl;
+
+          //pq.push(make_pair(p,n));
         }
       }
+      
     }
+    
+    j++;
   }
-
+  */
+  
+    /*
   while(inc_pq.size() != 0 )
   {
     cellid_t p = inc_pq.top().first;
@@ -177,6 +215,7 @@ inline void compute_inc_pairs_pq
 
     msc_connector.connect_cells(s,p,n);
   }
+  */
 }
 
 /*---------------------------------------------------------------------------*/
@@ -308,7 +347,7 @@ void computeConnections(mscomplex_ptr_t msc,dataset_ptr_t ds,
              std::back_inserter(cps_1asc));
     */
 
-
+    
     std::for_each(
         msc->cpno_range().begin(), msc->cpno_range().end(),
         [&](const auto& x) {
@@ -317,7 +356,7 @@ void computeConnections(mscomplex_ptr_t msc,dataset_ptr_t ds,
             }
         }
     );
-
+    
     mark_reachable<1,GDIR_ASC,decltype (cps_1asc)>(cps_1asc,ds);
   }
 
@@ -328,25 +367,24 @@ void computeConnections(mscomplex_ptr_t msc,dataset_ptr_t ds,
            ba::transformed(bind(&mscomplex_t::cellid,boost::cref(msc),_1)),
            std::back_inserter(cps));
            */
-
+  
   std::for_each(
       msc->cpno_range().begin(), msc->cpno_range().end(),
       [&](const auto& x) {
           if (is_required_cp<dim, dir>(*msc, x)) {
-              cps.push_back(std::bind(&mscomplex_t::cellid, msc, x)());
+              cps.push_back(msc->cellid(x)); 
           }
       }
   );
+  
+  std::cout << "\n BEFORE COMPUTING INC PAIRS \n";
 
-    
-  std::cout << " cpno range: " << msc->cpno_range().size();
-
-
-  #pragma omp parallel for
+	//#pragma omp parallel for
   for(int i = 0 ; i < cps.size(); ++i)
   {
     compute_inc_pairs_pq<dim,dir>(cps[i],ds,msc_connector);
   }
+  
 }
 
 /*---------------------------------------------------------------------------*/
@@ -405,31 +443,33 @@ void  dataset_t::computeMsGraph(mscomplex_ptr_t msc)
 
     mscomplex_connector_t msc_connector(msc);
     msc_connector.init();
-    /*
-    std::cout << "\nComputing MS Graph: \n";
-
+    
+    std::cout << "\nComputing MS Graph \n";
+    
     #pragma omp sections
     {
       #pragma omp section
-      {computeConnections<2,DES>(msc,shared_from_this(),msc_connector);}
+      {
+	      computeConnections<2,DES>(msc,shared_from_this(),msc_connector);
+      }
 
       #pragma omp section
       {
         if(opencl::is_gpu_context())
         {
-          w.owner_extrema(shared_from_this());
-          computeExtremaConnections<DES>(msc,shared_from_this(),msc_connector);
-          computeExtremaConnections<ASC>(msc,shared_from_this(),msc_connector);
+          //w.owner_extrema(shared_from_this());
+          //computeExtremaConnections<DES>(msc,shared_from_this(),msc_connector);
+          //computeExtremaConnections<ASC>(msc,shared_from_this(),msc_connector);
         }
         else
         {
-          computeConnections<2,ASC>(msc,shared_from_this(),msc_connector);
-          computeConnections<1,DES>(msc,shared_from_this(),msc_connector);
+          //computeConnections<2,ASC>(msc,shared_from_this(),msc_connector);
+          //computeConnections<1,DES>(msc,shared_from_this(),msc_connector);
         }
       }
-
+      
     }
-  */
+  
 }
 /*---------------------------------------------------------------------------*/
 

@@ -5,7 +5,6 @@
 
 //#include <boost/shared_ptr.hpp>
 
-//we need to somehow remove this
 //#include <boost/multi_array.hpp>
 
 #include <aabb.h>

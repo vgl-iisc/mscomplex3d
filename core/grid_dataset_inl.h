@@ -174,9 +174,6 @@ inline bool dataset_t::compare_cells_orig<0>(const cellid_t & c1, const cellid_t
   cell_fn_t f1 = m_vert_fns(c1[0] / 2, c1[1] / 2, c1[2] / 2);
   cell_fn_t f2 = m_vert_fns(c2[0] / 2, c2[1] / 2, c2[2] / 2);
 
-
-
-
   if (f1 != f2)
     return f1 < f2;
 
@@ -186,17 +183,22 @@ inline bool dataset_t::compare_cells_orig<0>(const cellid_t & c1, const cellid_t
 /*---------------------------------------------------------------------------*/
 
 template <int dim>
-inline bool dataset_t::compare_cells_pp(const cellid_t & c1, const cellid_t &c2) const
+inline bool dataset_t::compare_cells_pp(const cellid_t& c1, const cellid_t& c2) const
 {
-  cellid_t oc1 = c1,oc2 = c2;
+    cellid_t oc1 = c1, oc2 = c2;
+    
+    if (isCellPaired(c1) && getCellDim(getCellPairId(c1)) == dim + 1)
+        oc1 = getCellMaxFacetId(getCellPairId(c1));
 
-  if(isCellPaired(c1) && getCellDim(getCellPairId(c1)) == dim+1)
-    oc1 = getCellMaxFacetId(getCellPairId(c1));
+    //issue is here
+    //if (isCellPaired(c2) && getCellDim(getCellPairId(c2)) == dim + 1)
+        //oc2 = getCellMaxFacetId(getCellPairId(c2));
 
-  if(isCellPaired(c2) && getCellDim(getCellPairId(c2)) == dim+1)
-    oc2 = getCellMaxFacetId(getCellPairId(c2));
+    
 
-  return compare_cells_orig<dim>(oc1,oc2);
+	//return compare_cells_orig<dim>(oc1,oc2);
+
+    return false;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -205,8 +207,10 @@ template <> inline bool dataset_t::compare_cells_pp_<GDIR_DES,0>
 (cellid_t c1, cellid_t c2) const  {return compare_cells_pp<0>(c1,c2);}
 template <> inline bool dataset_t::compare_cells_pp_<GDIR_DES,1>
 (cellid_t c1, cellid_t c2) const  {return compare_cells_pp<1>(c1,c2);}
+
 template <> inline bool dataset_t::compare_cells_pp_<GDIR_DES,2>
-(cellid_t c1, cellid_t c2) const  {return compare_cells_pp<2>(c1,c2);}
+(cellid_t c1, cellid_t c2) const  {return compare_cells_pp<2>(c1,c2);} //debug this
+
 template <> inline bool dataset_t::compare_cells_pp_<GDIR_DES,3>
 (cellid_t c1, cellid_t c2) const  {return compare_cells_pp<3>(c1,c2);}
 template <> inline bool dataset_t::compare_cells_pp_<GDIR_ASC,0>

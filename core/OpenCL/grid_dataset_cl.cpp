@@ -660,21 +660,6 @@ namespace grid
             flag_size[0] > max_width || flag_size[1] > max_height || flag_size[2] > max_depth) {
             throw std::runtime_error("Invalid image dimensions for flag_img!");
         }
-
-        // Create image with alternative format for testing
-        try {
-            flag_img = cl::Image3D(s_context, CL_MEM_READ_ONLY,
-                cl::ImageFormat(CL_R, CL_UNSIGNED_INT8),
-                flag_size[0], flag_size[1], flag_size[2], 0, 0);
-            
-            std::cout << "Image created successfully." << std::endl;
-        }
-        catch (cl::Error& err) {
-            std::cerr << "Error creating image: " << err.what() << " (" << err.err() << ")" << std::endl;
-            throw;
-        }
-
-
         
         flag_img = cl::Image3D(s_context, CL_MEM_READ_ONLY,
                                cl::ImageFormat(CL_R,CL_UNSIGNED_INT8),

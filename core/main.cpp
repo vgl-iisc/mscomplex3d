@@ -19,7 +19,7 @@
 
 =========================================================================*/
 
-#include <boost/program_options.hpp>
+//#include <boost/program_options.hpp>
 
 #include <grid_dataset.h>
 #include <grid_mscomplex.h>
@@ -29,7 +29,7 @@
 
 using namespace std;
 using namespace grid;
-
+/*
 namespace bpo = boost::program_options ;
 
 void compute_mscomplex_basic(std::string filename, cellid_t size, double simp_tresh)
@@ -77,6 +77,7 @@ void compute_mscomplex_basic(std::string filename, cellid_t size, double simp_tr
             <<"===================================="<<endl;
 }
 
+*/
 
 
 int main(int ac , char **av)
@@ -98,7 +99,7 @@ int main(int ac , char **av)
   }
   */
 
-
+/*
   bpo::options_description desc("Allowed options");
   desc.add_options()
       ("help,h", "produce help message")
@@ -132,11 +133,11 @@ int main(int ac , char **av)
   }
 
   opencl::init();
-
+*/
 //  if(levels == cellid_t::zero)
-  {
-    compute_mscomplex_basic(filename,size,simp_tresh);
-  }
+  //{
+    //compute_mscomplex_basic(filename,size,simp_tresh);
+  //}
 //  else
 //  {
 //    data_manager_ptr_t gdm(new data_manager_t(filename,size,levels,simp_tresh));
