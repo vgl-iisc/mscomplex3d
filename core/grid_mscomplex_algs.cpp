@@ -15,7 +15,10 @@
 //#include "cl.hpp"
 //#include <opencl.hpp>
 
+#if defined(__linux__)
+#define __CL_ENABLE_EXCEPTIONS
 #define CL_HPP_TARGET_OPENCL_VERSION 220
+#endif
 #include <OpenCL/opencl.hpp>
 
 using namespace std;
@@ -28,7 +31,6 @@ using namespace std;
 #define NOMINMAX // To prevent Windows.h from defining min and max macros
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h> // Include Windows-specific headers
-
 //#include <cstddef> // This is where std::byte is defined in C++17
 //#include <winnt.h>
 
@@ -838,7 +840,9 @@ inline void __collect_extrema_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
         //InterlockedIncrement(&scp_ncells[i]);
         //InterlockedIncrement(reinterpret_cast<LONG*>(&scp_ncells[i]));
         //ATOMIC_INCREMENT(reinterpret_cast<LONG*>(&scp_ncells[i]));
-        ATOMIC_INCREMENT(&scp_ncells[i]);
+        #ifdef _MSC_VER
+        ATOMIC_INCREMENT(reinterpret_cast<LONG*>(&scp_ncells[i]));
+        #endif
       }
 
   #pragma omp parallel for
@@ -859,7 +863,12 @@ inline void __collect_extrema_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
         //int p    = InterlockedDecrement(&scp_ncells[i]);
         //int p    = InterlockedDecrement(reinterpret_cast<LONG*>(&scp_ncells[i]));
         //int p = atomic_fetch_add(&scp_ncells[i], 1);
-        int p=ATOMIC_DECREMENT(&scp_ncells[i]);
+        int p=0;
+        #ifdef _MSC_VER
+        p=ATOMIC_DECREMENT(reinterpret_cast<LONG*>(&scp_ncells[i]));
+        #else
+        p=ATOMIC_DECREMENT(&scp_ncells[i]);
+        #endif
         msc->m_mfolds[dir][i][p] = c;
       }
 

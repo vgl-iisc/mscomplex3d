@@ -1,4 +1,4 @@
-project(mscomplex3d-pyms3d)
+project(pyms3d_core)
 
 #set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/Boost.Numpy/libs/numpy/cmake ${CMAKE_MODULE_PATH})
 
