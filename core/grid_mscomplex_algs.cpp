@@ -13,7 +13,10 @@
 
 
 //#include "cl.hpp"
-#include <opencl.hpp>
+//#include <opencl.hpp>
+
+#define CL_HPP_TARGET_OPENCL_VERSION 220
+#include <OpenCL/opencl.hpp>
 
 using namespace std;
 
@@ -358,7 +361,7 @@ void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
   //  thresh *= (*br::max_element(m_cp_fn) - *br::min_element(m_cp_fn));
 
   if (is_nrm)
-      thresh *= (*std::ranges::max_element(m_cp_fn) - *std::ranges::min_element(m_cp_fn));
+      thresh *= (*std::max_element(m_cp_fn.begin(),m_cp_fn.end()) - *std::min_element(m_cp_fn.begin(),m_cp_fn.end()));
 	
 
   for(int i = 0 ;i < get_num_critpts();++i)
@@ -453,7 +456,7 @@ int mscomplex_t::get_hversion_pers(double thresh, bool is_nrm) const
     //thresh *= (*br::max_element(m_cp_fn) - *br::min_element(m_cp_fn));
 
   if (is_nrm)
-      thresh *= (*std::ranges::max_element(m_cp_fn) - *std::ranges::min_element(m_cp_fn));
+      thresh *= (*std::max_element(m_cp_fn.begin(),m_cp_fn.end()) - *std::min_element(m_cp_fn.begin(),m_cp_fn.end()));
 
   for(hver = 0 ; hver < m_canc_list.size() ; ++hver)
   {
@@ -835,6 +838,7 @@ inline void __collect_extrema_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
         //InterlockedIncrement(&scp_ncells[i]);
         //InterlockedIncrement(reinterpret_cast<LONG*>(&scp_ncells[i]));
         //ATOMIC_INCREMENT(reinterpret_cast<LONG*>(&scp_ncells[i]));
+        ATOMIC_INCREMENT(&scp_ncells[i]);
       }
 
   #pragma omp parallel for
@@ -853,8 +857,9 @@ inline void __collect_extrema_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
         int oe_i = (ds->isCellCritical(c))?(oe):(oarr(i_to_c2(r,oe)/2));
         int i    = scp_id[oe_i];
         //int p    = InterlockedDecrement(&scp_ncells[i]);
-        int p    = InterlockedDecrement(reinterpret_cast<LONG*>(&scp_ncells[i]));
+        //int p    = InterlockedDecrement(reinterpret_cast<LONG*>(&scp_ncells[i]));
         //int p = atomic_fetch_add(&scp_ncells[i], 1);
+        int p=ATOMIC_DECREMENT(&scp_ncells[i]);
         msc->m_mfolds[dir][i][p] = c;
       }
 

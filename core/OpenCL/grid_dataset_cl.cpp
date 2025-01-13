@@ -9,6 +9,7 @@
 #include <OpenCL/cl.hpp>
 #else
 //#include <cl.hpp>
+#define CL_HPP_TARGET_OPENCL_VERSION 220
 #include<opencl.hpp>
 #endif
 
