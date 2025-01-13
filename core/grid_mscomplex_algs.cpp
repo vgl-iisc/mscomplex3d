@@ -13,7 +13,10 @@
 
 
 //#include "cl.hpp"
-#include <opencl.hpp>
+//#include <opencl.hpp>
+
+#define CL_HPP_TARGET_OPENCL_VERSION 220
+#include <OpenCL/opencl.hpp>
 
 using namespace std;
 
@@ -834,7 +837,8 @@ inline void __collect_extrema_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
         int i    = scp_id[oe_i];
         //InterlockedIncrement(&scp_ncells[i]);
         //InterlockedIncrement(reinterpret_cast<LONG*>(&scp_ncells[i]));
-        ATOMIC_INCREMENT(reinterpret_cast<LONG*>(&scp_ncells[i]));
+        //ATOMIC_INCREMENT(reinterpret_cast<LONG*>(&scp_ncells[i]));
+        ATOMIC_INCREMENT(&scp_ncells[i]);
       }
 
   #pragma omp parallel for
@@ -853,8 +857,9 @@ inline void __collect_extrema_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
         int oe_i = (ds->isCellCritical(c))?(oe):(oarr(i_to_c2(r,oe)/2));
         int i    = scp_id[oe_i];
         //int p    = InterlockedDecrement(&scp_ncells[i]);
-        int p = ATOMIC_DECREMENT(reinterpret_cast<LONG*>(&scp_ncells[i]));
+        //int p    = InterlockedDecrement(reinterpret_cast<LONG*>(&scp_ncells[i]));
         //int p = atomic_fetch_add(&scp_ncells[i], 1);
+        int p=ATOMIC_DECREMENT(&scp_ncells[i]);
         msc->m_mfolds[dir][i][p] = c;
       }
 

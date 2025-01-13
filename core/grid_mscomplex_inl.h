@@ -141,7 +141,8 @@ inline int mscomplex_t::surv_extrema(int i) const
 //{return *boost::range::min_element(m_cp_fn);}
 
 inline cell_fn_t mscomplex_t::fn_min() const {
-    return *std::ranges::min_element(m_cp_fn);
+    //return *std::ranges::min_element(m_cp_fn);
+    return *std::min_element(m_cp_fn.begin(),m_cp_fn.end());
 }
 
 /*---------------------------------------------------------------------------*/
@@ -150,7 +151,9 @@ inline cell_fn_t mscomplex_t::fn_min() const {
 //{return *boost::range::max_element(m_cp_fn);}
 
 inline cell_fn_t mscomplex_t::fn_max() const {
-    return *std::ranges::max_element(m_cp_fn);
+    //return *std::ranges::max_element(m_cp_fn);
+    return *std::max_element(m_cp_fn.begin(),m_cp_fn.end());
+
 }
 
 /*---------------------------------------------------------------------------*/

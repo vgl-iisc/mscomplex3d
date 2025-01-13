@@ -9,6 +9,7 @@
 #include <OpenCL/cl.hpp>
 #else
 //#include <cl.hpp>
+#define CL_HPP_TARGET_OPENCL_VERSION 220
 #include<opencl.hpp>
 #endif
 
@@ -1137,7 +1138,6 @@ namespace grid
 
         for (int i = 0; i < std::min(10, msc->get_num_critpts()); ++i) {
             std::cout << "Critical Point " << i << ": Cell ID = " << msc->m_cp_cellid[i] << std::endl;
-            std::cout << "Critical Point " << i << ": Index = " << (int)msc->m_cp_index[i] << std::endl;
         }
         
       }
