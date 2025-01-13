@@ -175,15 +175,8 @@ inline std::string mscomplex_t::cp_info (int cp_no) const
 
 //inline boost::iterator_range<mscomplex_t::iterator_t> mscomplex_t::cpno_range() const
 //{return boost::make_iterator_range(iterator_t(0),iterator_t(get_num_critpts()));}
-/*
-inline auto mscomplex_t::cpno_range() const {
-    /*return std::ranges::subrange(
-        std::ranges::iota_view<int>(0, this->get_num_critpts()).begin(),
-        std::ranges::iota_view<int>(0, this->get_num_critpts().end());
 
-    return std::ranges::iota_view<int,int>(0, this->get_num_critpts());
-}
-*/
+
 inline std::ranges::iota_view<int, int> mscomplex_t::cpno_range() const {
    /* using iterator_tt = decltype(std::ranges::iota_view<int, int>(0, this->get_num_critpts()).begin());    return std::ranges::subrange(
         iterator_tt(0),

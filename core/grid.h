@@ -9,32 +9,37 @@
 
 #include <aabb.h>
 #include <map>
+#include <vector>
+#include <array>
+#include <iostream>
+#include <stdexcept>
+#include <algorithm>
 
-template <typename T, std::size_t N=3>
+template <typename T, std::size_t N = 3>
 class Array3D {
 private:
-    size_t dim1, dim2, dim3;
+    size_t size_z, size_y, size_x;
 
-    // Compute linear index from 3D indices
-    size_t index(size_t i, size_t j, size_t k) const {
-        if (i >= dim1 || j >= dim2 || k >= dim3) {
+    std::array<short, N> reindex_values;
+
+    // Compute linear index from 3D indices (Fortran order)
+    size_t index(size_t z, size_t y, size_t x) const {
+        if (z >= size_z || y >= size_y || x >= size_x) {
             throw std::out_of_range("Index out of bounds");
         }
-        return i * dim2 * dim3 + j * dim3 + k;
+        //return (x+reindex_values[0]) * size_z * size_y + (y+reindex_values[1]) * size_z + (z+reindex_values[2]);
+        return x * size_z * size_y + y * size_z + z;
     }
 
 public:
     std::vector<T> data; // Flattened 3D data
 
     // Constructor: Initialize dimensions and fill with default value
-    Array3D(size_t d1, size_t d2, size_t d3, T default_value = T())
-        : dim1(d1), dim2(d2), dim3(d3), data(d1* d2* d3, default_value) {}
+    Array3D(size_t z, size_t y, size_t x, T default_value = T())
+        : size_z(z), size_y(y), size_x(x), data(z* y* x, default_value) {}
 
-
-    Array3D(n_vector_t<T, N> n)
-        : Array3D(n[0], n[1], n[2]) // Delegate to the main constructor
-    {}
-
+    Array3D(n_vector_t<T, N> n): Array3D(n[0], n[1], n[2]) // Delegate to the main constructor
+           {}
 
     // Function to reindex the array (modifies the current object)
     void reindex(const std::array<short, N>& new_indices) {
@@ -42,21 +47,25 @@ public:
         std::vector<T> new_data(data.size(), T());
 
         // Iterate over the original array and assign new indices in the temporary data
-        for (size_t i = 0; i < dim1; ++i) {
-            for (size_t j = 0; j < dim2; ++j) {
-                for (size_t k = 0; k < dim3; ++k) {
+        for (size_t i = 0; i < size_x; ++i) {
+            for (size_t j = 0; j < size_y; ++j) {
+                for (size_t k = 0; k < size_z; ++k) {
                     // Remap the indices based on new_indices
-                    int new_i = static_cast<int>(i) + new_indices[0];
+                    int new_i = static_cast<int>(i) + new_indices[2];
                     int new_j = static_cast<int>(j) + new_indices[1];
-                    int new_k = static_cast<int>(k) + new_indices[2];
+                    int new_k = static_cast<int>(k) + new_indices[0];
+
+                    reindex_values[0] = new_indices[0];
+                    reindex_values[1] = new_indices[1];
+                    reindex_values[2] = new_indices[2];
 
                     // Ensure that the new indices are within bounds
-                    if (new_i >= 0 && new_i < static_cast<int>(dim1) &&
-                        new_j >= 0 && new_j < static_cast<int>(dim2) &&
-                        new_k >= 0 && new_k < static_cast<int>(dim3)) {
+                    //if (new_i >= 0 && new_i < static_cast<int>(size_z) &&
+                    //    new_j >= 0 && new_j < static_cast<int>(size_y) &&
+                    //    new_k >= 0 && new_k < static_cast<int>(size_x)) {
                         // Compute indices and transfer the value
-                        new_data[index(new_i, new_j, new_k)] = data[index(i, j, k)];
-                    }
+                        new_data[index(new_k, new_j, new_i)] = data[index(k, j, i)];
+                    //}
                 }
             }
         }
@@ -65,72 +74,58 @@ public:
         data = std::move(new_data);
     }
 
-
-
-    T* getData()
-    {
-        return data.data();
-    }
-
-    const T* getData() const
-    {
-        return data.data();
-    }
-
-	//T* getData() 
-    //{
-      //  return data.data();
-    //}
+    // Get raw pointer to data (non-const and const versions)
+    T* getData() { return data.data(); }
+    const T* getData() const { return data.data(); }
 
     // Access element (read/write)
-    T& operator()(size_t i, size_t j, size_t k) {
-        return data[index(i, j, k)];
+    T& operator()(size_t z, size_t y, size_t x) {
+        return data[index(z, y, x)];
     }
 
     // Access element (read-only)
-    const T& operator()(size_t i, size_t j, size_t k) const {
-        return data[index(i, j, k)];
+    const T& operator()(size_t z, size_t y, size_t x) const {
+        return data[index(z, y, x)];
     }
 
-    // Access element (read/write)
-	T& operator()(n_vector_t<T,N> n) {
-        return data[index(n[0], n[1], n[2])];
-    }
+	// Access element (read/write)
+   	T& operator()(n_vector_t<T,N> n) {
+           return data[index(n[0], n[1], n[2])];
+       }
 
-    // Access element (read-only)
-    const T& operator()(n_vector_t<T, N> n) const {
-        return data[index(n[0], n[1], n[2])];
+	// Access element (read-only)
+	const T& operator()(n_vector_t<T, N> n) const {
+    	return data[index(n[0], n[1], n[2])];
     }
+   
 
     // Resize the array and fill with default value
-    void resize(size_t d1, size_t d2, size_t d3, T default_value = T()) {
-        dim1 = d1;
-        dim2 = d2;
-        dim3 = d3;
-        //data.resize(d1 * d2 * d3);
-        //data.
-        data.assign(d1 * d2 * d3, default_value);
+    void resize(size_t z, size_t y, size_t x, T default_value = T()) {
+        size_z = z;
+        size_y = y;
+        size_x = x;
+        data.assign(z * y * x, default_value);
     }
 
-    void resize(n_vector_t<T,N> n, T default_value = T()) {
-        resize(n[0], n[1], n[2]);
+    void resize(n_vector_t<T, N> n, T default_value = T()) {
+    	resize(n[0], n[1], n[2]);
     }
 
-    // Fill all elements with a specific value
+    // Fill all elements with a specific value 
     void fill(T value) {
         std::fill(data.begin(), data.end(), value);
     }
 
     // Get dimensions
-    size_t size1() const { return dim1; }
-    size_t size2() const { return dim2; }
-    size_t size3() const { return dim3; }
+    size_t size1() const { return size_z; }
+    size_t size2() const { return size_y; }
+    size_t size3() const { return size_x; }
 
     // Debug: Print all elements
     void print() const {
-        for (size_t i = 0; i < dim1; ++i) {
-            for (size_t j = 0; j < dim2; ++j) {
-                for (size_t k = 0; k < dim3; ++k) {
+        for (size_t i = 0; i < size_z; ++i) {
+            for (size_t j = 0; j < size_y; ++j) {
+                for (size_t k = 0; k < size_x; ++k) {
                     std::cout << (*this)(i, j, k) << " ";
                 }
                 std::cout << "\n";
@@ -139,6 +134,8 @@ public:
         }
     }
 };
+
+
 
 
 namespace grid

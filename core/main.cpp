@@ -82,10 +82,42 @@ void compute_mscomplex_basic(std::string filename, cellid_t size, double simp_tr
 
 int main(int ac , char **av)
 {
-  string         filename;
-  cellid_t       size;
-  double         simp_tresh;
-  cellid_t       levels;
+  string         filename = "C:\\Users\\sachi\\OneDrive\\Documents\\PYMS3D_EXAMPLES\\Hydrogen_128x128x128.raw";
+  //string         filename = "C:\\Users\\sachi\\OneDrive\\Documents\\PYMS3D_EXAMPLES\\grid_data.raw";
+  cellid_t       size = cellid_t(128,128,128);
+  //cellid_t       size = cellid_t(3, 4, 5);
+  //double         simp_tresh;
+  //cellid_t       levels;
+
+  opencl::init();
+
+
+  const rect_t dom(cellid_t::zero, (size - cellid_t::one) * 2);
+
+  DLOG << "Entered :"
+      << endl << "\t" << SVAR(filename)
+      << endl << "\t" << SVAR(size);
+
+  mscomplex_ptr_t msc(new mscomplex_t);
+  dataset_ptr_t ds;
+
+  msc->m_rect = dom;
+  msc->m_domain_rect = dom;
+  msc->m_ext_rect = dom;
+
+  ds.reset(new dataset_t(dom, dom, dom));
+
+  ds->init(filename);
+
+  ds->computeMsGraph(msc);
+
+
+  //ds->computeMsGraph()
+
+    
+
+
+
   /*
   {
     struct rlimit rl;

@@ -10,7 +10,7 @@
 
 #include <grid_dataset_cl.h>
 
-#define static_assert BOOST_STATIC_ASSERT
+//#define static_assert BOOST_STATIC_ASSERT
 
 #include <map>
 #include <ranges>
@@ -125,42 +125,31 @@ inline void  compute_inc_pairs_pq
   //auto cmp_dim = bind(cellid_int_pair_cmp< dim, dir>,ds,_1,_2);
   //auto cmp_pdim = bind(cellid_int_pair_cmp<pdim, dir>,ds,_1,_2);
 
-  /*auto cmp_dim = std::bind(cellid_int_pair_cmp < dim, dir>, ds, std::placeholders::_1, std::placeholders::_2);
-  auto cmp_pdim=std::bind(cellid_int_pair_cmp < pdim,dir>, ds, std::placeholders::_1, std::placeholders::_2);
-  
-  priority_queue<cellid_int_pair_t,cellid_int_pair_list_t, decltype (cmp_dim) >
-      pq(cmp_dim );
-  priority_queue<cellid_int_pair_t,cellid_int_pair_list_t, decltype (cmp_pdim)>
-      inc_pq(cmp_pdim);
-      */
-
   auto cmp_dim = [ds](const cellid_int_pair_t& lhs, const cellid_int_pair_t& rhs) {
       return cellid_int_pair_cmp<dim, dir>(ds, lhs, rhs);
   };
 
-  //auto cmp_pdim = [ds](const cellid_int_pair_t& lhs, const cellid_int_pair_t& rhs) {
-  //    return cellid_int_pair_cmp<pdim, dir>(ds, lhs, rhs);
-  //};
-
-  //dir 0 dim 2
+  auto cmp_pdim = [ds](const cellid_int_pair_t& lhs, const cellid_int_pair_t& rhs) {
+      return cellid_int_pair_cmp<pdim, dir>(ds, lhs, rhs);
+  };
 
   std::priority_queue<cellid_int_pair_t, cellid_int_pair_list_t, decltype(cmp_dim)> pq(cmp_dim);
 
 
-  //std::priority_queue<cellid_int_pair_t, cellid_int_pair_list_t, decltype(cmp_pdim)> inc_pq(cmp_pdim);
+  std::priority_queue<cellid_int_pair_t, cellid_int_pair_list_t, decltype(cmp_pdim)> inc_pq(cmp_pdim);
 
   cellid_t f[40];
 
   
   int j = 0;
-  n_vector_t<short,3> a{ 1, 2, 3 };
-  cellid_t p;
-  pq.push(make_pair(a, 10));  
+  //n_vector_t<short,3> a{ 1, 2, 3 };
+  //cellid_t p;
+  //pq.push(make_pair(a, 10));  
 
 	pq.push(make_pair(s,1));
   
 
-  /*
+  
   while(pq.size() != 0 )
   {
   	cellid_t c = pq.top().first;
@@ -178,8 +167,8 @@ inline void  compute_inc_pairs_pq
       if(ds->isCellCritical(*b))
       {
         ASSERT(ds->getCellDim(*b) == pdim);
-        std::cout << "Cell ID *b: " << *b << std::endl;
-        //inc_pq.push(make_pair(*b,n));
+        //std::cout << "Cell ID *b: " << *b << std::endl;
+        inc_pq.push(make_pair(*b,n));
       }
       else
       {
@@ -189,9 +178,9 @@ inline void  compute_inc_pairs_pq
             (no_vcheck||ds->isCellVisited(*b)) &&
             (ds->getCellDim(p) == dim ))
         {
-            std::cout << "Paired Cell ID p: " << p << std::endl;
+            //std::cout << "Paired Cell ID p: " << p << std::endl;
 
-          //pq.push(make_pair(p,n));
+          pq.push(make_pair(p,n));
         }
       }
       
@@ -199,9 +188,9 @@ inline void  compute_inc_pairs_pq
     
     j++;
   }
-  */
   
-    /*
+  
+    
   while(inc_pq.size() != 0 )
   {
     cellid_t p = inc_pq.top().first;
@@ -215,7 +204,7 @@ inline void  compute_inc_pairs_pq
 
     msc_connector.connect_cells(s,p,n);
   }
-  */
+  
 }
 
 /*---------------------------------------------------------------------------*/
@@ -372,14 +361,15 @@ void computeConnections(mscomplex_ptr_t msc,dataset_ptr_t ds,
       msc->cpno_range().begin(), msc->cpno_range().end(),
       [&](const auto& x) {
           if (is_required_cp<dim, dir>(*msc, x)) {
-              cps.push_back(msc->cellid(x)); 
+              //cps.push_back(msc->cellid(x)); 
+              cps.push_back(std::bind(&mscomplex_t::cellid, msc, x)());
           }
       }
   );
   
   std::cout << "\n BEFORE COMPUTING INC PAIRS \n";
 
-	//#pragma omp parallel for
+  #pragma omp parallel for
   for(int i = 0 ; i < cps.size(); ++i)
   {
     compute_inc_pairs_pq<dim,dir>(cps[i],ds,msc_connector);
@@ -441,6 +431,24 @@ void  dataset_t::computeMsGraph(mscomplex_ptr_t msc)
     opencl::worker w;
     w.assign_gradient(shared_from_this(), msc);
 
+    //auto lc = this->m_rect.lc();
+    //auto uc = this->m_rect.uc();
+
+    //std::ofstream os("log_flags.txt");
+
+    //for (int z = lc[2]; z < uc[2]; ++z)
+    //{
+    //    for (int y = lc[1]; y < uc[1]; ++y)
+    //    {
+    //        for (int x = lc[0]; x < uc[0]; ++x)
+    //        {
+    //            os <<"0x" << std::hex << int(this->m_cell_flags(x, y, z)) << "\t";
+    //        }
+    //        os << std::endl;
+    //    }
+    //    os << std::endl;
+    //}
+
     mscomplex_connector_t msc_connector(msc);
     msc_connector.init();
     
@@ -457,14 +465,14 @@ void  dataset_t::computeMsGraph(mscomplex_ptr_t msc)
       {
         if(opencl::is_gpu_context())
         {
-          //w.owner_extrema(shared_from_this());
-          //computeExtremaConnections<DES>(msc,shared_from_this(),msc_connector);
-          //computeExtremaConnections<ASC>(msc,shared_from_this(),msc_connector);
+          w.owner_extrema(shared_from_this());
+          computeExtremaConnections<DES>(msc,shared_from_this(),msc_connector);
+          computeExtremaConnections<ASC>(msc,shared_from_this(),msc_connector);
         }
         else
         {
-          //computeConnections<2,ASC>(msc,shared_from_this(),msc_connector);
-          //computeConnections<1,DES>(msc,shared_from_this(),msc_connector);
+          computeConnections<2,ASC>(msc,shared_from_this(),msc_connector);
+          computeConnections<1,DES>(msc,shared_from_this(),msc_connector);
         }
       }
       

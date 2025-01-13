@@ -39,6 +39,13 @@ dataset_t::~dataset_t () {clear();}
 
 /*---------------------------------------------------------------------------*/
 
+
+template <typename T>
+T swap_endian(T value) {
+    uint8_t* ptr = reinterpret_cast<uint8_t*>(&value);
+    std::reverse(ptr, ptr + sizeof(T));
+    return value;
+}
 void dataset_t::init(const string &filename)
 {
   init_storage();
@@ -58,6 +65,15 @@ void dataset_t::init(const string &filename)
   ifs.read((char*)(void*)m_vert_fns.data.data(),sizeof(cell_fn_t)*num_pts);
   ENSURE(ifs.fail()==false,"failed to read some data");
 
+
+        //endian neesss
+        /*
+  if (true) {
+      for (size_t i = 0; i < num_pts; ++i) {
+          m_vert_fns.data[i] = swap_endian(m_vert_fns.data[i]);
+      }
+  }
+  */
   std::cout << "\nDATA HAS BEEN READ\n";
     	auto max_iter = std::max_element(m_vert_fns.data.begin(), m_vert_fns.data.end());
     	std::cout << "\n max value in data: " << *max_iter;
@@ -211,7 +227,14 @@ bool dataset_t::areCellsIncident(cellid_t c1,cellid_t c2) const
 /*---------------------------------------------------------------------------*/
 
 cellid_t dataset_t::getCellPairId (cellid_t c) const
-{ASSERT(isCellPaired(c));return flag_to_pair(c,m_cell_flags(c));}
+{
+	ASSERT(isCellPaired(c));
+    auto isPaired = isCellPaired(c);
+    auto f = m_cell_flags(c);
+    auto ret = flag_to_pair(c,f);
+    ASSERT(ret[0] <  255 && ret[1] < 255 && ret[2] < 255);
+    return ret;
+}
 
 /*---------------------------------------------------------------------------*/
 

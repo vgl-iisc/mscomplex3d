@@ -546,25 +546,27 @@ public:
           return this->is_not_canceled(item);
               });
 
-      
-      
+
+
+      //std::cout << "\nRNG:\n";
+      //for (const auto& element : rng) {
+      //    std::cout << element << std::endl;
+      //}
+
 
       TLOG << "Computed:";
 
       if (i == -1) return range_to_ndarray<int, 1>(rng);
       else {
 
-          auto filtered_rng= std::ranges::views::filter(rng, [this, i](int x) {
+          auto filtered_rng = std::ranges::views::filter(rng, [this, i](int x) {
               return this->is_index_i_cp_(x, i);
               });
           std::vector<int> filtered_vector(filtered_rng.begin(), filtered_rng.end());
 
-        /*
-          std::cout << "\nRNG:\n";
-          for (const auto& element : filtered_rng) {
-              std::cout << element << std::endl;
-          }
-          */
+        
+         
+          
           return range_to_ndarray<int, 1>(filtered_rng);
       }
   	TLOG << "Exited  :";

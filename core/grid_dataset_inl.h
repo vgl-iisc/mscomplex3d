@@ -191,8 +191,8 @@ inline bool dataset_t::compare_cells_pp(const cellid_t& c1, const cellid_t& c2) 
         oc1 = getCellMaxFacetId(getCellPairId(c1));
 
     //issue is here
-    //if (isCellPaired(c2) && getCellDim(getCellPairId(c2)) == dim + 1)
-        //oc2 = getCellMaxFacetId(getCellPairId(c2));
+    if (isCellPaired(c2) && getCellDim(getCellPairId(c2)) == dim + 1)
+        oc2 = getCellMaxFacetId(getCellPairId(c2));
 
     
 
