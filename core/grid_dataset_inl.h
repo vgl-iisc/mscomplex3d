@@ -196,9 +196,9 @@ inline bool dataset_t::compare_cells_pp(const cellid_t& c1, const cellid_t& c2) 
 
     
 
-	//return compare_cells_orig<dim>(oc1,oc2);
+	return compare_cells_orig<dim>(oc1,oc2);
 
-    return false;
+    //return false;
 }
 
 /*---------------------------------------------------------------------------*/
