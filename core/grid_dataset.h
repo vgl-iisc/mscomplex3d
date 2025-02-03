@@ -55,10 +55,6 @@ public:
   // bit 7 .. is cell critical or not.
 
 
-  //typedef boost::multi_array<cellid_t,gc_grid_dim>        cellid_array_t;
-  //typedef  boost::multi_array<cell_flag_t,gc_grid_dim>     cellflag_array_t;
-  //typedef boost::multi_array<cell_fn_t,gc_grid_dim>       varray_t;
-
   typedef Array3D<cellid_t>                                      cellid_array_t;
   typedef Array3D<cell_flag_t>                                   cellflag_array_t;
   typedef Array3D<cell_fn_t>                                     varray_t;
@@ -165,6 +161,7 @@ public:
 
   void log_pairs(std::ostream &os = std::cout);
   void log_pairs(const std::string &s);
+  void verify_pairs(std::ostream& os = std::cout);
 
   void log_visits(std::ostream &os = std::cout);
   void log_visits(const std::string &s);

@@ -29,6 +29,8 @@ private:
 		}
 		//return (x+reindex_values[0]) * size_z * size_y + (y+reindex_values[1]) * size_z + (z+reindex_values[2]);
 		//return x * size_z * size_y + y * size_z + z;
+		//if(x==256 && y==4 && z==1)
+			//std::cout << "\nWe want index: " << z * size_x * size_y + y * size_x + x;;
 		return z * size_x * size_y + y * size_x + x;
 	}
 
@@ -100,12 +102,12 @@ public:
 	}
 
 	// Access element (read/write)
-	T& operator()(n_vector_t<T, N> n) {
+	T& operator()(n_vector_t<size_t, N> n) {
 		return data[index(n[0], n[1], n[2])];
 	}
 
 	// Access element (read-only)
-	const T& operator()(n_vector_t<T, N> n) const {
+	const T& operator()(n_vector_t<size_t, N> n) const {
 		return data[index(n[0], n[1], n[2])];
 	}
 

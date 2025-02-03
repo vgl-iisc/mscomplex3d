@@ -46,7 +46,8 @@ public:
   void connect_cells(cellid_t c1,cellid_t c2, int m)
   {
     int i = id_cp_map.at(c1);
-    int j = id_cp_map.at(c2);
+  	int j = id_cp_map.at(c2);
+
 
     // Exceptions thrown inside critical sections cannot pass outside
     // So this tomfoolery has to be resorted to.
@@ -56,11 +57,20 @@ public:
     {
       //        if (id_cp_map.size() == 0)
       //          init();
-      try{msc->connect_cps(i,j,m);}
-      catch(const std::exception &e){e_what = e.what();}
+      try
+      {
+
+	      msc->connect_cps(i,j,m);
+      }
+      catch(const std::exception &e)
+      {
+	      e_what = e.what();
+
+      }
+      ENSURES(e_what.empty()) << SVAR(c1) << SVAR(c2);
+
     }
 
-    ENSURES(e_what.empty()) << SVAR(c1) <<SVAR(c2);
   }
 };
 
@@ -160,14 +170,18 @@ inline void  compute_inc_pairs_pq
     do {n += pq.top().second; pq.pop();}
     while(pq.size() != 0 && pq.top().first == c);
 
-    
     for(cellid_t *b = f,*e = f + ds->get_cets<dir>(c,f);b != e; ++b)
     {
-        
+        cellid_t a = *b;
+
       if(ds->isCellCritical(*b))
       {
         ASSERT(ds->getCellDim(*b) == pdim);
+
+
+            
         //std::cout << "Cell ID *b: " << *b << std::endl;
+      
         inc_pq.push(make_pair(*b,n));
       }
       else
@@ -431,28 +445,20 @@ void  dataset_t::computeMsGraph(mscomplex_ptr_t msc)
     opencl::worker w;
     w.assign_gradient(shared_from_this(), msc);
 
-    //auto lc = this->m_rect.lc();
-    //auto uc = this->m_rect.uc();
+    auto lc = this->m_rect.lc();
+    auto uc = this->m_rect.uc();
 
     //std::ofstream os("log_flags.txt");
 
-    //for (int z = lc[2]; z < uc[2]; ++z)
-    //{
-    //    for (int y = lc[1]; y < uc[1]; ++y)
-    //    {
-    //        for (int x = lc[0]; x < uc[0]; ++x)
-    //        {
-    //            os <<"0x" << std::hex << int(this->m_cell_flags(x, y, z)) << "\t";
-    //        }
-    //        os << std::endl;
-    //    }
-    //    os << std::endl;
-    //}
+    //this->log_pairs(os);
+
+
 
     mscomplex_connector_t msc_connector(msc);
     msc_connector.init();
     
-    std::cout << "\nComputing MS Graph \n";
+    //std::cout << "\nComputing MS Graph \n";
+
     
     #pragma omp sections
     {
@@ -460,7 +466,7 @@ void  dataset_t::computeMsGraph(mscomplex_ptr_t msc)
       {
 	      computeConnections<2,DES>(msc,shared_from_this(),msc_connector);
       }
-
+      
       #pragma omp section
       {
         if(opencl::is_gpu_context())
@@ -475,8 +481,10 @@ void  dataset_t::computeMsGraph(mscomplex_ptr_t msc)
           computeConnections<1,DES>(msc,shared_from_this(),msc_connector);
         }
       }
+        
       
     }
+    
   
 }
 /*---------------------------------------------------------------------------*/

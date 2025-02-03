@@ -63,20 +63,25 @@ void dataset_t::init(const string &filename)
   //ENSURE(ifs.is_open(),"unable to open file " + filename);
   ENSUREV2(ifs.is_open(),"unable to open file ", filename,wd);
 
+  std::cout << "Bytes read: " << ifs.gcount() << std::endl;
 
-  m_vert_fns.resize(num_pts, 1, 1);
-  ifs.read((char*)(void*)m_vert_fns.data.data(),sizeof(cell_fn_t)*num_pts);
+  m_vert_fns.resize(pt_span[0], pt_span[1], pt_span[2]);
+  //m_vert_fns.resize(pt_span);
+  //ifs.read((char*)(void*) m_vert_fns.data.data(), sizeof(cell_fn_t) * num_pts);
+  ifs.read(reinterpret_cast<char*>(m_vert_fns.data.data()), sizeof(cell_fn_t) * num_pts);
+  if (ifs.eof()) {
+      std::cerr << "Reached EOF after reading." << std::endl;
+      ifs.clear(); // Reset EOF flag
+  }
+
   ENSURE(ifs.fail()==false,"failed to read some data");
 
 
-        //endian neesss
-        /*
-  if (true) {
-      for (size_t i = 0; i < num_pts; ++i) {
-          m_vert_fns.data[i] = swap_endian(m_vert_fns.data[i]);
-      }
-  }
-  */
+
+  std::cout << "\nPosition of ifs.tellg " << uint(ifs.tellg());
+  std::cout << "\nfile size " << num_pts * sizeof(cell_fn_t);
+
+
   std::cout << "\nDATA HAS BEEN READ\n";
     	auto max_iter = std::max_element(m_vert_fns.data.begin(), m_vert_fns.data.end());
     	std::cout << "\n max value in data: " << *max_iter;
@@ -85,6 +90,7 @@ void dataset_t::init(const string &filename)
   ENSURE(uint(ifs.tellg())==num_pts*sizeof(cell_fn_t),"file/piece size mismatch");
 
   ifs.close();
+  
 }
 
 /*---------------------------------------------------------------------------*/
@@ -119,12 +125,13 @@ void dataset_t::init_storage()
   rect_size_t  pt_span = (m_ext_rect.span()/2)+1;
   rect_point_t bl = m_ext_rect.lower_corner();
 
-  m_cell_flags.resize(span);
+  m_cell_flags.resize(span[0],span[1],span[2]);
   m_vert_fns.resize(pt_span);
 
   //std::fill_n(m_cell_flags.data(),span[0]*span[1]*span[2],0);
-  std::fill_n(m_cell_flags.data.data(),span[0]*span[1]*span[2],0);
 
+  std::fill_n(m_cell_flags.data.data(),span[0]*span[1]*span[2],0);
+  
   m_cell_flags.reindex(bl);
   m_vert_fns.reindex(bl/2);
 
@@ -136,7 +143,6 @@ void dataset_t::init_storage()
     m_owner_maxima.reindex(m_rect.lc()/2);
     m_owner_minima.reindex(m_rect.lc()/2);
   }
-
 }
 
 /*---------------------------------------------------------------------------*/
@@ -165,16 +171,25 @@ inline cellid_t dataset_t::get_cell_vert(cellid_t c) const
 }
 
 /*---------------------------------------------------------------------------*/
-
-inline cellid_t flag_to_mxfct(cellid_t c,cell_flag_t f)
+/**
+ * \brief Gets the neighboring cell specified by flag 
+ * \param c cell
+ * \param f flag
+ * \return neighboring cell
+ */
+inline cellid_t get_neighbor(cellid_t c,cell_flag_t f)
 {
-    	//debug here
+    //cell_flag_t d = f & 0x07;
+    //c[(d - 1) >> 1] += (d & 1) ? (-1) : (+1);
+
+
   cell_flag_t d = f&0x07;
-        if(!(d>=1 && d<=7))
-  printf("\nf = 0x%x, d = %d\n", f, d);
-  //std::cout << f;
-  ASSERT(is_in_range(d,1,7));
-  c[(d-1)>>1] += (d&1)?(-1):(+1);
+  int8_t axis = (d - 1) >> 1;
+  int8_t step = (d & 
+      (uint8_t)1) ? (-1) : (+1);
+  //if (d > 0)step = -1;
+  //else step = 1;
+  c[axis] += step;
   return c;
 }
 
@@ -195,7 +210,13 @@ inline uint dataset_t::getCellIncCells( cellid_t c,cellid_t * inc) const
 
 /*---------------------------------------------------------------------------*/
 
-inline cell_flag_t mxfct_to_flag(cellid_t c,cellid_t fct)
+/**
+ * \brief 
+ * \param c 
+ * \param fct 
+ * \return 
+ */
+inline cell_flag_t get_neighbor_flag(cellid_t c,cellid_t fct)
 {
   ASSERT(euclid_norm2(c-fct) == 1);
 
@@ -215,12 +236,12 @@ inline cell_flag_t mxfct_to_flag(cellid_t c,cellid_t fct)
 /*---------------------------------------------------------------------------*/
 
 inline cellid_t flag_to_pair(cellid_t c,cell_flag_t f)
-{return flag_to_mxfct(c,(f>>3)&0x07);}
+{return get_neighbor(c,(f>>3)&0x07);}
 
 /*---------------------------------------------------------------------------*/
 
 inline cell_flag_t pair_to_flag(cellid_t c,cellid_t p)
-{return (mxfct_to_flag(c,p)<<3);}
+{return (get_neighbor_flag(c,p)<<3);}
 
 /*---------------------------------------------------------------------------*/
 
@@ -231,25 +252,41 @@ bool dataset_t::areCellsIncident(cellid_t c1,cellid_t c2) const
 
 cellid_t dataset_t::getCellPairId (cellid_t c) const
 {
-	ASSERT(isCellPaired(c));
+	ENSURES(isCellPaired(c));
     auto isPaired = isCellPaired(c);
     auto f = m_cell_flags(c);
-    auto ret = flag_to_pair(c,f);
-    ASSERT(ret[0] <  255 && ret[1] < 255 && ret[2] < 255);
-    return ret;
+    auto pair = flag_to_pair(c,f);
+
+    if(!this->m_rect.contains(pair))
+    {
+	 std::cout << "Pair is not contained within the rect "
+         << "cell =" << c
+         << "pair =" << pair
+         << "flag = " << f
+         << flag_to_pair(c, f);
+
+    }
+
+    ENSURES(this->m_rect.contains(pair)) << "Pair is not contained within the rect "
+        << "cell =" << c
+        << "pair =" << pair
+        << "flag = " << f
+        << flag_to_pair(c, f);
+
+    	return pair;
 }
 
 /*---------------------------------------------------------------------------*/
 
 cellid_t dataset_t::getCellMaxFacetId (cellid_t c) const
     {
-	    return flag_to_mxfct(c,m_cell_flags(c));
+	    return get_neighbor(c,m_cell_flags(c));
     }
 
 /*---------------------------------------------------------------------------*/
 
 cellid_t dataset_t::getCellSecondMaxFacetId (cellid_t c) const
-{return (2*c - flag_to_mxfct(c,m_cell_flags(c)));}
+{return (2*c - get_neighbor(c,m_cell_flags(c)));}
 
 /*---------------------------------------------------------------------------*/
 
@@ -308,6 +345,7 @@ uint dataset_t::getCellFacets (cellid_t c,cellid_t *f) const
   {
     for(uint i = 0 ; i < (c[d]&1);++i)
     {
+
       f[pos] = c; f[pos++][d] += 1;
       f[pos] = c; f[pos++][d] -= 1;
     }
@@ -423,7 +461,20 @@ bool dataset_t::isPairOrientationCorrect (cellid_t c, cellid_t p) const
 /*---------------------------------------------------------------------------*/
 
 bool dataset_t::isCellCritical (cellid_t c) const
-{return (m_cell_flags (c) & CELLFLAG_CRITICAL);}
+	{
+
+    bool a=(m_cell_flags(c) & CELLFLAG_CRITICAL);
+    int q = m_cell_flags(c);
+    if (c[0] == 256 && c[1] == 4 && c[2] == 1)
+    {
+        std::cout << "\nFUNCTION";
+        std::cout << std::endl << q;
+        std::cout << std::endl << (int)CELLFLAG_CRITICAL;
+        std::cout << std::endl << (m_cell_flags(c) & CELLFLAG_CRITICAL);
+        std::cout<<"\n Function output: " << a;
+    }
+	    return a;
+    }
 
 /*---------------------------------------------------------------------------*/
 
@@ -480,7 +531,7 @@ void dataset_t::visitCell(cellid_t c)
 void dataset_t::setCellMaxFacet (cellid_t c,cellid_t f)
 {
   ASSERT(getCellDim(c) == getCellDim(f)+1);
-  m_cell_flags (c) |= mxfct_to_flag(c,f);
+  m_cell_flags (c) |= get_neighbor_flag(c,f);
   ASSERT(getCellMaxFacetId(c) == f);
 }
 
@@ -568,8 +619,21 @@ void dataset_t::log_flags()
 
 /*---------------------------------------------------------------------------*/
 
+/**
+ * \brief Provide gradient direction glyph for \param c .
+ *
+ * E.g for a vertex and edge pair along the positive x direction it would provide "-" and ">"
+ * for the vertex and edge respectively
+ * when you print it out, you'll see the gradient arrow ->
+ *
+ * \param c cell for which glyph is given.
+ * \param p cell's pair
+ * \return direction glyph for gradient of cell
+ *
+ */
 char get_dir_txt(cellid_t c,cellid_t p)
 {
+  
   int dir = 0;
 
   if (c[1] != p[1])
@@ -617,7 +681,7 @@ char get_dir_txt(cellid_t c,cellid_t p)
 }
 
 /*---------------------------------------------------------------------------*/
-
+//
 void dataset_t::log_pairs(std::ostream &os)
 {
   static_assert(gc_grid_dim == 3 , "defined for 3-manifolds only");
@@ -642,6 +706,7 @@ void dataset_t::log_pairs(std::ostream &os)
           os<<get_dir_txt(c,getCellPairId(c))<<" ";
         else
           os<<"? ";
+        os.flush();
       }
       os<<std::endl;
     }
@@ -749,6 +814,39 @@ void dataset_t::log_pairs(const std::string &s)
   ENSURE(fs.is_open(),"unable to open file");
   log_pairs(fs);
   fs.close();
+}
+
+/*---------------------------------------------------------------------------*/
+void dataset_t::verify_pairs(std::ostream& os)
+{
+    static_assert(gc_grid_dim == 3, "defined for 3-manifolds only");
+
+    cellid_t c;
+
+    for (c[2] = m_rect[2][0]; c[2] <= m_rect[2][1]; ++c[2])
+    {
+        os << "sheet no:: " << c[2] << std::endl;
+        for (c[1] = m_rect[1][0]; c[1] <= m_rect[1][1]; ++c[1])
+        {
+            for (c[0] = m_rect[0][0]; c[0] <= m_rect[0][1]; ++c[0])
+            {
+                if (isCellCritical(c))
+                {
+                    if (isCellPaired(c))
+                        os << get_dir_txt(c, getCellPairId(c)) << "c";
+                    else
+                        os << "C ";
+                }
+                else if (isCellPaired(c))
+                    os << get_dir_txt(c, getCellPairId(c)) << " ";
+                else
+                    os << "? ";
+            }
+            os << std::endl;
+        }
+
+    }
+
 }
 
 /*---------------------------------------------------------------------------*/

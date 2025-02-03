@@ -209,8 +209,7 @@ template <> inline bool dataset_t::compare_cells_pp_<GDIR_DES,1>
 (cellid_t c1, cellid_t c2) const  {return compare_cells_pp<1>(c1,c2);}
 
 template <> inline bool dataset_t::compare_cells_pp_<GDIR_DES,2>
-(cellid_t c1, cellid_t c2) const  {return compare_cells_pp<2>(c1,c2);} //debug this
-
+(cellid_t c1, cellid_t c2) const  {return compare_cells_pp<2>(c1,c2);} 
 template <> inline bool dataset_t::compare_cells_pp_<GDIR_DES,3>
 (cellid_t c1, cellid_t c2) const  {return compare_cells_pp<3>(c1,c2);}
 template <> inline bool dataset_t::compare_cells_pp_<GDIR_ASC,0>

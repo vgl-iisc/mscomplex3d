@@ -85,6 +85,9 @@ np::ndarray vector_to_ndarray(const std::vector<T> & vec)
 
 template<typename DTYPE, int NCOL, typename T>
 py::array_t<DTYPE> vector_to_ndarray(const std::vector<T>& vec) {
+
+
+
     // Ensure the sizes match
     static_assert(sizeof(DTYPE) * NCOL == sizeof(T), "Size mismatch between DTYPE and T");
 
@@ -539,6 +542,10 @@ public:
 
   py::array cps(int i)
   {
+
+      
+          //return pybind11::array_t<double>({ 0 });
+      
       TLOG << "Entered :";
 
       auto rng = cpno_range()
@@ -563,9 +570,6 @@ public:
               return this->is_index_i_cp_(x, i);
               });
           std::vector<int> filtered_vector(filtered_rng.begin(), filtered_rng.end());
-
-        
-         
           
           return range_to_ndarray<int, 1>(filtered_rng);
       }
@@ -983,6 +987,7 @@ void init_mscomplex(py::module_& m) {
         .def("cp_pairid", &mscomplex_t::pair_idx, "Index of the paired critical point i (-1 if unpaired)")
         .def("cp_vertid", &mscomplex_t::vertid, "Vertex id of the critical cell")
         .def("cp_cellid", &mscomplex_t::cellid, "Cell id of the critical cell")
+        //.def("is_boundry", &mscomplex_t::, "If the cp is on the boundary or not")
         .def("simplify_pers", &mscomplex_t::simplify_pers,
             py::arg("thresh") = 1.0,
             py::arg("is_nrm") = true,
@@ -1020,9 +1025,63 @@ Note:
         .def("compute_bin", &mscomplex_compute_bin, "Compute the MsComplex from a raw/bin file")
         .def("compute_arr", &mscomplex_pyms3d_t::compute_arr, "Compute the MsComplex from a 3D numpy array")
         .def("load", &mscomplex_pyms3d_t::load, "Load mscomplex from file")
-        .def("save", &mscomplex_pyms3d_t::save, "Save mscomplex to file");
-		
-        
+        .def("save", &mscomplex_pyms3d_t::save, "Save mscomplex to file")
+        .def("vert_func", &mscomplex_pyms3d_t::vert_fn,
+            "Scalar value at vertex coordinate");
+        /*
+	.def("asc_geom", &mscomplex_pyms3d_t::geom<ASC>,
+            py::arg("cp"), py::arg("hversion") = -1, py::arg("ToPts") = true,
+            "Ascending manifold geometry of a given critical point i"
+            "\n"
+            "Parameters  : \n"
+            "          cp: the critical point id\n"
+            "    hversion: desired hierarchical version.\n"
+            "              -1 indicates current version (default)"
+            "       ToPts: convert the geometry data to point indices.\n"
+            "               default = True     \n"
+            "\n"
+            "               False  : returns a list of cellids \n"
+            "               True   : returns a list of Point idxs in \n"
+            "                        Primal/Dual grid according to following\n"
+            "                        table\n"
+            "\n"
+            "                         index(cp) pt-Index-Type  ArrayShape\n"
+            "                             0      Primal          [NC]\n"
+            "                             1      Dual            [NC',4]\n"
+            "                             2      Dual            [NC',2]\n"
+            "\n"
+            "                       NC  #cells in Asc/Des mfold of cp.\n"
+            "                       NC' #cells in Asc/Des mfold of cp whose \n"
+            "                             dual pts are inside Primal Grid\n"
+        );
+        */
+    /*
+        .def("des_geom", &mscomplex_pyms3d_t::geom<DES>,
+            (py::arg("cp"), py::arg("hversion") = -1, py::arg("ToPts") = true),
+            "Descending manifold geometry of a given critical point i"
+            "\n"
+            "Parameters  : \n"
+            "          cp: the critical point id\n"
+            "    hversion: desired hierarchical version.\n"
+            "              -1 indicates current version (default)"
+            "       ToPts: convert the geometry data to point indices.\n"
+            "               default = True     \n"
+            "\n"
+            "               False  : returns a list of cellids \n"
+            "               True   : returns a list of Point idxs in \n"
+            "                        Primal/Dual grid according to following\n"
+            "                        table\n"
+            "\n"
+            "                         index(cp) pt-Index-Type  ArrayShape\n"
+            "                             1      Primal          [NC,2]\n"
+            "                             2      Primal          [NC,4]\n"
+            "                             3      Dual            [NC]\n"
+            "\n"
+            "                       NC  #cells in Asc/Des mfold of cp.\n"
+            "                       NC' #cells in Asc/Des mfold of cp whose \n"
+            "                             dual pts are inside Primal Grid\n"
+        );
+        */
 }
 
 
@@ -1060,13 +1119,14 @@ BOOST_PYTHON_MODULE(pyms3d)
 
   //wrap_mscomplex_t();
 }*/
-int add(int a, int b) {
-    return a + b;
+void debug_print() {
+    std::cout << "debug";
 }
 PYBIND11_MODULE(pyms3d_core, m) {
     // Call the function that registers the bindings
     init_mscomplex(m);
-        m.def("add", &add, "A function that adds two numbers");
+    m.doc() = "This is a custom module implemented in C++ using Pybind11.";  // Module docstring
+        m.def("debug_print", &debug_print, "A function that prints a simple debug message");
         m.def("get_hw_info",&get_hw_info);
 
 }

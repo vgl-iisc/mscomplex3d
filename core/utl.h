@@ -547,7 +547,7 @@ std::stringstream()
   if(!(cond)) \
   for(std::stringstream ss ; true ; throw std::runtime_error(ss.str())) \
   ss<<"Failed to ensure condition " << #cond <<"\n" \
-    <<"at ("<<__FILE__<<","<<__func__<<","<<__LINE__<<") \n "
+    <<"at ("<<__FILE__<<","<<__LINE__<<") \n "
 
 /*---------------------------------------------------------------------------*/
 

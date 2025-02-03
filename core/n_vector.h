@@ -83,13 +83,14 @@ class n_vector_t: public std::array<T,N>
       return r;
     }
 
-    template<typename OT>
-    inline n_vector_t & operator+=(const OT &o)
+    template <typename OT>
+       // requires std::is_arithmetic_v<OT>
+    inline n_vector_t& operator+=(const OT& o)
     {
-      for(size_t i = 0 ; i < N;++i )
-        (*this)[i] += o;
+        for (size_t i = 0; i < N; ++i)
+            (*this)[i] += o;
 
-      return *this;
+        return *this;
     }
 
     template<typename OT,bool OO>
@@ -281,6 +282,16 @@ inline const n_vector_t<T,N,O> operator+(const n_vector_t<T,N,O> & v, const OT &
 {
   return n_vector_t<T,N,O>(v) += s;
 }
+
+// Define the += operator
+/*
+n_vector_t& operator+=(const n_vector_t& other) {
+    this->x += other.x;
+    this->y += other.y;
+    this->z += other.z;
+    return *this;
+}
+*/
 
 template<typename T, std::size_t N,bool O,typename OT>
 inline const n_vector_t<T,N,O> operator+(const OT &s,const n_vector_t<T,N,O> & v)

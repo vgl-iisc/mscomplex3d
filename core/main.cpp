@@ -82,10 +82,12 @@ void compute_mscomplex_basic(std::string filename, cellid_t size, double simp_tr
 
 int main(int ac , char **av)
 {
-  string         filename = "C:\\Users\\sachi\\OneDrive\\Documents\\PYMS3D_EXAMPLES\\Hydrogen_128x128x128.raw";
+  //string         filename = "C:\\Users\\sachi\\OneDrive\\Documents\\PYMS3D_EXAMPLES\\Hydrogen_128x128x128.raw";
+  string         filename = "C:\\Users\\sachi\\OneDrive\\Documents\\PYMS3D_EXAMPLES\\SquareCylinderOkuboWeiss_t0816.raw";
   //string         filename = "C:\\Users\\sachi\\OneDrive\\Documents\\PYMS3D_EXAMPLES\\grid_data.raw";
-  cellid_t       size = cellid_t(128,128,128);
-  //cellid_t       size = cellid_t(3, 4, 5);
+  cellid_t       size = cellid_t(192,64,48);
+  //cellid_t       size = cellid_t(128,128,128);
+  //cellid_t       size = cellid_t(129, 4, 4);
   //double         simp_tresh;
   //cellid_t       levels;
 
@@ -105,17 +107,53 @@ int main(int ac , char **av)
   msc->m_domain_rect = dom;
   msc->m_ext_rect = dom;
 
+
   ds.reset(new dataset_t(dom, dom, dom));
 
   ds->init(filename);
 
   ds->computeMsGraph(msc);
 
+  msc->simplify_pers(0.05);
+
+    /*
+  int num_critpts = msc->get_num_critpts();
+  std::ranges::iota_view<int, int> a= std::views::iota(0, num_critpts);
+
+
+  auto rng = a | std::ranges::views::filter([this](const auto& item) {
+      return this->is_not_canceled(item);
+          });
+          */
+  
+
+  //std::cout << "\nRNG:\n";
+  //for (const auto& element : rng) {
+  //    std::cout << element << std::endl;
+  //}
+
+  /*
+  TLOG << "Computed:";
+  int i = 0;
+
+      auto filtered_rng = std::ranges::views::filter(rng, [this, i](int x) {
+          return this->is_index_i_cp_(x, i);
+          });
+      std::vector<int> filtered_vector(filtered_rng.begin(), filtered_rng.end());
+
+
+    for(int l=0;l<filtered_vector.size();i++)
+      std::cout <<"\n" << filtered_vector[i];
+  
+  */
 
   //ds->computeMsGraph()
 
-    
+  //msc->simplify_pers(0.05);
 
+  
+
+  
 
 
   /*

@@ -1139,9 +1139,10 @@ namespace grid
                    msc->m_cp_pair_idx.data(),msc->m_cp_index.data(),
                    msc->m_cp_fn.data());
 
-        for (int i = 0; i < std::min(10, msc->get_num_critpts()); ++i) {
-            std::cout << "Critical Point " << i << ": Cell ID = " << msc->m_cp_cellid[i] << std::endl;
-        }
+        //for (int i = 0; i < std::min(10000, msc->get_num_critpts()); ++i) {
+            //if(msc->m_cp_cellid[i][0]==256)
+            //std::cout << "Critical Point " << i << ": Cell ID = " << msc->m_cp_cellid[i] << std::endl;
+        //}
         
       }
     }
