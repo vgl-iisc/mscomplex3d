@@ -544,7 +544,7 @@ public:
   {
 
       
-          //return pybind11::array_t<double>({ 0 });
+  	return pybind11::array_t<double>({ 0 });
       
       TLOG << "Entered :";
 
