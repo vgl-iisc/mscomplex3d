@@ -462,19 +462,8 @@ bool dataset_t::isPairOrientationCorrect (cellid_t c, cellid_t p) const
 
 bool dataset_t::isCellCritical (cellid_t c) const
 	{
-
-    bool a=(m_cell_flags(c) & CELLFLAG_CRITICAL);
-    int q = m_cell_flags(c);
-    if (c[0] == 256 && c[1] == 4 && c[2] == 1)
-    {
-        std::cout << "\nFUNCTION";
-        std::cout << std::endl << q;
-        std::cout << std::endl << (int)CELLFLAG_CRITICAL;
-        std::cout << std::endl << (m_cell_flags(c) & CELLFLAG_CRITICAL);
-        std::cout<<"\n Function output: " << a;
-    }
-	    return a;
-    }
+        return (m_cell_flags(c) & CELLFLAG_CRITICAL);
+	}
 
 /*---------------------------------------------------------------------------*/
 
