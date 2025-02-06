@@ -16,7 +16,7 @@ include(FetchContent)
 FetchContent_Declare(
     pybind11
     GIT_REPOSITORY https://github.com/pybind/pybind11.git
-    GIT_TAG        v2.12.0  # You can use a specific commit or branch if needed
+    GIT_TAG        v2.13.0  # You can use a specific commit or branch if needed
 )
 
 # Make sure the pybind11 content is available
