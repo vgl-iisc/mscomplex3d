@@ -205,9 +205,6 @@ namespace grid
       s[1] = p.hi.y -p.lo.y +1;
       s[2] = p.hi.z -p.lo.z +1;
 
-      std::cout << "Flag size in function get_size: "
-          << s[0] << " x " << s[1] << " x " << s[2] << std::endl;
-
       return s;
     }
 
@@ -632,9 +629,6 @@ namespace grid
 
       int cell_ct = num_cells(ext);
 
-      std::cout << "Flag size before try: "
-          << flag_size[0] << " x " << flag_size[1] << " x " << flag_size[2] << std::endl;
-
       cl::NDRange globalSize(1024); // Total number of work items
       cl::NDRange localSize(256);          // Work items per work group
 
@@ -645,23 +639,20 @@ namespace grid
                                cl::ImageFormat(CL_R,CL_FLOAT),
                                func_size[0],func_size[1],func_size[2],0,0,h_func);
 
-
-
-        std::cout << "Flag size: "
-            << flag_size[0] << " x " << flag_size[1] << " x " << flag_size[2] << std::endl;
-
         // Check device limits
         cl::Device device = s_context.getInfo<CL_CONTEXT_DEVICES>()[0];
         size_t max_width = device.getInfo<CL_DEVICE_IMAGE3D_MAX_WIDTH>();
         size_t max_height = device.getInfo<CL_DEVICE_IMAGE3D_MAX_HEIGHT>();
         size_t max_depth = device.getInfo<CL_DEVICE_IMAGE3D_MAX_DEPTH>();
-        std::cout << "Device max 3D image size: "
-            << max_width << " x " << max_height << " x " << max_depth << std::endl;
+        
         
 
         // Check flag size validity
         if (flag_size[0] == 0 || flag_size[1] == 0 || flag_size[2] == 0 ||
             flag_size[0] > max_width || flag_size[1] > max_height || flag_size[2] > max_depth) {
+            std::cout << "\nFlag Size: " << flag_size[0] << " x " << flag_size[1] << " x " << flag_size[2];
+            std::cout << "\nDevice max 3D image size: "
+                << max_width << " x " << max_height << " x " << max_depth << std::endl;
             throw std::runtime_error("Invalid image dimensions for flag_img!");
         }
         
@@ -1131,9 +1122,6 @@ namespace grid
 
         msc->resize(num_cps);
 
-        std::cout << "\nNUMBER OF CRITICAL POINTS: " << num_cps<<"\n";
-
-        
         __save_cps(rct,ext,dom,func_img,*flag_img,cp_offset_buf,num_cps,
                    msc->m_cp_cellid.data(),msc->m_cp_vertid.data(),
                    msc->m_cp_pair_idx.data(),msc->m_cp_index.data(),

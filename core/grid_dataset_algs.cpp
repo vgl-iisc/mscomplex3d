@@ -380,8 +380,6 @@ void computeConnections(mscomplex_ptr_t msc,dataset_ptr_t ds,
           }
       }
   );
-  
-  std::cout << "\n BEFORE COMPUTING INC PAIRS \n";
 
   #pragma omp parallel for
   for(int i = 0 ; i < cps.size(); ++i)

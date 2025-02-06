@@ -62,29 +62,15 @@ void dataset_t::init(const string &filename)
   ifstream ifs(filename.c_str(),ios::in|ios::binary);
   //ENSURE(ifs.is_open(),"unable to open file " + filename);
   ENSUREV2(ifs.is_open(),"unable to open file ", filename,wd);
-
-  std::cout << "Bytes read: " << ifs.gcount() << std::endl;
-
   m_vert_fns.resize(pt_span[0], pt_span[1], pt_span[2]);
-  //m_vert_fns.resize(pt_span);
-  //ifs.read((char*)(void*) m_vert_fns.data.data(), sizeof(cell_fn_t) * num_pts);
-  ifs.read(reinterpret_cast<char*>(m_vert_fns.data.data()), sizeof(cell_fn_t) * num_pts);
+
+    	ifs.read(reinterpret_cast<char*>(m_vert_fns.data.data()), sizeof(cell_fn_t) * num_pts);
   if (ifs.eof()) {
       std::cerr << "Reached EOF after reading." << std::endl;
       ifs.clear(); // Reset EOF flag
   }
 
   ENSURE(ifs.fail()==false,"failed to read some data");
-
-
-
-  std::cout << "\nPosition of ifs.tellg " << uint(ifs.tellg());
-  std::cout << "\nfile size " << num_pts * sizeof(cell_fn_t);
-
-
-  std::cout << "\nDATA HAS BEEN READ\n";
-    	auto max_iter = std::max_element(m_vert_fns.data.begin(), m_vert_fns.data.end());
-    	std::cout << "\n max value in data: " << *max_iter;
 
   ifs.seekg(0,ios::end);
   ENSURE(uint(ifs.tellg())==num_pts*sizeof(cell_fn_t),"file/piece size mismatch");
@@ -462,6 +448,7 @@ bool dataset_t::isPairOrientationCorrect (cellid_t c, cellid_t p) const
 
 bool dataset_t::isCellCritical (cellid_t c) const
 	{
+
         return (m_cell_flags(c) & CELLFLAG_CRITICAL);
 	}
 

@@ -760,7 +760,6 @@ void mscomplex_compute_bin
 
 	msc->ds->computeMsGraph(msc);
 
-    std::cout << "crit point size: " <<  msc->m_cp_cellid.size();
 
     DLOG << "Exited  :";
 }
