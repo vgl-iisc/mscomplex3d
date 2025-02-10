@@ -44,8 +44,6 @@ A python loadable module named **pyms3d** must be present in the install directo
 
 OpenCL usually comes with the CUDA Computing Toolkit from Nvidia. It is recomended to install the entire toolkit to make use of the binary or python module.
 
-![mscomplex3d-config.png](cmake-config.png)
-
 # Pybind11 Installation #
 
 The CMake file for the python module is configured to automatically download the Pybind11 dependency. It is not recommended to use any other Pybind.
