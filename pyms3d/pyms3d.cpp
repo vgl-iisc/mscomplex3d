@@ -37,6 +37,45 @@
 #include <grid_dataset.h>
 #include <grid_mscomplex.h>
 
+#include <chrono>
+
+struct timer
+{
+    int flag=0;
+    std::chrono::duration<double> time;
+    std::chrono::time_point<std::chrono::steady_clock> start;
+
+    void timer_start()
+    {
+        if (flag == 1)
+            std::cout << "Timer already started, cannot start timer again. End it to start.";
+        else
+        {
+            start = std::chrono::high_resolution_clock::now();
+            flag = 1;
+        }
+    }
+
+    void timer_end()
+    {
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = end - start;
+        time = elapsed;
+    }
+    void timer_print(const std::string& process_name)
+    {
+        std::cout<<std::endl << process_name << " took this much time: " << time;
+        time = std::chrono::duration < double> (0);
+        flag = 0;
+    }
+}time_keeper;
+
+
+
+
+
+
+
 #ifdef _WIN32
 #include <BaseTsd.h>
 typedef SSIZE_T ssize_t;
@@ -85,9 +124,6 @@ np::ndarray vector_to_ndarray(const std::vector<T> & vec)
 
 template<typename DTYPE, int NCOL, typename T>
 py::array_t<DTYPE> vector_to_ndarray(const std::vector<T>& vec) {
-
-
-
     // Ensure the sizes match
     static_assert(sizeof(DTYPE) * NCOL == sizeof(T), "Size mismatch between DTYPE and T");
 
@@ -753,13 +789,22 @@ void mscomplex_compute_bin
     msc->m_rect = dom;
     msc->m_domain_rect = dom;
     msc->m_ext_rect = dom;
-    
+
+
+    time_keeper.timer_start();
     msc->ds.reset(new dataset_t(dom, dom, dom));
+    time_keeper.timer_end();
+    time_keeper.timer_print("reset");
 
+    time_keeper.timer_start();
 	msc->ds->init(bin_file);
+    time_keeper.timer_end();
+    time_keeper.timer_print("file read");
 
+    time_keeper.timer_start();
 	msc->ds->computeMsGraph(msc);
-
+    time_keeper.timer_end();
+    time_keeper.timer_print("MS Complex Processing");
 
     DLOG << "Exited  :";
 }
