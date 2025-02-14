@@ -9,15 +9,16 @@ The mscomplex3d computes the Morse-Smale complexes on 3d grids. Its available in
 
 # Installation #
 
-## Dependancies ##
-- [Cmake 3.1.8](http://www.cmake.org/)
-- [Boost 1.58](http://www.boost.org/doc/libs/1_58_0/)
-- [OpenCL 1.1](https://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/) OpenCL is often tricky to install. See following section for tips. 
+## Dependencies ##
+- [Cmake](http://www.cmake.org/)
+- OpenCL
 - [OpenMP](http://openmp.org/wp/)
-- [Python 2.7](http://python.org) with dev libs
+- [Python 3.7](http://python.org)
+- [Pybind11 2.13](https://github.com/pybind/pybind11/releases/tag/v2.13.0) 
 
-## Fetch and Compile (linux) ##
+## Fetch and Compile ##
 
+### Linux ###
 
 ```bash
 $ git clone https://bitbucket.org/vgl_iisc/mscomplex-3d.git
@@ -31,23 +32,18 @@ $ make -j8
 $ make -j8 install
 ```
 
+### Windows ###
+
+
 Run the above commands in bash shell. 
 
 A binary executable named **mscomplex3d** must be present in the install directory. 
 A python loadable module named **pyms3d** must be present in the install directory as well as in [pyms3d/examples](pyms3d/examples)
 
 # OpenCL Installation #
-Either of the following methods may be used for OpenCL 1.1 installation. 
-## OpenCL 1.1 with CUDA (Linux) ##
 
-Nvidia Cuda installs with the default OpenCL version 1.1 (as of Cuda 10.1). Once the drivers are installed (using the cuda .run file) you should find the opencl libs at ```/usr/local/cuda/lib64/libOpenCL.so``` and include directory at ```/usr/local/cuda/include/```. The same must be configured via cmake/cmake-gui. cmake-gui configuration image is shown below. 
+OpenCL usually comes with the CUDA Computing Toolkit from Nvidia. It is recomended to install the entire toolkit to make use of the binary or python module.
 
-![mscomplex3d-config.png](cmake-config.png)
+# Pybind11 Installation #
 
-## Installing OpenCL (old way) ##
-
-Please follow this guide for installing OpenCL on linux [here](http://wiki.tiker.net/OpenCLHowTo). 
-
-The following is a list of platforms/OSs in which it was necessary to install OpenCL little differently from the above guide. 
-
-- [Asus Zenbook running ubuntu13.10](opencl-on-zenbook)
+The CMake file for the python module is configured to automatically download the Pybind11 dependency. It is not recommended to use any other Pybind.
