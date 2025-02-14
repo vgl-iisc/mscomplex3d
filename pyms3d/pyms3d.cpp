@@ -41,32 +41,44 @@
 
 struct timer
 {
-    int flag=0;
+    int flag = 0;
     std::chrono::duration<double> time;
     std::chrono::time_point<std::chrono::steady_clock> start;
 
     void timer_start()
     {
         if (flag == 1)
-            std::cout << "Timer already started, cannot start timer again. End it to start.";
+        {
+            std::cout << "Timer already started, cannot start timer again. End it to start.\n";
+        }
         else
         {
-            start = std::chrono::high_resolution_clock::now();
+            start = std::chrono::steady_clock::now();  // Use steady_clock for better cross-platform consistency
             flag = 1;
         }
     }
 
     void timer_end()
     {
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = end - start;
-        time = elapsed;
+        if (flag == 0)
+        {
+            std::cout << "Timer was not started. Please start the timer before ending it.\n";
+            return;
+        }
+        auto end = std::chrono::steady_clock::now();
+        time = end - start;
+        flag = 0; // Reset flag so timer can be restarted
     }
+
     void timer_print(const std::string& process_name)
     {
-        std::cout<<std::endl << process_name << " took this much time: " << time;
-        time = std::chrono::duration < double> (0);
-        flag = 0;
+        if (flag == 1)
+        {
+            std::cout << "Warning: Timer is still running. Stopping it now.\n";
+            timer_end();  // Ensure timer stops before printing
+        }
+        std::cout << process_name << " took: " << time.count() << " seconds\n";
+        time = std::chrono::duration<double>(0);
     }
 }time_keeper;
 
