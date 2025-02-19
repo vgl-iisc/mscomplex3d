@@ -297,6 +297,7 @@ namespace grid
         std::vector<std::pair<int,int> > availablePlatformDeviceIDs;
 
         int selectedPlatformDeviceID_GPU=-1;
+        int selectedPlatformDeviceID_CPU=-1;
 
         for (int i = 0 ; i < platforms.size(); ++i)
         {
@@ -315,17 +316,26 @@ namespace grid
             if(selectedPlatformDeviceID_GPU == -1 &&
                devices[j].getInfo<CL_DEVICE_TYPE>() == CL_DEVICE_TYPE_GPU)
               selectedPlatformDeviceID_GPU = availablePlatformDeviceIDs.size()-1;
+
+            if (devices[j].getInfo<CL_DEVICE_TYPE>() == CL_DEVICE_TYPE_CPU)
+                selectedPlatformDeviceID_CPU = availablePlatformDeviceIDs.size() - 1;
+
           }
         }
 
+
+        //std::pair<int,int> selectedPlatformDevicePair = availablePlatformDeviceIDs[
+        //(selectedPlatformDeviceID_GPU != -1)?(selectedPlatformDeviceID_GPU):(0)];
+
         std::pair<int,int> selectedPlatformDevicePair = availablePlatformDeviceIDs[
-            (selectedPlatformDeviceID_GPU != -1)?(selectedPlatformDeviceID_GPU):(0)];
+        (selectedPlatformDeviceID_CPU != -1)?(selectedPlatformDeviceID_CPU):(0)];
 
         s_platform = platforms[selectedPlatformDevicePair.first];
 
         cl_context_properties properties[] =
            { CL_CONTEXT_PLATFORM, (cl_context_properties)(s_platform)(), 0};
         s_context = cl::Context(CL_DEVICE_TYPE_ALL, properties);
+        //s_context = cl::Context(CL_DEVICE_TYPE_CPU, properties);
 
         devices    = s_context.getInfo<CL_CONTEXT_DEVICES>();
         devices[0] = devices[selectedPlatformDevicePair.second];
@@ -333,6 +343,7 @@ namespace grid
         s_device   = devices[0];
 
         s_queue = cl::CommandQueue(s_context, s_device);
+        std::cout << "Using OpenCL device: " << s_device.getInfo<CL_DEVICE_NAME>() << std::endl;
 
       }
       catch (cl::Error err)
@@ -398,7 +409,8 @@ namespace grid
 
           // Define NDRange sizes
           cl::NDRange global(1024);  // 1024 work-items in total
-          cl::NDRange local(256);    // 256 work-items per work group
+          //cl::NDRange local(256);    // 256 work-items per work group
+          cl::NDRange local(64);    // 256 work-items per work group
 
           // Define and initialize kernels
           s_assign_max_facet_edge=cl::Kernel (program1, "assign_max_facet_edge");
@@ -611,6 +623,11 @@ namespace grid
     bool is_gpu_context()
     {
       return (s_device.getInfo<CL_DEVICE_TYPE>() == CL_DEVICE_TYPE_GPU);
+    }
+
+    bool is_cpu_context()
+    {
+        return (s_device.getInfo<CL_DEVICE_TYPE>() == CL_DEVICE_TYPE_CPU);
     }
 
     void __assign_gradient
@@ -901,11 +918,13 @@ namespace grid
       cl::Buffer  &cp_count_buf,
       int &num_cps)
     {
+        
       try
       {
         cp_count_buf = cl::Buffer(s_context,CL_MEM_READ_WRITE,sizeof(int)*WG_SIZE);
         cl::Buffer group_sums_buf(s_context,CL_MEM_READ_WRITE,sizeof(int)*(WG_NUM));
-
+        
+        
         //s_count_cps(rct,ext,dom,flag_img,cp_count_buf);
 
 
@@ -914,9 +933,11 @@ namespace grid
         s_count_cps.setArg(2, dom);
         s_count_cps.setArg(3, flag_img);
         s_count_cps.setArg(4, cp_count_buf);
-
+        
+        
         cl::NDRange globalSize(1024); // Total number of work items
-        cl::NDRange localSize(256);          // Work items per work group
+        //cl::NDRange localSize(256);          // Work items per work group
+        cl::NDRange localSize(32);          // Work items per work group
 
       	s_queue.enqueueNDRangeKernel(
             s_count_cps,
@@ -927,11 +948,13 @@ namespace grid
 
         s_queue.finish();
         
-
+         
         rect_list_t bnds;
 
         get_boundry_rects(from_cell_pair(rct),from_cell_pair(ext),bnds);
+        
 
+    	
         for( uint i = 0 ; i < bnds.size(); ++i)
         {
           cell_pair_t bnd = to_cell_pair(bnds[i]);
@@ -953,7 +976,7 @@ namespace grid
           //s_count_boundry_cps(rct,ext,dom,bnd,bnd_dir,flag_img,cp_count_buf);
         }
         s_queue.finish();
-
+        
         s_scan_local_sums.setArg(0, cp_count_buf);
         s_scan_local_sums.setArg(1, group_sums_buf);
         s_queue.enqueueNDRangeKernel(
@@ -962,15 +985,18 @@ namespace grid
             globalSize,
             localSize
         );
+        s_queue.finish();
 
         s_scan_group_sums.setArg(0, group_sums_buf);
+
         s_queue.enqueueNDRangeKernel(
             s_scan_group_sums,
             cl::NullRange,
             globalSize,
             localSize
         );
-
+        
+        
         s_scan_update_sums.setArg(0, cp_count_buf);
         s_scan_update_sums.setArg(1, group_sums_buf);
         s_queue.enqueueNDRangeKernel(
@@ -994,6 +1020,7 @@ namespace grid
         ENSURES(false)<< "ERROR: "<< err.what()<< "("<< err.err()<< ")"<< std::endl;
         throw;
       }
+      
     }
 
     void __save_cps
@@ -1019,7 +1046,7 @@ namespace grid
         cl::Buffer cp_func_buf(s_context,CL_MEM_READ_WRITE,sizeof(cell_fn_t)*num_cps);
 
         cl::NDRange globalSize(1024); // Total number of work items
-        cl::NDRange localSize(256);          // Work items per work group
+        cl::NDRange localSize(32);          // Work items per work group
 
         s_save_cps.setArg(0, rct);
         s_save_cps.setArg(1, ext);
@@ -1101,7 +1128,7 @@ namespace grid
 
     worker::worker():flag_img(new cl::Image3D){}
 
-
+    
     void worker::assign_gradient(dataset_ptr_t ds, mscomplex_ptr_t msc)
     {
       cl::Image3D  func_img;
@@ -1117,23 +1144,25 @@ namespace grid
       {
         cl::Buffer cp_offset_buf;
         int          num_cps;
-
+		
        __count_and_scan_cps(rct,ext,dom,*flag_img,cp_offset_buf,num_cps);
 
         msc->resize(num_cps);
-
+        
         __save_cps(rct,ext,dom,func_img,*flag_img,cp_offset_buf,num_cps,
                    msc->m_cp_cellid.data(),msc->m_cp_vertid.data(),
                    msc->m_cp_pair_idx.data(),msc->m_cp_index.data(),
                    msc->m_cp_fn.data());
-
+                   
         //for (int i = 0; i < std::min(10000, msc->get_num_critpts()); ++i) {
             //if(msc->m_cp_cellid[i][0]==256)
             //std::cout << "Critical Point " << i << ": Cell ID = " << msc->m_cp_cellid[i] << std::endl;
         //}
         
       }
+      
     }
+
 
     void __owner_extrema
     ( cell_pair_t rct,

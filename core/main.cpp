@@ -23,9 +23,16 @@
 
 #include <grid_dataset.h>
 #include <grid_mscomplex.h>
+#include <CL/cl.h>
+
+#define __CL_ENABLE_EXCEPTIONS
+
+#include "grid_dataset_cl.h"
+#include "opencl.hpp"
 //#include <grid_outcore.h>
 
 //#include <sys/resource.h>
+
 
 using namespace std;
 using namespace grid;
@@ -80,12 +87,103 @@ void compute_mscomplex_basic(std::string filename, cellid_t size, double simp_tr
 */
 
 
+
+//#include <CL/cl.hpp>
+#include <iostream>
+
+int main()
+{
+    std::vector<cl::Platform> platforms;
+    cl::Platform::get(&platforms);
+
+    if (platforms.empty())
+    {
+        std::cerr << "No OpenCL platforms found!" << std::endl;
+        return -1;
+    }
+
+    std::cout << "Available OpenCL platforms:" << std::endl;
+    for (size_t i = 0; i < platforms.size(); ++i)
+    {
+        std::string platformName = platforms[i].getInfo<CL_PLATFORM_NAME>();
+        std::cout << "Platform " << i << ": " << platformName << std::endl;
+
+        std::vector<cl::Device> devices;
+        platforms[i].getDevices(CL_DEVICE_TYPE_ALL, &devices);
+
+        for (size_t j = 0; j < devices.size(); ++j)
+        {
+            std::string deviceName = devices[j].getInfo<CL_DEVICE_NAME>();
+            cl_device_type deviceType = devices[j].getInfo<CL_DEVICE_TYPE>();
+            std::cout << "  Device " << j << ": " << deviceName
+                << " [" << ((deviceType == CL_DEVICE_TYPE_CPU) ? "CPU" : "GPU") << "]"
+                << std::endl;
+        }
+    }
+
+//    string         filename = "C:\\Users\\sachi\\OneDrive\\Documents\\PYMS3D_EXAMPLES\\Hydrogen_128x128x128.raw";
+    string         filename = "C:\\Users\\sachi\\OneDrive\\Documents\\PYMS3D_EXAMPLES\\grid_data.raw";
+
+    //cellid_t       size = cellid_t(128,128,128);
+    cellid_t       size = cellid_t(3,4,5);
+
+    opencl::init();
+
+    const rect_t dom(cellid_t::zero, (size - cellid_t::one) * 2);
+
+    DLOG << "Entered :"
+        << endl << "\t" << SVAR(filename)
+        << endl << "\t" << SVAR(size);
+
+    mscomplex_ptr_t msc(new mscomplex_t);
+    dataset_ptr_t ds;
+
+    msc->m_rect = dom;
+    msc->m_domain_rect = dom;
+    msc->m_ext_rect = dom;
+
+
+    ds.reset(new dataset_t(dom, dom, dom));
+
+    ds->init(filename);
+
+    try
+    {
+        std::cout << "OpenCL Context is GPU: " << opencl::is_gpu_context() << std::endl;
+        std::cout << "OpenCL Context is CPU: " << opencl::is_cpu_context() << std::endl;
+
+        ds->computeMsGraph(msc);
+
+    }
+    catch (cl::Error& err)
+    {
+            std::cerr << "SETUP QUEUE ERROR: " << err.what() << " (" << err.err() << ")" << std::endl;
+
+            if (err.err() == CL_INVALID_PLATFORM)
+                std::cerr << "Invalid platform! The selected platform may not support CPU execution." << std::endl;
+            else if (err.err() == CL_INVALID_DEVICE)
+                std::cerr << "Invalid device! The CPU device may not be available." << std::endl;
+            else if (err.err() == CL_INVALID_CONTEXT)
+                std::cerr << "Invalid context! OpenCL failed to create a CPU context." << std::endl;
+            else if (err.err() == CL_OUT_OF_HOST_MEMORY)
+                std::cerr << "Out of host memory! Your system may be running low on RAM." << std::endl;
+
+            throw;
+        
+	}
+    return 0;
+
+}
+
+/*
 int main(int ac , char **av)
 {
   //string         filename = "C:\\Users\\sachi\\OneDrive\\Documents\\PYMS3D_EXAMPLES\\Hydrogen_128x128x128.raw";
-  string         filename = "C:\\Users\\sachi\\OneDrive\\Documents\\PYMS3D_EXAMPLES\\SquareCylinderOkuboWeiss_t0816.raw";
+  //string         filename = "C:\\Users\\sachi\\OneDrive\\Documents\\PYMS3D_EXAMPLES\\SquareCylinderOkuboWeiss_t0816.raw";
+  string         filename = "C:\\Users\\sachi\\OneDrive\\Documents\\PYMS3D_EXAMPLES\\neghip_64x64x64_uint8.raw";
   //string         filename = "C:\\Users\\sachi\\OneDrive\\Documents\\PYMS3D_EXAMPLES\\grid_data.raw";
-  cellid_t       size = cellid_t(192,64,48);
+  //cellid_t       size = cellid_t(192,64,48);
+  cellid_t       size = cellid_t(64,64,64);
   //cellid_t       size = cellid_t(128,128,128);
   //cellid_t       size = cellid_t(129, 4, 4);
   //double         simp_tresh;
@@ -114,7 +212,10 @@ int main(int ac , char **av)
 
   ds->computeMsGraph(msc);
 
-  msc->simplify_pers(0.05);
+  //msc->simplify_pers(0.05);
+
+
+
 
     /*
   int num_critpts = msc->get_num_critpts();
@@ -214,7 +315,7 @@ int main(int ac , char **av)
 
 //    gdm->work();
 //  }
-}
+//}
 
 
 

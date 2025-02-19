@@ -21,6 +21,7 @@ public:
 };
 
 bool is_gpu_context();
+bool is_cpu_context();
 
 // void assign_gradient_and_owner_extrema(dataset_ptr_t ds);
 // void update_to_surv_extrema(dataset_ptr_t ds,mscomplex_ptr_t msc);

@@ -63,18 +63,15 @@ void dataset_t::init(const string &filename)
   //ENSURE(ifs.is_open(),"unable to open file " + filename);
   ENSUREV2(ifs.is_open(),"unable to open file ", filename,wd);
   m_vert_fns.resize(pt_span[0], pt_span[1], pt_span[2]);
-
-    	ifs.read(reinterpret_cast<char*>(m_vert_fns.data.data()), sizeof(cell_fn_t) * num_pts);
+  ifs.read(reinterpret_cast<char*>(m_vert_fns.data.data()), sizeof(cell_fn_t) * num_pts);
   if (ifs.eof()) {
       std::cerr << "Reached EOF after reading." << std::endl;
+     
       ifs.clear(); // Reset EOF flag
   }
-
   ENSURE(ifs.fail()==false,"failed to read some data");
-
   ifs.seekg(0,ios::end);
   ENSURE(uint(ifs.tellg())==num_pts*sizeof(cell_fn_t),"file/piece size mismatch");
-
   ifs.close();
   
 }
