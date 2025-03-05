@@ -1066,7 +1066,7 @@ Note:
 
     py::class_<mscomplex_pyms3d_t, mscomplex_t, std::shared_ptr<mscomplex_pyms3d_t>>(m, "MsComplexPyms3D")
         .def(py::init<>())
-        .def("cps", &mscomplex_pyms3d_t::cps, py::arg("dim") = -1,
+	    .def("cps", &mscomplex_pyms3d_t::cps, py::arg("dim") = -1,
             "Returns a list of surviving critical points based on dimension")
         .def("cps_func", &mscomplex_pyms3d_t::cps_func, "Get function values of all critical points")
         .def("cps_index", &mscomplex_pyms3d_t::cps_index, "Get Morse indices of all critical points")
@@ -1082,7 +1082,25 @@ Note:
         .def("load", &mscomplex_pyms3d_t::load, "Load mscomplex from file")
         .def("save", &mscomplex_pyms3d_t::save, "Save mscomplex to file")
         .def("vert_func", &mscomplex_pyms3d_t::vert_fn,
-            "Scalar value at vertex coordinate");
+            "Scalar value at vertex coordinate")
+        .def("canc_pairs", &mscomplex_pyms3d_t::canc_pairs,
+            "get all cancellation pairs \n")
+        .def("collect_geom", &mscomplex_pyms3d_t::collect_mfolds,
+            py::arg("dir") = 2, 
+            py::arg("dim") = -1,
+            "Collect the geometry of all survivng critical points\n"\
+            "\n"\
+            "Parameters  : \n"\
+            "         dir: Geometry type \n"\
+            "              dir=0 --> Descending \n"\
+            "              dir=1 --> Ascending \n"\
+            "              dir=2 --> Both (default) \n"\
+            "         dim: Critical point type \n"\
+            "              dim=-1      --> All (default)\n"\
+            "              dim=0,1,2,3 --> Minima, 1-saddle,2-saddle,Maxima \n"\
+            "\n"\
+            "Note        : Call only after the compute function is called.\n"\
+        );
         /*
 	.def("asc_geom", &mscomplex_pyms3d_t::geom<ASC>,
             py::arg("cp"), py::arg("hversion") = -1, py::arg("ToPts") = true,
@@ -1156,6 +1174,12 @@ struct cellid_to_tup {
     }
 };
 
+
+	void setOpenCLDevice(int device=0)// use 0 for GPU, 1 for CPU
+    {
+	    
+    }
+
 /*****************************************************************************/
 /******** Define the pyms3d module                                    ********/
 /*****************************************************************************/
@@ -1182,7 +1206,7 @@ PYBIND11_MODULE(pyms3d_core, m) {
     init_mscomplex(m);
     m.doc() = "This is a custom module implemented in C++ using Pybind11.";  // Module docstring
         m.def("debug_print", &debug_print, "A function that prints a simple debug message");
-        m.def("get_hw_info",&get_hw_info);
+        m.def("get_hw_info",&get_hw_info, py::arg("device") = 0);
 
 }
 /*

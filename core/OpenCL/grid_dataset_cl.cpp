@@ -264,7 +264,7 @@ namespace grid
     }
 
 
-    void init(void)
+    void init(int device)
     {
       std::vector<cl::Device> devices;
       cl::Program             program1;
@@ -322,13 +322,18 @@ namespace grid
 
           }
         }
+        std::pair<int, int> selectedPlatformDevicePair;
+        if(device==0)
+        {
+            selectedPlatformDevicePair = availablePlatformDeviceIDs[
+                (selectedPlatformDeviceID_GPU != -1)?(selectedPlatformDeviceID_GPU):(0)];
 
-
-        //std::pair<int,int> selectedPlatformDevicePair = availablePlatformDeviceIDs[
-        //(selectedPlatformDeviceID_GPU != -1)?(selectedPlatformDeviceID_GPU):(0)];
-
-        std::pair<int,int> selectedPlatformDevicePair = availablePlatformDeviceIDs[
-        (selectedPlatformDeviceID_CPU != -1)?(selectedPlatformDeviceID_CPU):(0)];
+        }
+        else if(device==1)
+        {
+            selectedPlatformDevicePair = availablePlatformDeviceIDs[
+                (selectedPlatformDeviceID_CPU != -1) ? (selectedPlatformDeviceID_CPU) : (0)];
+        }
 
         s_platform = platforms[selectedPlatformDevicePair.first];
 
@@ -936,8 +941,8 @@ namespace grid
         
         
         cl::NDRange globalSize(1024); // Total number of work items
-        //cl::NDRange localSize(256);          // Work items per work group
-        cl::NDRange localSize(32);          // Work items per work group
+        cl::NDRange localSize(256);          // Work items per work group
+        //cl::NDRange localSize(32);          // Work items per work group
 
       	s_queue.enqueueNDRangeKernel(
             s_count_cps,
@@ -1046,7 +1051,8 @@ namespace grid
         cl::Buffer cp_func_buf(s_context,CL_MEM_READ_WRITE,sizeof(cell_fn_t)*num_cps);
 
         cl::NDRange globalSize(1024); // Total number of work items
-        cl::NDRange localSize(32);          // Work items per work group
+        cl::NDRange localSize(256);          // Work items per work group
+        //cl::NDRange localSize(32);          // Work items per work group
 
         s_save_cps.setArg(0, rct);
         s_save_cps.setArg(1, ext);

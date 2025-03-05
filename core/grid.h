@@ -251,7 +251,7 @@ namespace grid {
 	namespace opencl {
 
 		/// \brief Init OpenCL runtime
-		void init();
+		void init(int device=0);
 
 		/// \brief Return the platform/device info after init
 		std::string get_info();
@@ -262,9 +262,9 @@ namespace grid {
 		std::string get_info();
 	}
 
-	inline std::string get_hw_info()
+	inline std::string get_hw_info(int device=0)
 	{
-		opencl::init();
+		opencl::init(device);
 		return opencl::get_info() + openmp::get_info();
 	}
 }
