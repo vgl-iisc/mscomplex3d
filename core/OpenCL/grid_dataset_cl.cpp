@@ -285,77 +285,83 @@ namespace grid
 
       headerCode.replace(headerCode.find(s2),s2.size(),
                          utl::to_string(OPENCL_NUM_WORK_GROUPS));
-
       try
       {
-        std::vector<cl::Platform> platforms;
-        cl::Platform::get(&platforms);
+          std::vector<cl::Platform> platforms;
+          cl::Platform::get(&platforms);
 
-        if (platforms.size() == 0)
-            throw std::runtime_error("cl Platform size 0\n");
+          if (platforms.empty())
+              throw std::runtime_error("No OpenCL platforms found!");
 
-        std::vector<std::pair<int,int> > availablePlatformDeviceIDs;
+          std::vector<std::pair<int, int>> availablePlatformDeviceIDs;
+          int selectedPlatformDeviceID_GPU = -1;
+          int selectedPlatformDeviceID_CPU = -1;
 
-        int selectedPlatformDeviceID_GPU=-1;
-        int selectedPlatformDeviceID_CPU=-1;
-
-        for (int i = 0 ; i < platforms.size(); ++i)
-        {
-          // Should I really need to create a context to just read the list of devices??
-          cl_context_properties properties[] =
-             { CL_CONTEXT_PLATFORM, (cl_context_properties)(platforms[i])(), 0};
-
-          s_context = cl::Context(CL_DEVICE_TYPE_ALL, properties);
-
-          devices = s_context.getInfo<CL_CONTEXT_DEVICES>();
-
-          for (int j = 0 ; j < devices.size(); ++j)
+          for (int i = 0; i < platforms.size(); ++i)
           {
-            availablePlatformDeviceIDs.push_back(std::make_pair(i,j));
+              std::vector<cl::Device> devices;
+              platforms[i].getDevices(CL_DEVICE_TYPE_ALL, &devices);
 
-            if(selectedPlatformDeviceID_GPU == -1 &&
-               devices[j].getInfo<CL_DEVICE_TYPE>() == CL_DEVICE_TYPE_GPU)
-              selectedPlatformDeviceID_GPU = availablePlatformDeviceIDs.size()-1;
+              for (int j = 0; j < devices.size(); ++j)
+              {
+                  availablePlatformDeviceIDs.push_back(std::make_pair(i, j));
 
-            if (devices[j].getInfo<CL_DEVICE_TYPE>() == CL_DEVICE_TYPE_CPU)
-                selectedPlatformDeviceID_CPU = availablePlatformDeviceIDs.size() - 1;
+                  if (selectedPlatformDeviceID_GPU == -1 && devices[j].getInfo<CL_DEVICE_TYPE>() == CL_DEVICE_TYPE_GPU)
+                      selectedPlatformDeviceID_GPU = availablePlatformDeviceIDs.size() - 1;
 
+                  if (devices[j].getInfo<CL_DEVICE_TYPE>() == CL_DEVICE_TYPE_CPU)
+                      selectedPlatformDeviceID_CPU = availablePlatformDeviceIDs.size() - 1;
+              }
           }
-        }
-        std::pair<int, int> selectedPlatformDevicePair;
-        if(device==0)
-        {
-            selectedPlatformDevicePair = availablePlatformDeviceIDs[
-                (selectedPlatformDeviceID_GPU != -1)?(selectedPlatformDeviceID_GPU):(0)];
 
-        }
-        else if(device==1)
-        {
-            selectedPlatformDevicePair = availablePlatformDeviceIDs[
-                (selectedPlatformDeviceID_CPU != -1) ? (selectedPlatformDeviceID_CPU) : (0)];
-        }
+          std::pair<int, int> selectedPlatformDevicePair;
+          if (device == 0 && selectedPlatformDeviceID_GPU != -1)
+          {
+              selectedPlatformDevicePair = availablePlatformDeviceIDs[selectedPlatformDeviceID_GPU];
+              std::cout << "\nGPU SELECTED\n";
+          }
+          else if (device == 1 && selectedPlatformDeviceID_CPU != -1)
+          {
+              selectedPlatformDevicePair = availablePlatformDeviceIDs[selectedPlatformDeviceID_CPU];
+              std::cout << "\nCPU SELECTED\n";
+          }
+          else
+          {
+              selectedPlatformDevicePair = availablePlatformDeviceIDs[0]; // Default to first available
+              std::cout << "\nDEFAULT DEVICE SELECTED\n";
+          }
 
-        s_platform = platforms[selectedPlatformDevicePair.first];
+          int platformIndex = selectedPlatformDevicePair.first;
+          int deviceIndex = selectedPlatformDevicePair.second;
 
-        cl_context_properties properties[] =
-           { CL_CONTEXT_PLATFORM, (cl_context_properties)(s_platform)(), 0};
-        s_context = cl::Context(CL_DEVICE_TYPE_ALL, properties);
-        //s_context = cl::Context(CL_DEVICE_TYPE_CPU, properties);
+          if (platformIndex >= platforms.size())
+              throw std::runtime_error("Error: Selected platform index is out of bounds.");
 
-        devices    = s_context.getInfo<CL_CONTEXT_DEVICES>();
-        devices[0] = devices[selectedPlatformDevicePair.second];
-        devices.resize(1);
-        s_device   = devices[0];
+          s_platform = platforms[platformIndex];
 
-        s_queue = cl::CommandQueue(s_context, s_device);
-        std::cout << "Using OpenCL device: " << s_device.getInfo<CL_DEVICE_NAME>() << std::endl;
+          std::vector<cl::Device> platformDevices;
+          s_platform.getDevices(CL_DEVICE_TYPE_ALL, &platformDevices);
 
+          if (deviceIndex >= platformDevices.size())
+              throw std::runtime_error("Error: Selected device index is out of bounds.");
+
+          s_device = platformDevices[deviceIndex];
+
+          cl_context_properties properties[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)s_platform(), 0 };
+          s_context = cl::Context({ s_device }, properties);
+
+          s_queue = cl::CommandQueue(s_context, s_device);
+
+          std::cout << "Using OpenCL device: " << s_device.getInfo<CL_DEVICE_NAME>() << std::endl;
+          std::cout << "Using platform: " << s_platform.getInfo<CL_PLATFORM_NAME>() << std::endl;
       }
-      catch (cl::Error err)
+      catch (cl::Error& err)
       {
-       cerr<< "SETUP QUEUE ERROR: "<< err.what()<< "("<< err.err()<< ")"<< endl;
-       throw;
+          std::cerr << "SETUP QUEUE ERROR: " << err.what() << " (" << err.err() << ")" << std::endl;
+          throw;
       }
+
+
       /*
       try
       {
