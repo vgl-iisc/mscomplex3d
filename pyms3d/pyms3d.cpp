@@ -134,6 +134,11 @@ np::ndarray vector_to_ndarray(const std::vector<T> & vec)
 }
 */
 
+/**
+ * \brief Converts a std::vector<T> to a python array
+ * \param vec the std::vector object
+ * \return 
+ */
 template<typename DTYPE, int NCOL, typename T>
 py::array_t<DTYPE> vector_to_ndarray(const std::vector<T>& vec) {
     // Ensure the sizes match
@@ -588,25 +593,19 @@ public:
   }
   */
 
+  /**
+   * \brief Returns a python array of all critical points of index i
+   * \param i Critical point index
+   * \return 
+   */
   py::array cps(int i)
   {
-
-      
-      
       TLOG << "Entered :";
 
       auto rng = cpno_range()
           | std::ranges::views::filter([this](const auto& item) {
           return this->is_not_canceled(item);
               });
-
-
-
-      //std::cout << "\nRNG:\n";
-      //for (const auto& element : rng) {
-      //    std::cout << element << std::endl;
-      //}
-
 
       TLOG << "Computed:";
 
@@ -779,8 +778,13 @@ void mscomplex_compute_bin
   DLOG << "Exited  :";
 }
 */
-
-void mscomplex_compute_bin
+	/**
+	 * \brief Read 3D scalar grid values from a given .raw file
+	 * \param msc the datastructure used to store the grid values and subsequent critical points
+	 * \param bin_file the .raw file used to sotre scalar values
+	 * \param tp dimensions of the 3D scalar field
+	 */
+	void mscomplex_compute_bin
 (mscomplex_pyms3d_ptr_t &msc,
     std::string            bin_file,
     py::tuple              tp)
@@ -1031,7 +1035,10 @@ void wrap_mscomplex_t()
       ;
 }*/
 
-
+/**
+ * \brief Performs binding of C++ functions to Python functions that are exposed via the MsComplexPyms3D object 
+ * \param m 
+ */
 void init_mscomplex(py::module_& m) {
 
     
@@ -1063,7 +1070,7 @@ Note:
     Simplification will stop when any of the criteria is reached.
     Call only after the compute function is called.
 )doc");
-
+    //the reason we define this second python class is because this is how we take an inherited function from an existing one in Pybind
     py::class_<mscomplex_pyms3d_t, mscomplex_t, std::shared_ptr<mscomplex_pyms3d_t>>(m, "MsComplexPyms3D")
         .def(py::init<>())
 	    .def("cps", &mscomplex_pyms3d_t::cps, py::arg("dim") = -1,
@@ -1175,11 +1182,6 @@ struct cellid_to_tup {
 };
 
 
-	void setOpenCLDevice(int device=0)// use 0 for GPU, 1 for CPU
-    {
-	    
-    }
-
 /*****************************************************************************/
 /******** Define the pyms3d module                                    ********/
 /*****************************************************************************/
@@ -1201,6 +1203,11 @@ BOOST_PYTHON_MODULE(pyms3d)
 void debug_print() {
     std::cout << "debug";
 }
+
+/// <summary>
+/// This is where the PyBind takes place. Make sure the first argument has the same name as the module you want to create.
+/// For now, the name of this module is pyms3d_core
+/// </summary>
 PYBIND11_MODULE(pyms3d_core, m) {
     // Call the function that registers the bindings
     init_mscomplex(m);

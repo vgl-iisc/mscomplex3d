@@ -49,6 +49,7 @@ public:
     CELLFLAG_MASK     = 0xc0
   };
 
+  // BIT MASK INFORMATION
   // bits [0,3) max facet of a cell
   // bits [3,6) pair of a cell
   // bit 6 ..  mark bit used by bfs to say visted or not

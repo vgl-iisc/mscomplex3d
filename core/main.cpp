@@ -127,8 +127,8 @@ int main()
     //cellid_t       size = cellid_t(128,128,128);
     cellid_t       size = cellid_t(3,4,5);
 
-    opencl::init();
-
+    //opencl::init(1);
+    get_hw_info(0);
     const rect_t dom(cellid_t::zero, (size - cellid_t::one) * 2);
 
     DLOG << "Entered :"
@@ -149,8 +149,8 @@ int main()
 
     try
     {
-        std::cout << "OpenCL Context is GPU: " << opencl::is_gpu_context() << std::endl;
-        std::cout << "OpenCL Context is CPU: " << opencl::is_cpu_context() << std::endl;
+        std::cout << "\nOpenCL Context is GPU: " << opencl::is_gpu_context() << std::endl;
+        std::cout << "\nOpenCL Context is CPU: " << opencl::is_cpu_context() << std::endl;
 
         ds->computeMsGraph(msc);
 

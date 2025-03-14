@@ -99,7 +99,9 @@ void  dataset_t::init(const cell_fn_t * dptr, bool is_fortran_order)
 
 /*---------------------------------------------------------------------------*/
 
-
+/**
+ * \brief Initialise storage of scalar field data, this function assumes the data is in a 3D space
+ */
 void dataset_t::init_storage()
 {
   static_assert(gc_grid_dim == 3 , "defined for 3-manifolds only");
@@ -130,6 +132,9 @@ void dataset_t::init_storage()
 
 /*---------------------------------------------------------------------------*/
 
+/**
+ * \brief Clear scalar field data, resize all arrays to 0
+ */
 void  dataset_t::clear()
 {
   m_cell_flags.resize(cellid_t::zero);
@@ -139,7 +144,11 @@ void  dataset_t::clear()
 }
 
 /*---------------------------------------------------------------------------*/
-
+/**
+ * \brief  
+ * \param c 
+ * \return 
+ */
 inline cellid_t dataset_t::get_cell_vert(cellid_t c) const
 {
   cellid_t v = c;
@@ -194,10 +203,10 @@ inline uint dataset_t::getCellIncCells( cellid_t c,cellid_t * inc) const
 /*---------------------------------------------------------------------------*/
 
 /**
- * \brief 
- * \param c 
- * \param fct 
- * \return 
+ * \brief get the flag of a neighboring cell
+ * \param c given cell
+ * \param fct neighboring cell
+ * \return the neighboring cel flag value
  */
 inline cell_flag_t get_neighbor_flag(cellid_t c,cellid_t fct)
 {
@@ -251,9 +260,9 @@ cellid_t dataset_t::getCellPairId (cellid_t c) const
     }
 
     ENSURES(this->m_rect.contains(pair)) << "Pair is not contained within the rect "
-        << "cell =" << c
-        << "pair =" << pair
-        << "flag = " << f
+        << "\ncell =" << c
+        << "\npair =" << pair
+        << "\nflag = " << f
         << flag_to_pair(c, f);
 
     	return pair;

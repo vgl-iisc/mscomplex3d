@@ -1140,7 +1140,11 @@ namespace grid
 
     worker::worker():flag_img(new cl::Image3D){}
 
-    
+    /**
+     * \brief Assigns gradient and identifies critical points in the scalar field
+     * \param ds dataset with scalar field data
+     * \param msc mscomplex data 
+     */
     void worker::assign_gradient(dataset_ptr_t ds, mscomplex_ptr_t msc)
     {
       cl::Image3D  func_img;

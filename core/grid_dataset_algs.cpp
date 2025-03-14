@@ -333,6 +333,7 @@ inline bool is_required_cp_runtime(int dim, eGDIR dir, const mscomplex_t& msc, i
         && (!msc.is_paired(i) || msc.index(msc.pair_idx(i)) == pdim);
 }
 
+
 template <int dim, eGDIR dir>
 void computeConnections(mscomplex_ptr_t msc,dataset_ptr_t ds,
                         mscomplex_connector_t &msc_connector)
@@ -438,22 +439,24 @@ void computeExtremaConnections(mscomplex_ptr_t msc,dataset_ptr_t ds,
 
 /*---------------------------------------------------------------------------*/
 
+/**
+ * \brief Function to compute the MSComplex structure via OpenCL, scalar field must be initialized and OpenCL must be initialised before calling this function.
+ * \param msc 
+ */
 void  dataset_t::computeMsGraph(mscomplex_ptr_t msc)
 {
     opencl::worker w;
     w.assign_gradient(shared_from_this(), msc);
 
-    //auto lc = this->m_rect.lc();
-    //auto uc = this->m_rect.uc();
+    auto lc = this->m_rect.lc();
+    auto uc = this->m_rect.uc();
 
     //std::ofstream os("log_flags.txt");
 
     //this->log_pairs(os);
 
-
-
-    //mscomplex_connector_t msc_connector(msc);
-    //msc_connector.init();
+    mscomplex_connector_t msc_connector(msc);
+    msc_connector.init();
     
     //std::cout << "\nComputing MS Graph \n";
 

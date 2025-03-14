@@ -15,6 +15,14 @@
 #include <stdexcept>
 #include <algorithm>
 
+/// <summary>
+/// This class was made to replace the Boost multi_array
+///	Some outcomes may vary, though the computation of the morse smale complex, and critical points shall not change.
+///	Observed changed outcomes include
+///	1. Change in array index for critical points in the critical point array
+///	2. Runtime is longer than the previous implementation
+/// </summary>
+/// <typeparam name="T"></typeparam>
 template <typename T, std::size_t N = 3>
 class Array3D {
 private:
@@ -44,7 +52,11 @@ public:
 	Array3D(n_vector_t<T, N> n) : Array3D(n[0], n[1], n[2]) // Delegate to the main constructor
 	{}
 
-	// Function to reindex the array (modifies the current object)
+
+	/**
+	 * \brief Reindexes the array. This function is no longer used, and is unsupported. It is not intended to perform anything.
+	 * \param lower_corner 
+	 */
 	void reindex(const std::array<short, N>& lower_corner) {
 
 		for (int i = 0; i < N; ++i)
@@ -262,6 +274,11 @@ namespace grid {
 		std::string get_info();
 	}
 
+	/**
+	 * \brief Initializes OpenCL as well as provide a description of device used by OpenCL for parallel computation.
+	 * \param device the device to be used for parallel computation. 0 for GPU. 1 is for CPU. OpenCL configuration should be set up before utilizing either. Is 0 by default.
+	 * \return 
+	 */
 	inline std::string get_hw_info(int device=0)
 	{
 		opencl::init(device);
