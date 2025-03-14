@@ -306,49 +306,6 @@ public:
   ///     Here NC  #cells in Asc/Des mfold of cp.
   ///          NC' #cells in Asc/Des mfold of cp whose all dual pts are in Primal Grid
 
-    /*
-  template <eGDIR dir> np::ndarray geom(int cp,int hver=-1,bool ToPts=true)
-  {
-    TLOG <<"Entered :" << SVAR(cp) << SVAR(hver);
-
-    if( hver == -1) hver = get_hversion();
-
-    ENSURES(is_in_range(cp,0,get_num_critpts()))
-        << "out of range "<<SVAR(cp);
-    ENSURES(is_in_range(hver,0,m_canc_list.size()+1))
-        << "hversion not in range "<<SVAR(hver);
-    BOOST_STATIC_ASSERT(   dir==ASC     ||    dir==DES );
-
-    int_list_t l;
-
-    int dim = index(cp);
-
-    m_merge_dag->get_contrib_cps
-        (l,dir,cp,hver,m_geom_hversion[dir][dim]);
-
-    mfold_t mfold;
-
-    for(int j = 0 ; j < l.size(); ++j)
-      br::copy(m_mfolds[dir][l[j]],std::back_inserter(mfold));
-
-    TLOG << "Computed:" << SVAR(mfold.size());
-
-    if (ToPts)
-    {
-      if(dir==ASC && dim==0) return __mfold_to_point_indices<CC_PRIM,0>(mfold);
-      if(dir==ASC && dim==1) return __mfold_to_point_indices<CC_DUAL,1>(mfold);
-      if(dir==ASC && dim==2) return __mfold_to_point_indices<CC_DUAL,2>(mfold);
-
-      if(dir==DES && dim==1) return __mfold_to_point_indices<CC_PRIM,1>(mfold);
-      if(dir==DES && dim==2) return __mfold_to_point_indices<CC_PRIM,2>(mfold);
-      if(dir==DES && dim==3) return __mfold_to_point_indices<CC_DUAL,3>(mfold);
-
-      ENSURES(false) <<"Should never reach here";
-    }
-
-    return vector_to_ndarray<cell_coord_t,gc_grid_dim>(mfold);
-  }*/
-
   template <eGDIR dir> py::array geom(int cp, int hver = -1, bool ToPts = true)
   {
       TLOG << "Entered :" << SVAR(cp) << SVAR(hver);
