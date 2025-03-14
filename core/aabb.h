@@ -2,10 +2,6 @@
 #define RECT_H_INCLUDED
 
 #include <iterator>
-
-//#include <boost/iterator/reverse_iterator.hpp>
-
-
 #include <n_vector.h>
 
 typedef uint32_t uint;
@@ -334,8 +330,6 @@ namespace aabb
     };
 
     typedef std::reverse_iterator<pt_iterator> pt_riterator;
-
-    //typedef boost::reverse_iterator<pt_iterator> pt_riterator;
 
     inline pt_iterator pt_begin() const
     {return pt_iterator(*this,0);}

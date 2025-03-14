@@ -12,8 +12,6 @@
 
 using namespace std;
 
-//#define static_assert(a, b) BOOST_STATIC_ASSERT_MSG(a, b)
-
 namespace grid
 {
 
@@ -23,10 +21,6 @@ namespace grid
         m_rect(r),
         m_ext_rect(e),
         m_domain_rect(d),
-        //m_vert_fns(cellid_t::zero,boost::fortran_storage_order()),
-        //m_cell_flags(cellid_t::zero,boost::fortran_storage_order()),
-        //m_owner_maxima(cellid_t::zero,boost::fortran_storage_order()),
-        //m_owner_minima(cellid_t::zero,boost::fortran_storage_order())
         m_vert_fns(0,0,0,0),
         m_cell_flags(0, 0, 0, 0),
         m_owner_maxima(0, 0, 0, 0),

@@ -9,7 +9,6 @@
 #if defined(__APPLE__) || defined(__MACOSX)
 #include <OpenCL/cl.hpp>
 #else
-//#include <cl.hpp>
 #if defined(__linux__)
 #define CL_HPP_TARGET_OPENCL_VERSION 220
 #endif
@@ -360,52 +359,6 @@ namespace grid
           std::cerr << "SETUP QUEUE ERROR: " << err.what() << " (" << err.err() << ")" << std::endl;
           throw;
       }
-
-
-      /*
-      try
-      {
-
-        
-        cl::Program::Sources sources;
-        sources.push_back(make_pair(headerCode.c_str(),headerCode.size()));
-
-        sources.push_back(make_pair(sourceCode1.c_str(),sourceCode1.size()));
-
-        program1 = cl::Program(s_context, sources);
-        program1.build(devices);
-
-        
-        s_assign_max_facet_edge =  cl::Kernel(program1, "assign_max_facet_edge").
-            bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE));
-
-        s_assign_max_facet_face =  cl::Kernel(program1, "assign_max_facet_face").
-            bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE));
-
-        s_assign_max_facet_cube =  cl::Kernel(program1, "assign_max_facet_cube").
-            bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE));
-
-        s_assign_pairs = cl::Kernel(program1, "assign_pairs").
-            bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE/2));
-
-        s_assign_pairs2 = cl::Kernel(program1, "assign_pairs2").
-            bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE/2));
-
-        s_assign_pairs3 = cl::Kernel(program1, "assign_pairs3").
-            bind(s_queue,cl::NullRange,cl::NDRange(WG_SIZE),cl::NDRange(WI_SIZE/2));
-            
-
-      }
-
-      
-      catch (cl::Error err)
-      {
-       cerr<< "PROGRAM1 ERROR: "<< err.what()<< "("<< err.err()<< ")"<< endl;
-       cerr<<program1.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0])<<endl;
-
-       throw;
-      }
-      */
         
       try {
           // Create program sources

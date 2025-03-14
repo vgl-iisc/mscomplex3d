@@ -177,40 +177,6 @@ private:
 /*---------------------------------------------------------------------------*/
 
 /** \brief A simple multi-threaded logger                                   **/
-    /*
-class logger
-{
- public:
-
-  enum severity_level {trace,debug,info,warning,error,fatal};
-
-  inline bool isOpen(severity_level severity)
-  {return severity >= UTL_LOG_LEVEL;}
-
-  inline void push_ts(const std::string & log)
-  {
-    std::string tstr = boost::posix_time::to_simple_string
-        (boost::posix_time::microsec_clock::local_time());
-
-    boost::mutex::scoped_lock  lock(s_mutex);
-    std::clog << "[" <<tstr <<"] " << log << std::endl;
-  }
-
-  inline void push(const std::string & log)
-  {
-    boost::mutex::scoped_lock  lock(s_mutex);
-    std::clog << log;
-  }
-
-  static inline logger& get() {return s_logger;}
-
-private:
-
-  static boost::mutex s_mutex;
-  static logger       s_logger;
-}; // logger
-*/
-
 
 class logger {
 public:

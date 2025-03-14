@@ -6,7 +6,6 @@
 #include <ostream>
 #include <cmath>
 
-//#include <boost/array.hpp>
 #include <array>
 #include <utl.h>
 
@@ -249,8 +248,6 @@ class n_vector_t: public std::array<T,N>
     static n_vector_t zero;
 
     static n_vector_t one;
-
-//    typedef boost::function<T(T)> apply_t;
 
 //    inline const n_vector_t apply(apply_t f)
 //    {

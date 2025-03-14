@@ -26,9 +26,6 @@
 #include <queue>
 #include <fstream>
 #include <stack>
-
-//#include <boost/enable_shared_from_this.hpp>
-//#include <boost/function.hpp>
 #include <functional>
 
 #include <grid.h>

@@ -3,10 +3,6 @@
 
 #include <vector>
 
-//#include <boost/shared_ptr.hpp>
-
-//#include <boost/multi_array.hpp>
-
 #include <aabb.h>
 #include <map>
 #include <vector>

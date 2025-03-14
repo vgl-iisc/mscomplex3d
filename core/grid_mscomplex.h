@@ -21,11 +21,6 @@
 #ifndef __GRID_MSCOMPLEX_H_INCLUDED_
 #define __GRID_MSCOMPLEX_H_INCLUDED_
 
-//#include <
-// /enable_shared_from_this.hpp>
-//#include <boost/iterator/counting_iterator.hpp>
-//#include <boost/range/iterator_range.hpp>
-
 #include <grid.h>
 #include <ranges>
 namespace grid
@@ -99,11 +94,8 @@ public:
 
 
   // iterator range to go over the set of critical points
-//  typedef boost::counting_iterator<int> iterator_t;
-	//  inline boost::iterator_range<iterator_t> cpno_range() const;
   using iterator_t = int;
-  //inline std::ranges::iota_view<iterator_t,iterator_t> cpno_range() const;
-  inline std::ranges::iota_view<int,int> cpno_range() const;
+	inline std::ranges::iota_view<int,int> cpno_range() const;
   // functions to create a mscomplex from a dataset
   void  resize(int i);
   void  set_critpt(int i,cellid_t c,char idx,cell_fn_t f,cellid_t vert_cell);

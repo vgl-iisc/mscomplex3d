@@ -1,23 +1,11 @@
-//#include <boost/range/adaptors.hpp>
-//#include <boost/foreach.hpp>
-
-//#include <boost/bind.hpp>
-//#include <boost/phoenix/core.hpp>
-//#include <boost/phoenix/operator.hpp>
-
 #include <grid_dataset.h>
 #include <grid_mscomplex.h>
 
 #include <grid_dataset_cl.h>
-
-//#define static_assert BOOST_STATIC_ASSERT
-
 #include <map>
 #include <ranges>
 
 using namespace std;
-//namespace br = boost::range;
-//namespace ba = boost::adaptors;
 
 namespace grid
 {
@@ -86,7 +74,6 @@ inline void mark_reachable(const range_t &rng,dataset_ptr_t ds)
 {
   cellid_t cets[40];
 
-  //cellid_list_t stk(boost::begin(rng),boost::end(rng));
   cellid_list_t stk(std::ranges::begin(rng), std::ranges::end(rng));
 
   while(stk.size() != 0 )
@@ -132,9 +119,6 @@ inline void  compute_inc_pairs_pq
       ((dim==1) && (dir==DES)) || (dim==0) ||
       ((dim==2) && (dir==ASC)) || (dim==3);
 
-  //auto cmp_dim = bind(cellid_int_pair_cmp< dim, dir>,ds,_1,_2);
-  //auto cmp_pdim = bind(cellid_int_pair_cmp<pdim, dir>,ds,_1,_2);
-
   auto cmp_dim = [ds](const cellid_int_pair_t& lhs, const cellid_int_pair_t& rhs) {
       return cellid_int_pair_cmp<dim, dir>(ds, lhs, rhs);
   };
@@ -152,9 +136,6 @@ inline void  compute_inc_pairs_pq
 
   
   int j = 0;
-  //n_vector_t<short,3> a{ 1, 2, 3 };
-  //cellid_t p;
-  //pq.push(make_pair(a, 10));  
 
 	pq.push(make_pair(s,1));
   
@@ -231,13 +212,11 @@ inline void collect_reachable_saddle
 
   const int pdim = (dir == DES)?(dim - 1):(dim + 1);
 
-  //auto cmp_dim = bind(cellid_int_pair_cmp< dim, dir>,ds_ptr,_1,_2);
-  auto cmp_dim = std::bind(cellid_int_pair_cmp< dim, dir>,ds_ptr, std::placeholders::_1, std::placeholders::_2);
+	auto cmp_dim = std::bind(cellid_int_pair_cmp< dim, dir>,ds_ptr, std::placeholders::_1, std::placeholders::_2);
 
   priority_queue<cellid_int_pair_t,cellid_int_pair_list_t,decltype (cmp_dim) >
       pq(cmp_dim);
 
-  //BOOST_FOREACH(cellid_t c, rng) {pq.push(cellid_int_pair_t(c,1));}
   for (const auto& c : rng) {
       pq.push(cellid_int_pair_t(c, 1));
   }
@@ -285,8 +264,6 @@ inline void collect_reachable_extrema
   const int dim = (dir == DES)?(gc_grid_dim):(0);
 
   cellid_t cets[40];
-
-  //cellid_list_t stk(boost::begin(rng),boost::end(rng));
   cellid_list_t stk(std::ranges::begin(rng), std::ranges::end(rng));
   while(stk.size() != 0 )
   {
@@ -343,15 +320,6 @@ void computeConnections(mscomplex_ptr_t msc,dataset_ptr_t ds,
   if(dim == 2 && dir == DES)
   {
     cellid_list_t cps_1asc;
-    
-    /*
-    br::copy(msc->cpno_range() |
-             ba::filtered(bind(is_required_cp<1,GDIR_ASC>,boost::cref(*msc),_1))|
-             ba::transformed(bind(&mscomplex_t::cellid,msc,_1)),
-             std::back_inserter(cps_1asc));
-    */
-
-    
     std::for_each(
         msc->cpno_range().begin(), msc->cpno_range().end(),
         [&](const auto& x) {
@@ -365,18 +333,10 @@ void computeConnections(mscomplex_ptr_t msc,dataset_ptr_t ds,
   }
 
   cellid_list_t cps;
-  /*
-  br::copy(msc->cpno_range()|
-           ba::filtered(bind(is_required_cp<dim,dir>,boost::cref(*msc),_1))|
-           ba::transformed(bind(&mscomplex_t::cellid,boost::cref(msc),_1)),
-           std::back_inserter(cps));
-           */
-  
   std::for_each(
       msc->cpno_range().begin(), msc->cpno_range().end(),
       [&](const auto& x) {
           if (is_required_cp<dim, dir>(*msc, x)) {
-              //cps.push_back(msc->cellid(x)); 
               cps.push_back(std::bind(&mscomplex_t::cellid, msc, x)());
           }
       }
@@ -401,14 +361,6 @@ void computeExtremaConnections(mscomplex_ptr_t msc,dataset_ptr_t ds,
   constexpr eGDIR sad_dir = (ex_dir == DES)?(ASC):(DES);
 
   cellid_list_t sad_cps;
-
-   /*
-     br::copy(msc->cpno_range() |
-           ba::filtered(bind(is_required_cp<sad_dim,sad_dir>,boost::cref(*msc),_1))|
-           ba::transformed(bind(&mscomplex_t::cellid,boost::cref(msc),_1)),
-           std::back_inserter(sad_cps));
-     */      
-
   std::ranges::copy(
       msc->cpno_range()
       | std::views::filter([&](const auto& x) { return is_required_cp<sad_dim, sad_dir>(*msc, x); })

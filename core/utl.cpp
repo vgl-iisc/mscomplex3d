@@ -1,16 +1,10 @@
 #include "utl.h"
-
 #include <sstream>
 #include <fstream>
-
 #include <vector>
-
-//#include <tr1/functional>
 #include<functional>
 
 /*===========================================================================*/
-
-
 using namespace std;
 #undef _HAS_STD_BYTE
 
@@ -19,34 +13,17 @@ namespace utl {
 
 void trim(std::string &s)
 {
-    /*
-  s.erase(s.begin(), std::find_if
-          (s.begin(), s.end(),
-//           std::not1(std::ptr_fun<int, int>(std::isspace))));
-  std::not1([](int ch) { return std::isspace(ch); });
-  */
+ 
   s.erase(s.begin(), std::find_if(
       s.begin(), s.end(),
       [](int ch) { return !std::isspace(ch); })); // Lambda replacing std::not1
-  /*
-  s.erase(std::find_if
-          (s.rbegin(), s.rend(),
-           std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
-           */
   s.erase(std::find_if(
       s.rbegin(), s.rend(),
       [](int ch) { return !std::isspace(ch); }).base(), s.end());
 }
 
 /*---------------------------------------------------------------------------*/
-/*
-file_line_iterator::file_line_iterator(const char * f,char c_char):
-  is(new std::ifstream(f)),c_char(c_char)
-{
-  ENSUREV(is->is_open(),"cannot read the file",f);
-  increment();
-}
-*/
+
 file_line_iterator::file_line_iterator(const char* file_name, char c_char)
     : is(std::make_shared<std::ifstream>(file_name)), c_char(c_char)
 {
@@ -138,13 +115,9 @@ std::string __trace_indenter_t__::get_indent()
   return s;
 }
 
-
 }
 
 /*---------------------------------------------------------------------------*/
-
-//boost::mutex logger::s_mutex;
-//logger       logger::s_logger;
 
 std::mutex logger::s_mutex;
 logger logger::s_logger;
@@ -153,7 +126,6 @@ int    detail::__trace_indenter_t__::s_indent = 0;
 
 /*---------------------------------------------------------------------------*/
 
-} // namespace utl
-
+} 
 /*===========================================================================*/
 
