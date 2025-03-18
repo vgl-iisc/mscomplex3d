@@ -31,10 +31,7 @@ private:
 		if (z >= size_z || y >= size_y || x >= size_x) {
 			throw std::out_of_range("Index out of bounds");
 		}
-		//return (x+reindex_values[0]) * size_z * size_y + (y+reindex_values[1]) * size_z + (z+reindex_values[2]);
-		//return x * size_z * size_y + y * size_z + z;
-		//if(x==256 && y==4 && z==1)
-			//std::cout << "\nWe want index: " << z * size_x * size_y + y * size_x + x;;
+		
 		return z * size_x * size_y + y * size_x + x;
 	}
 
@@ -184,7 +181,6 @@ namespace grid
 	typedef std::shared_ptr<int_list_t>                   int_list_ptr_t;
 	typedef std::shared_ptr<cellid_list_t>                cellid_list_ptr_t;
 
-	//typedef boost::multi_array<int,gc_grid_dim>             int_marray_t;
 	typedef Array3D<int>                                      int_marray_t;
 
 	typedef std::pair<cellid_t, int>                         cellid_int_pair_t;

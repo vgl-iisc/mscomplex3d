@@ -316,8 +316,6 @@ public:
           << "out of range " << SVAR(cp);
       ENSURES(is_in_range(hver, 0, m_canc_list.size() + 1))
           << "hversion not in range " << SVAR(hver);
-      //BOOST_STATIC_ASSERT(dir == ASC || dir == DES);
-
       int_list_t l;
 
       int dim = index(cp);

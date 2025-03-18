@@ -79,12 +79,6 @@ inline void from_string(std::string s,T1& t1,T2& t2,T3& t3,T4& t4)
 /* Misc utility classes
 /*---------------------------------------------------------------------------*/
 
-//#include <boost/iterator/iterator_facade.hpp>
-//#include <boost/shared_ptr.hpp>
-//#include <boost/date_time/posix_time/posix_time.hpp>
-//#include <boost/thread/mutex.hpp>
-//#include <boost/thread/thread.hpp>
-
 #include <iostream>
 #include <string>
 #include <chrono>
@@ -114,11 +108,7 @@ namespace utl {
 **/
 
 class file_line_iterator
-    /* : public boost::iterator_facade<
-    file_line_iterator
-    , std::string const
-    , boost::forward_traversal_tag
-    >*/
+
 {
 public:
     
@@ -127,13 +117,11 @@ public:
 	file_line_iterator();
 
 private:
-  //friend class boost::iterator_core_access;
   void increment();
   bool equal(file_line_iterator const& other) const;
   const std::string &dereference() const;
 
 private:
-  //boost::shared_ptr<std::ifstream> is;
   std::shared_ptr<std::ifstream> is;
   std::string                      value;
   char                             c_char;
@@ -151,24 +139,19 @@ private:
 
   inline void   restart()
   {
-	//  _start_time = boost::posix_time::microsec_clock::local_time();
-      _start_time = std::chrono::steady_clock::now();
+  	_start_time = std::chrono::steady_clock::now();
 
   }
 
   inline double elapsed() const
   {
-    //boost::posix_time::time_duration td =
-      //  boost::posix_time::microsec_clock::local_time() - _start_time;
 
     auto now = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed_time = now - _start_time;
     return elapsed_time.count();
-    //return double(td.total_milliseconds())/1000;
   }
 
  private:
-  //boost::posix_time::ptime _start_time;
   std::chrono::steady_clock::time_point _start_time;
 
 }; // timer

@@ -413,17 +413,18 @@ void  dataset_t::computeMsGraph(mscomplex_ptr_t msc)
     //std::cout << "\nComputing MS Graph \n";
 
     
-    //#pragma omp sections
-    //{
-      //#pragma omp section
-      //{
-	      //computeConnections<2,DES>(msc,shared_from_this(),msc_connector);
-      //}
+    #pragma omp sections
+    {
+      #pragma omp section
+      {
+	      computeConnections<2,DES>(msc,shared_from_this(),msc_connector);
+      }
       
-      //#pragma omp section
-      //{
-          /*
-	if(opencl::is_gpu_context())
+      #pragma omp section
+      {
+
+
+      	if(opencl::is_gpu_context())
         {
           w.owner_extrema(shared_from_this());
           computeExtremaConnections<DES>(msc,shared_from_this(),msc_connector);
@@ -431,17 +432,17 @@ void  dataset_t::computeMsGraph(mscomplex_ptr_t msc)
         }
         else
         {
-          //computeConnections<2,ASC>(msc,shared_from_this(),msc_connector);
-          //computeConnections<1,DES>(msc,shared_from_this(),msc_connector);
+          computeConnections<2,ASC>(msc,shared_from_this(),msc_connector);
+          computeConnections<1,DES>(msc,shared_from_this(),msc_connector);
 
           w.owner_extrema(shared_from_this());
           computeExtremaConnections<DES>(msc, shared_from_this(), msc_connector);
           computeExtremaConnections<ASC>(msc, shared_from_this(), msc_connector);
-        }*/
-      //}
+        }
+      }
         
       
-    //}
+    }
     
   
 }

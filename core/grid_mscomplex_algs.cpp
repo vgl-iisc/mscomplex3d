@@ -83,20 +83,6 @@ void mscomplex_t::cancel_pair ()
 
   m_des_conn[p].erase(q);
   m_asc_conn[q].erase(p);
-  /*
-  BOOST_FOREACH(int_int_t i,m_des_conn[p])
-      BOOST_FOREACH(int_int_t j,m_asc_conn[q])
-  {
-    int u = i.first;
-    int v = j.first;
-    int m = i.second*j.second;
-
-    ASSERT(is_canceled(u) == false);
-    ASSERT(is_canceled(v) == false);
-
-    BTRACE_ERROR(connect_cps(u,v,m));
-  }
-  */
   for (const auto& i : m_des_conn[p]) {
       for (const auto& j : m_asc_conn[q]) {
           int u = i.first;
@@ -311,9 +297,6 @@ void mscomplex_t::simplify_pers(double thresh, bool is_nrm, int nmax, int nmin)
   auto cmp = std::bind(&mscomplex_t::persistence_cmp, this, std::placeholders::_2, std::placeholders::_1);
   priority_queue<int_pair_t,int_pair_list_t,decltype (cmp)> pq(cmp);
 
-  //if(is_nrm)
-  //  thresh *= (*br::max_element(m_cp_fn) - *br::min_element(m_cp_fn));
-
   if (is_nrm)
       thresh *= (*std::max_element(m_cp_fn.begin(),m_cp_fn.end()) - *std::min_element(m_cp_fn.begin(),m_cp_fn.end()));
 	
@@ -379,9 +362,6 @@ int mscomplex_t::get_hversion_pers(double thresh, bool is_nrm) const
 {
   int hver = 0;
 
-  //if(is_nrm)
-    //thresh *= (*br::max_element(m_cp_fn) - *br::min_element(m_cp_fn));
-
   if (is_nrm)
       thresh *= (*std::max_element(m_cp_fn.begin(),m_cp_fn.end()) - *std::min_element(m_cp_fn.begin(),m_cp_fn.end()));
 
@@ -436,12 +416,6 @@ void getCanceledCpContrib(mscomplex_ptr_t msc,contrib_list_t& ccp_contrib)
       | std::views::take(msc->m_hversion) // Take `msc->m_hversion` elements
       | std::views::transform(std::bind(order_pair<dir>, msc, std::placeholders::_1))
       | std::views::filter(std::bind(is_dim_pair<dim, odim>, msc, std::placeholders::_1));
-      
-
-    /*
-  BOOST_FOREACH(int_pair_t pr,ccp_rng)
-      ccp_map.insert(int_int_t(pr[0],ccp_map.size()));
-      */
   for (const auto& pr : ccp_rng) {
       ccp_map.insert(int_int_t(pr[0], ccp_map.size()));
   }
@@ -464,7 +438,6 @@ void getCanceledCpContrib(mscomplex_ptr_t msc,contrib_list_t& ccp_contrib)
 	int p = pr[0], q = pr[1];
   	int_list_t& pcontrib = ccp_contrib[ccp_map.at(p)];
   	// For each qa in the asc conn of q:
-    //for (const auto& qa : msc->m_conn[odir][q] | ba::map_keys) {
   	for (const auto& [qa, _] : msc->m_conn[odir][q]) {
         // a) If qa is not canceled ...
         if (msc->is_not_canceled(qa)) {
@@ -560,14 +533,6 @@ void getSurvivingCpContrib(mscomplex_ptr_t msc,contrib_list_t& scp_contrib)
 
       ASSERTS(msc->index(scp) == dim) << "incorrect dim";
       ASSERTS(msc->is_not_canceled(scp)) << scp << " should be cancelled";
-
-      /*
-      for (int ccp : scp_l | ba::sliced(1, scp_l.size()))
-      {
-          ASSERTS(msc->index(ccp) == dim) << "incorrect dim";
-          ASSERTS(msc->is_canceled(ccp)) << ccp << " should be cancelled";
-      }
-      */
       for (int ccp : std::ranges::subrange(scp_l.begin() + 1, scp_l.end())) {
           ASSERTS(msc->index(ccp) == dim) << "incorrect dim";
           ASSERTS(msc->is_canceled(ccp)) << ccp << " should be cancelled";

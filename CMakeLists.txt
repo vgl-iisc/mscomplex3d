@@ -19,21 +19,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 find_package(OpenCL REQUIRED)
 
 
-# Manually set the Boost include and library paths
-#set(Boost_INCLUDE_DIR "C://Users//sachi//OneDrive//Documents//vcpckg//vcpkg//installed//x64-windows//include")
-#set(Boost_LIBRARY_DIR "C://Users//sachi//OneDrive//Documents//vcpckg//vcpkg//installed//x64-windows//lib")
-
-# Find Boost
-#find_package(Boost REQUIRED COMPONENTS date_time system program_options)
-
-#if(Boost_FOUND)
-#    include_directories(${Boost_INCLUDE_DIRS})
-#else()
-#    message(FATAL_ERROR "Could not find Boost libraries!")
-#endif()
-
-
-
 # Common Properties
 set(MSCOMPLEX3D_LOG_LEVEL 2 CACHE STRING
       "log level value trace=0,debug=1,info=2,warning=3,error=4,fatal=5")

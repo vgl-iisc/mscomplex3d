@@ -224,13 +224,4 @@ template <> inline bool dataset_t::compare_cells_pp_<GDIR_ASC,3>
 /*===========================================================================*/
 }
 
-//namespace boost
-//{
-//  namespace serialization
-//  {
-//    template<class Archive>
-//    void serialize(Archive & ar, grid::dataset_t & d, const unsigned int );
-//
-//  } // namespace serialization
-//}
 #endif
