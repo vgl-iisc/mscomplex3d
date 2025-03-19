@@ -1,14 +1,6 @@
 import sys
 import os
 import pytest
-#sys.path.append("C:\\Users\\sachi\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python310\\Scripts")
-#sys.path.append("C:\\Users\\sachi\\OneDrive\\Documents\\PYMS3D_EXAMPLES")
-
-# Get the parent directory
-build_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'build', 'pyms3d', 'Release'))
-
-# Add it to sys.path
-sys.path.insert(0, build_dir)
 
 # Now you can import your custom module
 import pyms3d_core as pyms3d

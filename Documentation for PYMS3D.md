@@ -34,12 +34,7 @@ Kernel Workload Sizing
 We can decide whether to use the CPU or GPU to run OpenCL kernels, given sufficient memory. We can usually decide how this workload is then allocated across threads. This can differ based on difference in parallel computation on CPU and GPU. 
 
 Flag and flag values
-When we load the data, each voxel is assigned a 8 bit flag. The
-
-Unit testing via Pytest
-Whenever we make changes to the final module, we can easily test and verify the correctness of its functionality using Pytest
-
-To use Pytest, the Pytest module is required. It is recommended to create a virtual environment in the root of the repository(where the pytest.ini file is available), with the proper Pytest and numpy version associated to that version of Python which the module is created and then running "pytest -v" to perform all the unit tests in test_hydrogen.py which processes the Hydrogen_128x128x128.raw file and compares it against pre-computed outputs.
+When we load the data, each voxel is assigned a 8 bit flag. 
 
 
 
