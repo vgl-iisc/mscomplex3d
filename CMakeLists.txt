@@ -4,20 +4,7 @@ project(mscomplex3d)
 # Look for various software we need
 cmake_minimum_required(VERSION 3.5)
 set (CMAKE_CXX_STANDARD 20)
-
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-
-# Manually specify the OpenCL include directory
-#set(CUDA_INCLUDE_DIRS "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.5\\include")
-
-
-# Manually specify the OpenCL library path
-#set(OPENCL_LIBRARIES "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.5\\lib\\x64\\OpenCL.lib")
-
-# Automatically find OpenCL
-find_package(OpenCL REQUIRED)
-
 
 # Common Properties
 set(MSCOMPLEX3D_LOG_LEVEL 2 CACHE STRING
@@ -40,16 +27,11 @@ else(MSCOMPLEX3D_INSTALL_DIR)
 endif(MSCOMPLEX3D_INSTALL_DIR)
 
 add_subdirectory(core)
-
 # option(BUILD_VIEWER "build the mscomplex viewer" OFF)
 # if(BUILD_VIEWER)
 # add_subdirectory(viewer)
 # endif(BUILD_VIEWER)
-
 option(BUILD_PYMS3D "mstri python module" OFF)
 if(BUILD_PYMS3D)
 add_subdirectory(pyms3d)
 endif(BUILD_PYMS3D)
-
-
-

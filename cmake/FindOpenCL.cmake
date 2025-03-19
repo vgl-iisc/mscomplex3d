@@ -27,40 +27,44 @@ IF (APPLE)
   FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS OpenCL/cl.hpp DOC "Include for OpenCL CPP bindings on OSX")
 
 ELSE (APPLE)
-
 	IF (WIN32)
-	
-	    FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h)
-	    FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp)
-	
-	    # The AMD SDK currently installs both x86 and x86_64 libraries
-	    # This is only a hack to find out architecture
-	    IF( ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "AMD64" )
-	    	SET(OPENCL_LIB_DIR "$ENV{ATISTREAMSDKROOT}/lib/x86_64")
-	    ELSE (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "AMD64")
-	    	SET(OPENCL_LIB_DIR "$ENV{ATISTREAMSDKROOT}/lib/x86")
-	    ENDIF( ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "AMD64" )
-	    FIND_LIBRARY(OPENCL_LIBRARIES OpenCL.lib ${OPENCL_LIB_DIR})
-	    
-	    GET_FILENAME_COMPONENT(_OPENCL_INC_CAND ${OPENCL_LIB_DIR}/../../include ABSOLUTE)
-	    
-	    # On Win32 search relative to the library
-	    FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h PATHS "${_OPENCL_INC_CAND}")
-	    FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp PATHS "${_OPENCL_INC_CAND}")
-
-		
 		if(NOT DEFINED CUDA_PATH)
-		  
-		  message(STATUS "you may need to manually set your CUDA_PATH - find it by going to cmd and typing 'echo %CUDA_PATH%' ")
-		  message(STATUS "Assuming CUDA_PATH found at C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.5")
-		
-		  set(CUDA_PATH "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.5")
-		  
-		  message(STATUS "Cuda path = ${CUDA_PATH}")
-		  endif()
+    		message(STATUS "CUDA_PATH not defined, trying to detect automatically...")
+    
+    	# Check environment variable first
+    		if(DEFINED ENV{CUDA_PATH})
+        		set(CUDA_PATH $ENV{CUDA_PATH})
+        		message(STATUS "Found CUDA_PATH from environment: ${CUDA_PATH}")
+    		else()
+				# Look in the default installation directory for the latest version
+            	file(GLOB CUDA_PATH_CANDIDATES 
+                	 "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v*")
+            
+	            if(CUDA_PATH_CANDIDATES)
+    	            # Sort versions to get the latest one
+        	        list(SORT CUDA_PATH_CANDIDATES)
+            	    list(REVERSE CUDA_PATH_CANDIDATES)
+                	list(GET CUDA_PATH_CANDIDATES 0 CUDA_PATH)
+                	message(STATUS "Auto-detected CUDA installation: ${CUDA_PATH}")
+            	else()
+                	message(WARNING "Could not auto-detect CUDA installation. You may need to manually set CUDA_PATH")
+                	message(STATUS "You can find it by going to cmd and typing 'echo %CUDA_PATH%'")
+                	# Fallback to a common location, but warn the user
+                	set(CUDA_PATH "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.5")
+                	message(STATUS "Using fallback CUDA_PATH: ${CUDA_PATH} \nYou may need to set the correct version number or change the path entirely")
+            	endif()
+    		endif()
+		endif()
 
-		set(CUDA_INCLUDE_DIRS  "${CUDA_PATH}\\include")
-		set(OPENCL_LIBRARIES "${CUDA_PATH}\\lib\\x64\\OpenCL.lib")
+		message(STATUS "Using CUDA path = ${CUDA_PATH}")
+
+		set(CUDA_INCLUDE_DIRS "${CUDA_PATH}/include")
+		set(OPENCL_LIBRARIES "${CUDA_PATH}/lib/x64/OpenCL.lib")
+		set(_OPENCL_INC_CAND "${CUDA_PATH}/include")
+
+		# On Win32 search relative to the library
+		FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h PATHS "${_OPENCL_INC_CAND}")
+		FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp PATHS "${_OPENCL_INC_CAND}")
 
 	ELSE (WIN32)
 
