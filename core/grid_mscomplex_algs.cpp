@@ -5,6 +5,14 @@
 #include <grid_mscomplex.h>
 #include <grid_dataset_cl.h>
 
+#ifndef __has_cpp_attribute
+#define __has_cpp_attribute(x) 0
+#endif
+
+#ifndef __has_attribute
+#define __has_attribute(x) 0
+#endif
+
 #if defined(__linux__)
 #define __CL_ENABLE_EXCEPTIONS
 #define CL_HPP_TARGET_OPENCL_VERSION 220
