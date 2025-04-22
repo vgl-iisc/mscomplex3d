@@ -1,0 +1,1 @@
+from .pyms3d_core import *  # this loads all symbols from your compiled module

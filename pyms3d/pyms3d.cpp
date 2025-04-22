@@ -238,10 +238,11 @@ public:
       rect_t prect = (ccTYPE == CC_PRIM) ? (m_rect) : (rect_t(m_rect.lc() + 1, m_rect.uc() - 1));
 
       std::vector<int> points;
-
+      
       for (int i = 0; i < mfold.size(); ++i) {
+      	
           cellid_t c = mfold[i];
-          std::array<int, 3> j;
+          cellid_t j;
 
           bool need_cell = true;
 
@@ -255,7 +256,7 @@ public:
                   }
               }
           }
-
+          
           if (need_cell) {
               for (j[2] = -((c[2] + O) & 1); j[2] <= ((c[2] + O) & 1); j[2] += 2) {
                   for (j[1] = -((c[1] + O) & 1); j[1] <= ((c[1] + O) & 1); j[1] += 2) {
@@ -265,8 +266,9 @@ public:
                   }
               }
           }
+          
       }
-
+      
       // Create a NumPy array from the vector of points
       py::array_t<int> arr(points.size(), points.data());
 
@@ -322,9 +324,9 @@ public:
 
       m_merge_dag->get_contrib_cps
       (l, dir, cp, hver, m_geom_hversion[dir][dim]);
-
+      
       mfold_t mfold;
-
+	  
       for (int j = 0; j < l.size(); ++j) {
           const auto& sublist = m_mfolds[dir][l[j]];
 
@@ -332,16 +334,17 @@ public:
       }
 
       TLOG << "Computed:" << SVAR(mfold.size());
-
+      
       if (ToPts)
       {
           if (dir == ASC && dim == 0) return __mfold_to_point_indices<CC_PRIM, 0>(mfold);
+          /*if (dir == ASC && dim == 0) return __mfold_to_point_indices<CC_PRIM, 0>(mfold);
           if (dir == ASC && dim == 1) return __mfold_to_point_indices<CC_DUAL, 1>(mfold);
           if (dir == ASC && dim == 2) return __mfold_to_point_indices<CC_DUAL, 2>(mfold);
 
           if (dir == DES && dim == 1) return __mfold_to_point_indices<CC_PRIM, 1>(mfold);
           if (dir == DES && dim == 2) return __mfold_to_point_indices<CC_PRIM, 2>(mfold);
-          if (dir == DES && dim == 3) return __mfold_to_point_indices<CC_DUAL, 3>(mfold);
+          if (dir == DES && dim == 3) return __mfold_to_point_indices<CC_DUAL, 3>(mfold);*/
 
           ENSURES(false) << "Should never reach here";
       }
@@ -584,24 +587,24 @@ void init_mscomplex(py::module_& m) {
             py::arg("nmax") = 0,
             py::arg("nmin") = 0,
             R"doc(
-Simplify the Morse-Smale complex using topological persistence.
+				Simplify the Morse-Smale complex using topological persistence.
 
-Parameters:
-    thresh: Persistence threshold.
-    is_nrm: Indicates if the threshold is normalized to [0,1].
-            If false, the threshold is in the scale of the input function.
-    nmax, nmin: Number of maxima/minima that should be retained.
-                Set to 0 to ignore.
+				Parameters:
+				    thresh: Persistence threshold.
+				    is_nrm: Indicates if the threshold is normalized to [0,1].
+				            If false, the threshold is in the scale of the input function.
+				    nmax, nmin: Number of maxima/minima that should be retained.
+				                Set to 0 to ignore.
 
-Note:
-    Any combination of the above criteria may be set.
-    Simplification will stop when any of the criteria is reached.
-    Call only after the compute function is called.
-)doc");
+				Note:
+				    Any combination of the above criteria may be set.
+				    Simplification will stop when any of the criteria is reached.
+				    Call only after the compute function is called.
+		)doc");
     //the reason we define this second python class is because this is how we take an inherited function from an existing one in Pybind
     py::class_<mscomplex_pyms3d_t, mscomplex_t, std::shared_ptr<mscomplex_pyms3d_t>>(m, "MsComplexPyms3D")
         .def(py::init<>())
-	    .def("cps", &mscomplex_pyms3d_t::cps, py::arg("dim") = -1,
+        .def("cps", &mscomplex_pyms3d_t::cps, py::arg("dim") = -1,
             "Returns a list of surviving critical points based on dimension")
         .def("cps_func", &mscomplex_pyms3d_t::cps_func, "Get function values of all critical points")
         .def("cps_index", &mscomplex_pyms3d_t::cps_index, "Get Morse indices of all critical points")
@@ -621,7 +624,7 @@ Note:
         .def("canc_pairs", &mscomplex_pyms3d_t::canc_pairs,
             "get all cancellation pairs \n")
         .def("collect_geom", &mscomplex_pyms3d_t::collect_mfolds,
-            py::arg("dir") = 2, 
+            py::arg("dir") = 2,
             py::arg("dim") = -1,
             "Collect the geometry of all survivng critical points\n"\
             "\n"\
@@ -635,8 +638,7 @@ Note:
             "              dim=0,1,2,3 --> Minima, 1-saddle,2-saddle,Maxima \n"\
             "\n"\
             "Note        : Call only after the compute function is called.\n"\
-        );
-        /*
+        )
 	.def("asc_geom", &mscomplex_pyms3d_t::geom<ASC>,
             py::arg("cp"), py::arg("hversion") = -1, py::arg("ToPts") = true,
             "Ascending manifold geometry of a given critical point i"
@@ -661,11 +663,9 @@ Note:
             "                       NC  #cells in Asc/Des mfold of cp.\n"
             "                       NC' #cells in Asc/Des mfold of cp whose \n"
             "                             dual pts are inside Primal Grid\n"
-        );
-        */
-    /*
+        )
         .def("des_geom", &mscomplex_pyms3d_t::geom<DES>,
-            (py::arg("cp"), py::arg("hversion") = -1, py::arg("ToPts") = true),
+            py::arg("cp"), py::arg("hversion") = -1, py::arg("ToPts") = true,
             "Descending manifold geometry of a given critical point i"
             "\n"
             "Parameters  : \n"
@@ -689,7 +689,7 @@ Note:
             "                       NC' #cells in Asc/Des mfold of cp whose \n"
             "                             dual pts are inside Primal Grid\n"
         );
-        */
+        
 }
 
 struct cellid_to_tup {

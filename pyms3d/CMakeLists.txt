@@ -10,19 +10,9 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/pybind/pybind11.git
     GIT_TAG        v2.13.0  # You can use a specific commit or branch if needed
 )
-
 # Make sure the pybind11 content is available
 FetchContent_MakeAvailable(pybind11)
 
-# Find pybind11
-#find_package(pybind11 REQUIRED)
-
-# Manually specify the OpenCL include directory
-# set(CUDA_INCLUDE_DIRS "C://Program Files//NVIDIA GPU Computing Toolkit//CUDA//v12.5//include")
-
-
-# Manually specify the OpenCL library path
-# set(OPENCL_LIBRARIES "C://Program Files//NVIDIA GPU Computing Toolkit//CUDA//v12.5//lib//x64//OpenCL.lib")
 
 find_package(OpenMP REQUIRED)
 find_package(OpenCL REQUIRED)
@@ -48,7 +38,19 @@ pybind11_add_module(pyms3d_core
 )
 target_link_libraries(pyms3d_core PRIVATE ${OPENCL_LIBRARIES})
 
-install(TARGETS pyms3d_core DESTINATION ${MSCOMPLEX3D_INSTALL_DIR_BIN})
+#this only works if the cmake install prefix is set, if not, will just make the module in the usual build directory
+#install(TARGETS pyms3d_core DESTINATION ${CMAKE_INSTALL_PREFIX}/pyms3d_core)
+
+install(TARGETS pyms3d_core
+        LIBRARY DESTINATION pyms3d_core
+        ARCHIVE DESTINATION pyms3d_core
+        RUNTIME DESTINATION pyms3d_core)  # For Windows DLLs
+#install(TARGETS pyms3d_core DESTINATION ${CMAKE_INSTALL_PREFIX}/pyms3d_core)
+install(TARGETS pyms3d_core DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+
+
+#install(TARGETS pyms3d_core DESTINATION ${MSCOMPLEX3D_INSTALL_DIR_BIN})
 
 # Optional executable for testing or standalone use
 #add_executable(pyms3d-exe 

@@ -83,7 +83,7 @@ class n_vector_t: public std::array<T,N>
     }
 
     template <typename OT>
-       // requires std::is_arithmetic_v<OT>
+        requires std::is_convertible_v<OT, T>
     inline n_vector_t& operator+=(const OT& o)
     {
         for (size_t i = 0; i < N; ++i)

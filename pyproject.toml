@@ -1,0 +1,29 @@
+[build-system]
+requires = [
+    "scikit-build-core[pyproject]",
+    "pybind11",      # If you're using pybind11
+    "numpy",         # If your C++ extension or Python wrapper needs it
+]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "pyms3d_core"
+version = "0.1.0"
+description = "Python bindings for the MS3D C++ library"
+authors = [
+    { name = "Your Name" }
+]
+license = { text = "MIT" }
+dependencies = [
+    "numpy",   # Runtime requirement
+]
+
+[tool.scikit-build]
+# Optional but helpful config
+cmake.minimum-version = "3.15"
+ninja.minimum-version = "1.10"
+build-dir = "build"
+wheel.packages = ["pyms3d_core"]  # name of your Python package dir
+
+# Optional: If you want to install only a .pyd/.so and not expose full tree
+# sdist.include = ["CMakeLists.txt", "src/**", "pyms3d_core/**"]
