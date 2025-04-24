@@ -1,10 +1,12 @@
 [build-system]
 requires = [
     "scikit-build-core[pyproject]",
-    "pybind11",      # If you're using pybind11
-    "numpy",         # If your C++ extension or Python wrapper needs it
+    "pybind11",          # or pybind11[global] if needed
+    "numpy",
+    "cibuildwheel",      # For building wheels for multiple Python versions
 ]
 build-backend = "scikit_build_core.build"
+
 
 [project]
 name = "pyms3d_core"
@@ -18,12 +20,44 @@ dependencies = [
     "numpy",   # Runtime requirement
 ]
 
+
+
 [tool.scikit-build]
 # Optional but helpful config
-cmake.minimum-version = "3.15"
-ninja.minimum-version = "1.10"
+cmake.version = ">=3.15"
+ninja.version = ">=1.10"
 build-dir = "build"
 wheel.packages = ["pyms3d_core"]  # name of your Python package dir
+install.strip = false
+# Add custom commands to run before the build
+cmake.args = ["-DCMAKE_INSTALL_PREFIX=./pyms3d_core",
+"-DBUILD_PYMS3D=ON",
+  "-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}"]
+cmake.targets = ["install"]  # This will run the install target
+# This tells scikit-build-core to run the install step during the build
+install.components = ["python"]
 
-# Optional: If you want to install only a .pyd/.so and not expose full tree
-# sdist.include = ["CMakeLists.txt", "src/**", "pyms3d_core/**"]
+[tool.cibuildwheel]
+build = "cp3{7,8,9,10,11}-*"
+skip = ["pp*", "cp36*","*-musllinux_*"]  # Skip PyPy and Python 3.6 if you don't support them
+#test-command = "python -c 'import pyms3d_core; print(pyms3d_core.get_hw_info())'"
+
+archs = ["auto64"]  # This will build for x86_64 only and skip 32-bit
+
+
+# Add a before-build hook if needed
+#before-build = """
+#cmake -S . -B build -DCMAKE_INSTALL_PREFIX=./pyms3d_core && cmake --build build --target install --config Release
+#"""
+
+#before-build = """
+#cmake . -B build -DCMAKE_INSTALL_PREFIX=./pyms3d_core && cmake --build build --target install --config Release
+#"""
+
+#before-build = """
+#  if exist build rmdir /S /Q build
+#  cmake pyms3d -B build \
+#      -DBUILD_PYMS3D=ON \
+#      -DCMAKE_INSTALL_PREFIX=./pyms3d_core && \
+#  cmake --build build --target install --config Release
+#"""

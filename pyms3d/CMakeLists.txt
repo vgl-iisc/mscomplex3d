@@ -38,6 +38,12 @@ pybind11_add_module(pyms3d_core
 )
 target_link_libraries(pyms3d_core PRIVATE ${OPENCL_LIBRARIES})
 
+#This is the missing piece:
+target_include_directories(pyms3d_core PRIVATE ${OPENCL_INCLUDE_DIRS})
+target_link_libraries(pyms3d_core PRIVATE ${OPENCL_LIBRARIES})
+
+
+
 #this only works if the cmake install prefix is set, if not, will just make the module in the usual build directory
 #install(TARGETS pyms3d_core DESTINATION ${CMAKE_INSTALL_PREFIX}/pyms3d_core)
 
@@ -46,7 +52,7 @@ install(TARGETS pyms3d_core
         ARCHIVE DESTINATION pyms3d_core
         RUNTIME DESTINATION pyms3d_core)  # For Windows DLLs
 #install(TARGETS pyms3d_core DESTINATION ${CMAKE_INSTALL_PREFIX}/pyms3d_core)
-install(TARGETS pyms3d_core DESTINATION ${CMAKE_INSTALL_PREFIX})
+#install(TARGETS pyms3d_core DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 
 

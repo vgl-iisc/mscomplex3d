@@ -103,6 +103,10 @@ set_source_files_properties(OpenCL/grid_dataset_cl.cpp PROPERTIES COMPILE_FLAGS
 "-DOPENCL_NUM_WORK_ITEMS_PER_GROUP=${OPENCL_NUM_WORK_ITEMS_PER_GROUP} -DOPENCL_NUM_WORK_GROUPS=${OPENCL_NUM_WORK_GROUPS}")
 
 add_library(${PROJECT_NAME} OBJECT ${${PROJECT_NAME}_SRCS})
+#target_link_libraries(mscomplex3d-core PRIVATE ${OpenCL_LIBRARIES})
+target_include_directories(${PROJECT_NAME} PRIVATE ${OpenCL_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${OpenCL_LIBRARIES})
+
 
 option(BUILD_TOOL "command line tool" ON)
 if(BUILD_TOOL)
