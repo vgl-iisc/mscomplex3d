@@ -1,63 +1,59 @@
 [build-system]
 requires = [
-    "scikit-build-core[pyproject]",
-    "pybind11",          # or pybind11[global] if needed
-    "numpy",
-    "cibuildwheel",      # For building wheels for multiple Python versions
+  "scikit-build-core[pyproject]",
+  "pybind11",
+  "numpy",
+  "cibuildwheel",
 ]
 build-backend = "scikit_build_core.build"
-
 
 [project]
 name = "pyms3d_core"
 version = "0.1.0"
 description = "Python bindings for the MS3D C++ library"
 authors = [
-    { name = "Your Name" }
+  { name = "Sachin" }
 ]
 license = { text = "MIT" }
 dependencies = [
-    "numpy",   # Runtime requirement
+  "numpy",
 ]
 
-
-
+# ──────────────────────────────────────────────────────────
 [tool.scikit-build]
-# Optional but helpful config
-cmake.version = ">=3.15"
-ninja.version = ">=1.10"
-build-dir = "build"
-wheel.packages = ["pyms3d_core"]  # name of your Python package dir
+# Put *all* of CMake's files here (relative to project root).
+# You can also use an absolute path if you like.
+build-dir = "../build_pyms3d"
+
+# Which Python packages go into your wheel
+wheel.packages = ["pyms3d_core"]
+#wheel.install-dir = "../package_installs"
+
 install.strip = false
-# Add custom commands to run before the build
-cmake.args = ["-DCMAKE_INSTALL_PREFIX=./pyms3d_core",
-"-DBUILD_PYMS3D=ON",
-  "-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}"]
-cmake.targets = ["install"]  # This will run the install target
-# This tells scikit-build-core to run the install step during the build
 install.components = ["python"]
 
+# ──────────────────────────────────────────────────────────
+[tool.scikit-build.cmake]
+# Use your subfolder's CMakeLists.txt
+#source-dir = "pyms3d"
+source-dir = "."
+# Forward your flags; INSTALL_DIR is the wheel‑staging area
+args = [
+  "-DBUILD_PYMS3D=ON",
+  "-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}"
+#  "-DCMAKE_INSTALL_PREFIX=${PROJECT_ROOT}/../package_installs"
+]
+# After building, invoke `install`
+targets = ["install"]
+
+# ──────────────────────────────────────────────────────────
 [tool.cibuildwheel]
+# Which interpreters/arches
 build = "cp3{7,8,9,10,11}-*"
-skip = ["pp*", "cp36*","*-musllinux_*"]  # Skip PyPy and Python 3.6 if you don't support them
-#test-command = "python -c 'import pyms3d_core; print(pyms3d_core.get_hw_info())'"
+skip  = ["pp*", "cp36*", "*-musllinux_*"]
+archs = ["auto64"]
 
-archs = ["auto64"]  # This will build for x86_64 only and skip 32-bit
+# Where to put the final wheels (relative to project root).
+# This path must exist or be creatable.
 
 
-# Add a before-build hook if needed
-#before-build = """
-#cmake -S . -B build -DCMAKE_INSTALL_PREFIX=./pyms3d_core && cmake --build build --target install --config Release
-#"""
-
-#before-build = """
-#cmake . -B build -DCMAKE_INSTALL_PREFIX=./pyms3d_core && cmake --build build --target install --config Release
-#"""
-
-#before-build = """
-#  if exist build rmdir /S /Q build
-#  cmake pyms3d -B build \
-#      -DBUILD_PYMS3D=ON \
-#      -DCMAKE_INSTALL_PREFIX=./pyms3d_core && \
-#  cmake --build build --target install --config Release
-#"""

@@ -51,12 +51,6 @@ install(TARGETS pyms3d_core
         LIBRARY DESTINATION pyms3d_core
         ARCHIVE DESTINATION pyms3d_core
         RUNTIME DESTINATION pyms3d_core)  # For Windows DLLs
-#install(TARGETS pyms3d_core DESTINATION ${CMAKE_INSTALL_PREFIX}/pyms3d_core)
-#install(TARGETS pyms3d_core DESTINATION ${CMAKE_INSTALL_PREFIX})
-
-
-
-#install(TARGETS pyms3d_core DESTINATION ${MSCOMPLEX3D_INSTALL_DIR_BIN})
 
 # Optional executable for testing or standalone use
 #add_executable(pyms3d-exe 
