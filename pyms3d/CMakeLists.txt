@@ -29,28 +29,19 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
-
-# Add the Python module
 pybind11_add_module(pyms3d_core 
     pyms3d.cpp
     $<TARGET_OBJECTS:mscomplex3d-core>
    
 )
-target_link_libraries(pyms3d_core PRIVATE ${OPENCL_LIBRARIES})
 
-#This is the missing piece:
 target_include_directories(pyms3d_core PRIVATE ${OPENCL_INCLUDE_DIRS})
 target_link_libraries(pyms3d_core PRIVATE ${OPENCL_LIBRARIES})
-
-
-
-#this only works if the cmake install prefix is set, if not, will just make the module in the usual build directory
-#install(TARGETS pyms3d_core DESTINATION ${CMAKE_INSTALL_PREFIX}/pyms3d_core)
 
 install(TARGETS pyms3d_core
         LIBRARY DESTINATION pyms3d_core
         ARCHIVE DESTINATION pyms3d_core
-        RUNTIME DESTINATION pyms3d_core)  # For Windows DLLs
+        RUNTIME DESTINATION pyms3d_core) 
 
 # Optional executable for testing or standalone use
 #add_executable(pyms3d-exe 
@@ -58,9 +49,6 @@ install(TARGETS pyms3d_core
 #    $<TARGET_OBJECTS:mscomplex3d-core>
 #    $<TARGET_OBJECTS:pyms3d_core>
 #)
-
-
-#install(TARGETS pyms3d-exe DESTINATION ${MSCOMPLEX3D_INSTALL_DIR_BIN})
 
 # option(INSTALL_PYMSTRI_EXAMPLES "Install the sample scripts" OFF)
 # 

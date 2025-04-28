@@ -10,9 +10,9 @@ build-backend = "scikit_build_core.build"
 [project]
 name = "pyms3d_core"
 version = "0.1.0"
-description = "Python bindings for the MS3D C++ library"
+description = "Python bindings for the MSComplex3D C++ library"
 authors = [
-  { name = "Sachin" }
+  { name = "Sachin Kishan" }
 ]
 license = { text = "MIT" }
 dependencies = [
@@ -21,23 +21,19 @@ dependencies = [
 
 # ──────────────────────────────────────────────────────────
 [tool.scikit-build]
-# Put *all* of CMake's files here (relative to project root).
-# You can also use an absolute path if you like.
+# Where the cmake builds files go during the building process
 build-dir = "../build_pyms3d"
 
 # Which Python packages go into your wheel
-wheel.packages = ["pyms3d_core"]
-#wheel.install-dir = "../package_installs"
 
+wheel.packages = ["pyms3d_core"]
 install.strip = false
 install.components = ["python"]
 
 # ──────────────────────────────────────────────────────────
 [tool.scikit-build.cmake]
-# Use your subfolder's CMakeLists.txt
-#source-dir = "pyms3d"
+
 source-dir = "."
-# Forward your flags; INSTALL_DIR is the wheel‑staging area
 args = [
   "-DBUILD_PYMS3D=ON",
   "-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}"
@@ -52,8 +48,3 @@ targets = ["install"]
 build = "cp3{7,8,9,10,11}-*"
 skip  = ["pp*", "cp36*", "*-musllinux_*"]
 archs = ["auto64"]
-
-# Where to put the final wheels (relative to project root).
-# This path must exist or be creatable.
-
-
