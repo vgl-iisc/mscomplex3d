@@ -61,3 +61,26 @@ $ pip install numpy
 $ pytest -v
 
 The test should use the pyms3d_core module. While it is by default, assumed to be in ../build/pyms3d/Release, this can be edited if it being created elsewhere on your system.
+
+
+# Building wheels #
+To build the python wheel, the steps depend on your operating system. 
+
+# Building wheels for windows #
+We can use cibuildwheels to build wheels for windows. This automatically takes care of ensuring we build the wheel for the package for multiple python versions. The python .toml file handles the configurations for this, as well as automates the package creation.
+
+# Building for linux #
+Building for linux is slightly trickier. Currently, we build the wheels for linux using an automated shell script, which creates the package and associated wheel for linux x64_86 systems. Unfortunately, we cannot use cibuildwheel due to certain limitations.
+
+Cibuildwheel for linux development makes use of docker. It does this for the purpose of ensuring that any wheels built for linux reach a certain standard known as the many linux standard. Due to limitations with building on docker with opencl libraries, it is non-trivial to build on Docker, hence the workaround was to forgo the standard and manually build each package and consequent wheel without cibuildwheel. For the current purposes of Pyms3d, this is acceptable. It is ideal if there were a way to build using cibuildwheel easily on Linux as well.
+
+
+
+## Debugging the C++ source code ##
+
+Use the Visual Studio IDE. (Not VSCode) Link: https://visualstudio.microsoft.com/
+Go to solution explorer in VS
+Right click on mscomplex 
+Click on “Set as Startup Project”
+This will set the IDE to run the mscomplex main.cpp file
+This allows you to freely test and debug the MSComplex c++ source code using the editor
