@@ -43,7 +43,8 @@ Run the above commands in bash shell.
 
 # OpenCL Installation #
 
-OpenCL usually comes with the CUDA Computing Toolkit from Nvidia. It is recomended to install the entire toolkit to make use of the binary or python module.
+OpenCL usually comes with the CUDA Computing Toolkit from Nvidia. 
+It is recomended to install the entire toolkit to make use of the binary or python module.
 
 # Pybind11 Installation #
 
@@ -54,11 +55,13 @@ Whenever we build the final module, we can test and verify the correctness of it
 
 To use Pytest, the Pytest module is required. It is recommended to create a virtual environment in the root of the repository(where the pytest.ini file is available), with the proper Pytest and numpy version associated to that version of Python which the module is created and then running "pytest -v" to perform all the unit tests in test_hydrogen.py which processes the Hydrogen_128x128x128.raw file and compares it against correct pre-computed outputs.
 
+```
 $ py <python_version_number> -m venv venv
 $ venv\Scripts\activate
 $ pip install pytest
 $ pip install numpy
 $ pytest -v
+```
 
 The test should use the pyms3d_core module. While it is by default, assumed to be in ../build/pyms3d/Release, this can be edited if it being created elsewhere on your system.
 
