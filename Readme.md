@@ -23,67 +23,111 @@ The mscomplex3d computes the Morse-Smale complexes on 3d grids. Its available in
 ```bash
 $ git clone https://bitbucket.org/vgl_iisc/mscomplex-3d.git
 $ cd mscomplex3d
-$ git submodule update --init --recursive
 $ cd ..
 $ mkdir build install
 $ cd build
-$ cmake ../mscomplex-3d/ -DMSCOMPLEX_3D_INSTALL_DIR=../install -DBUILD_PYMS3D=1  
-$ make -j8
-$ make -j8 install
+$cmake -DBUILD_PYMS3D=ON -DCMAKE_CXX_COMPILER=/usr/bin/g++-11 -DCMAKE_CXX_STANDARD=20 <project root path from build>
+$ cmake --build . --config Release(or Debug)
 ```
 
 ### Windows ###
 
-The following commands build the MSVC project as well the Python module immediately in the build release directory for PYMS3D
-
-$ cmake -DBUILD_PYMS3D=ON ../MS_COMPLEX
-$ cmake --build . --clean-first --config release
-
-Run the above commands in bash shell. 
-
-# OpenCL Installation #
-
-OpenCL usually comes with the CUDA Computing Toolkit from Nvidia. 
-It is recomended to install the entire toolkit to make use of the binary or python module.
-
-# Pybind11 Installation #
-
-The CMake file for the python module is configured to automatically download the Pybind11 dependency. The version to download might change depending on your version of Python. The currently set version works with any Python version from 3.7 onwards.
-
-# Unit testing via Pytest #
-Whenever we build the final module, we can test and verify the correctness of its functionality using Pytest
-
-To use Pytest, the Pytest module is required. It is recommended to create a virtual environment in the root of the repository(where the pytest.ini file is available), with the proper Pytest and numpy version associated to that version of Python which the module is created and then running "pytest -v" to perform all the unit tests in test_hydrogen.py which processes the Hydrogen_128x128x128.raw file and compares it against correct pre-computed outputs.
-
+```bash
+$ git clone https://bitbucket.org/vgl_iisc/mscomplex-3d.git
+$ cd mscomplex3d
+$ cd ..
+$ mkdir build install
+$ cd build
+$cmake -DBUILD_PYMS3D=ON -DCMAKE_CXX_COMPILER=/usr/bin/g++-11 -DCMAKE_CXX_STANDARD=20 <project root path from build>
+$ cmake --build . --config Release(or Debug)
 ```
+
+> **Note:** Run the above commands in a **Bash shell** (e.g., Git Bash, MSYS2, or WSL) for proper execution of Unix-style command syntax.
+
+This will generate the C++ library and the Python bindings directly into the `Release/` directory inside the build folder.
+
+---
+
+## ⚙️ OpenCL Installation
+
+OpenCL is typically installed with the **CUDA Toolkit** from NVIDIA. You can download it from the official [NVIDIA Developer site](https://developer.nvidia.com/cuda-toolkit).
+
+> **Note:** It is recommended to install the full CUDA toolkit to ensure compatibility with OpenCL binaries and drivers, especially if using an NVIDIA GPU.
+
+---
+
+## 📦 Pybind11 Dependency
+
+The `CMakeLists.txt` file for the Python module is configured to automatically **download and integrate Pybind11** during the CMake configuration step.
+
+- The Pybind11 version used is compatible with **Python 3.7 and above**.
+- No manual installation of Pybind11 is required.
+
+---
+
+## ✅ Unit Testing via Pytest
+
+After building the Python module, unit tests can be run using **Pytest** to verify correctness.
+
+1. Create and activate a virtual environment at the **root** of the repository (where `pytest.ini` is located):
+
+```bash
 $ py <python_version_number> -m venv venv
 $ venv\Scripts\activate
-$ pip install pytest
-$ pip install numpy
+```
+
+2. Install test dependencies:
+
+```bash
+$ pip install pytest numpy
+```
+
+3. Run the tests:
+
+```bash
 $ pytest -v
 ```
 
-The test should use the pyms3d_core module. While it is by default, assumed to be in ../build/pyms3d/Release, this can be edited if it being created elsewhere on your system.
+This will execute the tests in `test_hydrogen.py`, which uses the `pyms3d_core` module to process `Hydrogen_128x128x128.raw` and compare outputs against precomputed reference data.
 
+> ⚠️ The default import path for `pyms3d_core` is assumed to be `../build/pyms3d/Debug`. Modify this in `pytest.ini` if your build directory structure differs.
 
-# Building wheels #
-To build the python wheel, the steps depend on your operating system. 
+---
 
-# Building wheels for windows #
-We can use cibuildwheels to build wheels for windows. This automatically takes care of ensuring we build the wheel for the package for multiple python versions. The python .toml file handles the configurations for this, as well as automates the package creation.
+## 📦 Building Python Wheels
 
-# Building for linux #
-Building for linux is slightly trickier. Currently, we build the wheels for linux using an automated shell script, which creates the package and associated wheel for linux x64_86 systems. Unfortunately, we cannot use cibuildwheel due to certain limitations.
+### 🪟 Windows
 
-Cibuildwheel for linux development makes use of docker. It does this for the purpose of ensuring that any wheels built for linux reach a certain standard known as the many linux standard. Due to limitations with building on docker with opencl libraries, it is non-trivial to build on Docker, hence the workaround was to forgo the standard and manually build each package and consequent wheel without cibuildwheel. For the current purposes of Pyms3d, this is acceptable. It is ideal if there were a way to build using cibuildwheel easily on Linux as well.
+We use **[cibuildwheel](https://github.com/pypa/cibuildwheel)** to build Python wheels on Windows for multiple Python versions.
 
+- Configuration is handled through `pyproject.toml` and CI scripts.
+- This automates the wheel generation process and ensures compliance with standard Python packaging practices.
 
+### 🐧 Linux
 
-## Debugging the C++ source code ##
+Building on Linux requires a workaround due to Docker limitations with OpenCL:
 
-Use the Visual Studio IDE. (Not VSCode) Link: https://visualstudio.microsoft.com/
-Go to solution explorer in VS
-Right click on mscomplex 
-Click on “Set as Startup Project”
-This will set the IDE to run the mscomplex main.cpp file
-This allows you to freely test and debug the MSComplex c++ source code using the editor
+- **cibuildwheel** on Linux uses **Docker** to ensure compliance with the [manylinux](https://github.com/pypa/manylinux) standard.
+- Due to issues with OpenCL inside Docker containers, **we currently do not use cibuildwheel on Linux**.
+- Instead, we build manually for x86_64 Linux platforms.
+
+> **Note:** While this does not comply with the manylinux standard, it is an acceptable compromise for our current project requirements.
+
+---
+
+## 🐞 Debugging the C++ Source Code on Windows
+
+To debug the `mscomplex` C++ source using **Visual Studio (not VSCode)**:
+
+1. Download and install Visual Studio from:  
+   [https://visualstudio.microsoft.com/](https://visualstudio.microsoft.com/)
+
+2. Open the project’s `.sln` file.
+
+3. In the **Solution Explorer**:
+   - Right-click on the `mscomplex` project.
+   - Select **"Set as Startup Project"**.
+
+4. Build and run the project to execute the `main.cpp` file in `mscomplex`.
+
+This setup allows for full debugging support, including breakpoints, watch variables, and step-through execution within the Visual Studio IDE.
