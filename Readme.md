@@ -103,6 +103,16 @@ We use **[cibuildwheel](https://github.com/pypa/cibuildwheel)** to build Python 
 - Configuration is handled through `pyproject.toml` and CI scripts.
 - This automates the wheel generation process and ensures compliance with standard Python packaging practices.
 
+From Project root
+
+Build a single package for a single python version
+
+```python3.xx -m build --outdir <wheel directory>```
+
+Build multiple directories
+
+```python3 -m cibuildwheel --output-dir <wheel directory>```
+
 ### 🐧 Linux
 
 Building on Linux requires a workaround due to Docker limitations with OpenCL:
@@ -110,6 +120,11 @@ Building on Linux requires a workaround due to Docker limitations with OpenCL:
 - **cibuildwheel** on Linux uses **Docker** to ensure compliance with the [manylinux](https://github.com/pypa/manylinux) standard.
 - Due to issues with OpenCL inside Docker containers, **we currently do not use cibuildwheel on Linux**.
 - Instead, we build manually for x86_64 Linux platforms.
+
+Build a single package for a single python version. 
+From project root: 
+
+```python3.xx -m build --outdir <wheel directory>```
 
 > **Note:** While this does not comply with the manylinux standard, it is an acceptable compromise for our current project requirements.
 
