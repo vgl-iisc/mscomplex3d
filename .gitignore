@@ -1,0 +1,77 @@
+# === General C++ project ignores ===
+
+# Build directories
+build/
+Build/
+cmake-build-*/
+bin/
+Bin/
+_skbuild/
+
+# Compiled object files and libraries
+*.o
+*.obj
+*.so
+*.dll
+*.lib
+*.a
+*.lo
+*.la
+
+# Executables
+*.exe
+*.out
+*.app
+*.bin
+*.elf
+
+# Debug and profiling files
+*.dSYM/
+*.stackdump
+*.core
+*.gcno
+*.gcda
+*.gcov
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# IDE / Editor specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python related artifacts (for pybind11 or hybrid C++/Python projects)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Custom project-specific ignores
+pyms3d_core/
+wheelhouse/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# Unit test output
+test_output/
+Testing/
+CTestTestfile.cmake
+
+# Ninja build system files
+.ninja_deps
+.ninja_log
+rules.ninja
+build.ninja
