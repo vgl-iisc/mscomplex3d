@@ -57,8 +57,9 @@ dist/
 build/
 
 # Custom project-specific ignores
-pyms3d_core/
-wheelhouse/
+# Ignore everything in pyms3d_core except __init__.py
+pyms3d_core/*
+!pyms3d_core/__init__.pywheelhouse/
 
 # Logs and temporary files
 *.log
