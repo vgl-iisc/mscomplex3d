@@ -120,6 +120,17 @@ Building on Linux requires a workaround due to Docker limitations with OpenCL:
 - **cibuildwheel** on Linux uses **Docker** to ensure compliance with the [manylinux](https://github.com/pypa/manylinux) standard.
 - Due to issues with OpenCL inside Docker containers, **we currently do not use cibuildwheel on Linux**.
 - Instead, we build manually for x86_64 Linux platforms.
+- It is recommended to use the deadsnakes ppa to easily add different python versions to your system
+
+```
+$ sudo add-apt-repository -y ppa:deadsnakes/ppa
+$ sudo apt install -y python3.7 python3.8 python3.9 python3.10 python3.11
+$ sudo apt install -y python3.7-venv python3.7-distutils python3.7-dev
+$ sudo apt install -y python3.8-venv python3.8-distutils python3.8-dev
+$ sudo apt install -y python3.9-venv python3.9-distutils python3.9-dev
+$ sudo apt install -y python3.10-venv python3.10-distutils python3.10-dev
+$ sudo apt install -y python3.11-venv python3.11-distutils python3.11-dev
+```
 
 Build a single package for a single python version. 
 From project root: 
