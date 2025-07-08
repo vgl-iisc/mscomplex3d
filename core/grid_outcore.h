@@ -18,6 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+// This file is not used
+
 #ifndef GRID_DATAMANAGER_H_INCLUDED_
 #define GRID_DATAMANAGER_H_INCLUDED_
 

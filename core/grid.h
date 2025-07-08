@@ -11,6 +11,8 @@
 #include <stdexcept>
 #include <algorithm>
 
+// TODO: needs to be optimised, load-bearing datastructure that runs quite slowly right now
+
 /// <summary>
 /// This class was made to replace the Boost multi_array
 ///	Some outcomes may vary, though the computation of the morse smale complex, and critical points shall not change.

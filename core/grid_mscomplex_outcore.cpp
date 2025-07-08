@@ -6,6 +6,8 @@
 
 #include <grid_mscomplex.h>
 
+// This file is not used
+
 using namespace std;
 
 namespace br = boost::range;

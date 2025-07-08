@@ -959,14 +959,16 @@ namespace grid
         );
         s_queue.finish();
 
-        s_scan_group_sums.setArg(0, group_sums_buf);
-
-        s_queue.enqueueNDRangeKernel(
-            s_scan_group_sums,
-            cl::NullRange,
-            globalSize,
-            localSize
-        );
+        /*  FIXME: enqueuing this kernel leads to future read/writes from the buffer failing
+            exception indicates some sort of lifetime issue, a destructor getting called prematurely*/
+  
+        // s_scan_group_sums.setArg(0, group_sums_buf);
+        // s_queue.enqueueNDRangeKernel(
+        //     s_scan_group_sums,
+        //     cl::NullRange,
+        //     globalSize,
+        //     localSize
+        // );
         
         
         s_scan_update_sums.setArg(0, cp_count_buf);
@@ -977,7 +979,6 @@ namespace grid
             globalSize,
             localSize
         );
-
 
         //s_scan_local_sums(cp_count_buf,group_sums_buf);
         //s_scan_group_sums(group_sums_buf);
