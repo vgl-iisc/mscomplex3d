@@ -62,10 +62,11 @@ int main()
     }
 
 //    string         filename = "C:\\Users\\sachi\\OneDrive\\Documents\\PYMS3D_EXAMPLES\\Hydrogen_128x128x128.raw";
-    string         filename = "C:\\Users\\sachi\\OneDrive\\Documents\\PYMS3D_EXAMPLES\\grid_data.raw";
+    // string         filename = "C:\\Users\\sachi\\OneDrive\\Documents\\PYMS3D_EXAMPLES\\grid_data.raw";
+    string filename = "Debug\\Hydrogen_128x128x128.raw";
 
-    //cellid_t       size = cellid_t(128,128,128);
-    cellid_t       size = cellid_t(3,4,5);
+    cellid_t       size = cellid_t(128,128,128);
+    // cellid_t       size = cellid_t(3,4,5);
 
     //opencl::init(1);
     get_hw_info(0);

@@ -68,7 +68,6 @@ pyms3d_core/*
 
 # Unit test output
 test_output/
-Testing/
 CTestTestfile.cmake
 
 # Ninja build system files

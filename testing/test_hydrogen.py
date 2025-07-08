@@ -2,6 +2,8 @@ import sys
 import os
 import pytest
 
+sys.path.append("build/pyms3d/Debug")
+
 # Now you can import your custom module
 import pyms3d_core as pyms3d
 
@@ -10,7 +12,10 @@ def basic_hydrogen_dataset_test():
         os.chdir('testing')
         DataFile1 = "Hydrogen_128x128x128.raw"
         Dim1      = (128,128,128)
-        pyms3d.get_hw_info()
+        # adding this fails the next test, we might be invalidating 
+        # some state which prevents get_hw_info from running correctly next 
+        # time around (during the test)
+        # pyms3d.get_hw_info()
         msc = pyms3d.MsComplexPyms3D()
         msc.compute_bin(DataFile1,Dim1)
     except Exception as e: 
@@ -49,3 +54,12 @@ def test_msc_datastructure():
     except Exception as e:  
          pytest.fail("Error on creating the msc object")
 
+os.chdir('testing')
+DataFile1 = "Hydrogen_128x128x128.raw"
+Dim1      = (128,128,128)
+# adding this fails the next test, we might be invalidating 
+# some state which prevents get_hw_info from running correctly next 
+# time around (during the test)
+# pyms3d.get_hw_info()
+msc = pyms3d.MsComplexPyms3D()
+msc.compute_bin(DataFile1,Dim1)

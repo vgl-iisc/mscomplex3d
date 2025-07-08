@@ -51,7 +51,7 @@ void dataset_t::init(const string &filename)
   uint num_pts   = pt_span[0]*pt_span[1]*pt_span[2];
   auto wd = std::filesystem::current_path();
 
-  std::cout << "\nfile size: " << pt_span[0] <<" x " <<pt_span[1]<<" x "<< pt_span[2];
+  std::cout << "\nfile size: " << pt_span[0] <<" x " <<pt_span[1]<<" x "<< pt_span[2] << "\n";
 
   ifstream ifs(filename.c_str(),ios::in|ios::binary);
   //ENSURE(ifs.is_open(),"unable to open file " + filename);
@@ -63,6 +63,7 @@ void dataset_t::init(const string &filename)
      
       ifs.clear(); // Reset EOF flag
   }
+
   ENSURE(ifs.fail()==false,"failed to read some data");
   ifs.seekg(0,ios::end);
   ENSURE(uint(ifs.tellg())==num_pts*sizeof(cell_fn_t),"file/piece size mismatch");

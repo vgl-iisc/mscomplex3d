@@ -5,6 +5,7 @@
 #include <sstream>
 #include <ostream>
 #include <cmath>
+#include <algorithm>
 
 #include <array>
 #include <utl.h>
