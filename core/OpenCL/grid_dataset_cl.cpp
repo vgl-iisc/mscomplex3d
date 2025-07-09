@@ -908,8 +908,8 @@ namespace grid
         
         
         cl::NDRange globalSize(1024); // Total number of work items
-        cl::NDRange localSize(256);          // Work items per work group
-        //cl::NDRange localSize(32);          // Work items per work group
+        // cl::NDRange localSize(256);          // Work items per work group
+        cl::NDRange localSize(32);          // Work items per work group
 
       	s_queue.enqueueNDRangeKernel(
             s_count_cps,
@@ -920,7 +920,6 @@ namespace grid
 
         s_queue.finish();
         
-         
         rect_list_t bnds;
 
         get_boundry_rects(from_cell_pair(rct),from_cell_pair(ext),bnds);
@@ -962,13 +961,13 @@ namespace grid
         /*  FIXME: enqueuing this kernel leads to future read/writes from the buffer failing
             exception indicates some sort of lifetime issue, a destructor getting called prematurely*/
   
-        // s_scan_group_sums.setArg(0, group_sums_buf);
-        // s_queue.enqueueNDRangeKernel(
-        //     s_scan_group_sums,
-        //     cl::NullRange,
-        //     globalSize,
-        //     localSize
-        // );
+        s_scan_group_sums.setArg(0, group_sums_buf);
+        s_queue.enqueueNDRangeKernel(
+            s_scan_group_sums,
+            cl::NullRange,
+            globalSize,
+            localSize
+        );
         
         
         s_scan_update_sums.setArg(0, cp_count_buf);
@@ -1012,6 +1011,8 @@ namespace grid
     {
       try
       {
+        ENSURES(num_cps > 0) << "no critical points found!" << std::endl;
+
         cl::Buffer cp_cellid_buf(s_context,CL_MEM_READ_WRITE,sizeof(cellid_t)*num_cps);
         cl::Buffer cp_vertid_buf(s_context,CL_MEM_READ_WRITE,sizeof(cellid_t)*num_cps);
         cl::Buffer cp_pair_idx_buf(s_context,CL_MEM_READ_WRITE,sizeof(int)*num_cps);
@@ -1019,8 +1020,8 @@ namespace grid
         cl::Buffer cp_func_buf(s_context,CL_MEM_READ_WRITE,sizeof(cell_fn_t)*num_cps);
 
         cl::NDRange globalSize(1024); // Total number of work items
-        cl::NDRange localSize(256);          // Work items per work group
-        //cl::NDRange localSize(32);          // Work items per work group
+        // cl::NDRange localSize(256);          // Work items per work group
+        cl::NDRange localSize(32);          // Work items per work group
 
         s_save_cps.setArg(0, rct);
         s_save_cps.setArg(1, ext);
