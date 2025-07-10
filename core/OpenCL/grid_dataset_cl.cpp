@@ -958,9 +958,6 @@ namespace grid
         );
         s_queue.finish();
 
-        /*  FIXME: enqueuing this kernel leads to future read/writes from the buffer failing
-            exception indicates some sort of lifetime issue, a destructor getting called prematurely*/
-  
         s_scan_group_sums.setArg(0, group_sums_buf);
         s_queue.enqueueNDRangeKernel(
             s_scan_group_sums,
