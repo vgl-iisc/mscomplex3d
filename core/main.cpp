@@ -31,10 +31,16 @@ using namespace std;
 using namespace grid;
 #include <iostream>
 
-int main()
+int main(const int argc, const char *argv[])
 {
+    if (argc < 5) {
+        std::cout << "Please specify a dataset (.raw) file and its dimensions (3 integers)";
+        return 0;
+    }
+
     std::vector<cl::Platform> platforms;
     cl::Platform::get(&platforms);
+
 
     if (platforms.empty())
     {
@@ -63,9 +69,9 @@ int main()
 
 //    string         filename = "C:\\Users\\sachi\\OneDrive\\Documents\\PYMS3D_EXAMPLES\\Hydrogen_128x128x128.raw";
     // string         filename = "C:\\Users\\sachi\\OneDrive\\Documents\\PYMS3D_EXAMPLES\\grid_data.raw";
-    string filename = "Debug\\Hydrogen_128x128x128.raw";
+    string filename = argv[1];
 
-    cellid_t       size = cellid_t(128,128,128);
+    cellid_t       size = cellid_t(atoi(argv[2]),atoi(argv[3]),atoi(argv[4]));
     // cellid_t       size = cellid_t(3,4,5);
 
     //opencl::init(1);
@@ -87,6 +93,9 @@ int main()
     ds.reset(new dataset_t(dom, dom, dom));
 
     ds->init(filename);
+
+    auto minmax = std::minmax_element(ds->m_vert_fns.data.begin(), ds->m_vert_fns.data.end());
+    std::cout << "Data range: " << *minmax.first << " to " << *minmax.second << std::endl;
 
     try
     {
