@@ -30,12 +30,20 @@
 using namespace std;
 using namespace grid;
 #include <iostream>
+#include <iterator>
 
 int main(const int argc, const char *argv[])
 {
     if (argc < 5) {
         std::cout << "Please specify a dataset (.raw) file and its dimensions (3 integers)";
         return 0;
+    }
+
+    // 0 = GPU, 1 = CPU
+    int device = 0; 
+
+    if (argc > 5) {
+        device = atoi(argv[5]);
     }
 
     std::vector<cl::Platform> platforms;
@@ -75,7 +83,7 @@ int main(const int argc, const char *argv[])
     // cellid_t       size = cellid_t(3,4,5);
 
     //opencl::init(1);
-    get_hw_info(0);
+    get_hw_info(device);
     const rect_t dom(cellid_t::zero, (size - cellid_t::one) * 2);
 
     DLOG << "Entered :"
@@ -88,7 +96,6 @@ int main(const int argc, const char *argv[])
     msc->m_rect = dom;
     msc->m_domain_rect = dom;
     msc->m_ext_rect = dom;
-
 
     ds.reset(new dataset_t(dom, dom, dom));
 
@@ -121,6 +128,31 @@ int main(const int argc, const char *argv[])
             throw;
         
 	}
+
+    std::vector<int> minima, saddle1, saddle2, maxima;
+    std::copy_if(msc->cpno_range().begin(), msc->cpno_range().end(), std::back_insert_iterator(minima), [&](int i) { return !msc->is_canceled(i) && msc->is_index_i_cp_(i, 0); });
+    std::copy_if(msc->cpno_range().begin(), msc->cpno_range().end(), std::back_insert_iterator(saddle1), [&](int i) { return !msc->is_canceled(i) && msc->is_index_i_cp_(i, 1); });
+    std::copy_if(msc->cpno_range().begin(), msc->cpno_range().end(), std::back_insert_iterator(saddle2), [&](int i) { return !msc->is_canceled(i) && msc->is_index_i_cp_(i, 2); });
+    std::copy_if(msc->cpno_range().begin(), msc->cpno_range().end(), std::back_insert_iterator(maxima), [&](int i) { return !msc->is_canceled(i) && msc->is_index_i_cp_(i, 3); });
+
+    std::cout << "minima: " << minima.size() << ", saddle(1): " << saddle1.size() << ", saddle(2) " << saddle2.size() << ", maxima: " << maxima.size() << std::endl;
+
+    minima.clear();
+    saddle1.clear();
+    saddle2.clear();
+    maxima.clear();
+
+    const float simplification_thresh = 0.05f;
+    msc->simplify_pers(simplification_thresh);
+    std::cout << "after simplification (threshold: " << simplification_thresh << ")" << std::endl;
+
+    std::copy_if(msc->cpno_range().begin(), msc->cpno_range().end(), std::back_insert_iterator(minima), [&](int i) { return !msc->is_canceled(i) && msc->is_index_i_cp_(i, 0); });
+    std::copy_if(msc->cpno_range().begin(), msc->cpno_range().end(), std::back_insert_iterator(saddle1), [&](int i) { return !msc->is_canceled(i) && msc->is_index_i_cp_(i, 1); });
+    std::copy_if(msc->cpno_range().begin(), msc->cpno_range().end(), std::back_insert_iterator(saddle2), [&](int i) { return !msc->is_canceled(i) && msc->is_index_i_cp_(i, 2); });
+    std::copy_if(msc->cpno_range().begin(), msc->cpno_range().end(), std::back_insert_iterator(maxima), [&](int i) { return !msc->is_canceled(i) && msc->is_index_i_cp_(i, 3); });
+
+    std::cout << "minima: " << minima.size() << ", saddle(1): " << saddle1.size() << ", saddle(2) " << saddle2.size() << ", maxima: " << maxima.size() << std::endl;
+    
     return 0;
 
 }

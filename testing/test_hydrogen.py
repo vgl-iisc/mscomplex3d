@@ -12,10 +12,7 @@ def basic_hydrogen_dataset_test():
         os.chdir('testing')
         DataFile1 = "Hydrogen_128x128x128.raw"
         Dim1      = (128,128,128)
-        # FIXME: adding this fails the next test, we might be invalidating 
-        # some state which prevents get_hw_info from running correctly next 
-        # time around (during the test)
-        # pyms3d.get_hw_info()
+        pyms3d.get_hw_info()
         
         msc = pyms3d.MsComplexPyms3D()
         msc.compute_bin(DataFile1,Dim1)
@@ -58,9 +55,16 @@ def test_msc_datastructure():
 os.chdir('testing')
 DataFile1 = "Hydrogen_128x128x128.raw"
 Dim1      = (128,128,128)
-# adding this fails the next test, we might be invalidating 
-# some state which prevents get_hw_info from running correctly next 
-# time around (during the test)
-# pyms3d.get_hw_info()
+
+# FIXME: this seemingly needs to run before compute_bin, which isn't great end-user experience
+pyms3d.get_hw_info()
+
 msc = pyms3d.MsComplexPyms3D()
 msc.compute_bin(DataFile1,Dim1)
+
+msc.simplify_pers(thresh=0.05)
+
+print(len(msc.cps(0)))
+print(len(msc.cps(1)))
+print(len(msc.cps(2)))
+print(len(msc.cps(3)))

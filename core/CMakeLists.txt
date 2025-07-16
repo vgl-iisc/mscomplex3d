@@ -13,7 +13,7 @@ find_package(OpenMP REQUIRED)
 set(OPENCL_NUM_WORK_ITEMS_PER_GROUP 256 CACHE STRING
       "number of work items in an opencl workgroup" )
 
-set(OPENCL_NUM_WORK_GROUPS 32 CACHE STRING
+set(OPENCL_NUM_WORK_GROUPS 4 CACHE STRING
       "number of work items in an opencl workgroup")
 
 include_directories(

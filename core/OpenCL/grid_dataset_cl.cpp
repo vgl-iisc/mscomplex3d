@@ -908,8 +908,8 @@ namespace grid
         
         
         cl::NDRange globalSize(1024); // Total number of work items
-        // cl::NDRange localSize(256);          // Work items per work group
-        cl::NDRange localSize(32);          // Work items per work group
+        cl::NDRange localSize(256);          // Work items per work group
+        // cl::NDRange localSize(32);          // Work items per work group
 
       	s_queue.enqueueNDRangeKernel(
             s_count_cps,
@@ -962,8 +962,8 @@ namespace grid
         s_queue.enqueueNDRangeKernel(
             s_scan_group_sums,
             cl::NullRange,
-            globalSize,
-            localSize
+            cl::NDRange(OPENCL_NUM_WORK_GROUPS),
+            cl::NDRange(OPENCL_NUM_WORK_GROUPS)
         );
         
         
@@ -1017,8 +1017,8 @@ namespace grid
         cl::Buffer cp_func_buf(s_context,CL_MEM_READ_WRITE,sizeof(cell_fn_t)*num_cps);
 
         cl::NDRange globalSize(1024); // Total number of work items
-        // cl::NDRange localSize(256);          // Work items per work group
-        cl::NDRange localSize(32);          // Work items per work group
+        cl::NDRange localSize(256);          // Work items per work group
+        // cl::NDRange localSize(32);          // Work items per work group
 
         s_save_cps.setArg(0, rct);
         s_save_cps.setArg(1, ext);
