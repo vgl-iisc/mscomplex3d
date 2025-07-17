@@ -39,9 +39,9 @@ target_include_directories(pyms3d_core PRIVATE ${OPENCL_INCLUDE_DIRS})
 target_link_libraries(pyms3d_core PRIVATE ${OPENCL_LIBRARIES})
 
 install(TARGETS pyms3d_core
-        LIBRARY DESTINATION pyms3d_core
-        ARCHIVE DESTINATION pyms3d_core
-        RUNTIME DESTINATION pyms3d_core) 
+        DESTINATION pyms3d_core
+        COMPONENT python) 
+
 
 # Optional executable for testing or standalone use
 #add_executable(pyms3d-exe 
