@@ -222,6 +222,20 @@ public:
 
   /*-------------------------------------------------------------------------*/
 
+  void save_bin(std::ostream &os) const {
+    base_t::save_bin(os);
+    ds->save_bin(os);
+  }
+
+  /*-------------------------------------------------------------------------*/
+
+  void load_bin(std::istream &is) {
+    base_t::load_bin(is);
+    ds->load_bin(is);
+  }
+
+  /*-------------------------------------------------------------------------*/
+
   template <eGDIR dir>
   py::array_t<int> conn(int cp) {
 
@@ -586,6 +600,40 @@ mscomplex_pyms3d_ptr_t new_msc()
     DLOG << "Exited  :";
 }
 
+py::tuple get_msc_state(const mscomplex_pyms3d_t &msc) {
+    std::ostringstream out;
+    out.clear();
+
+    msc.save_bin(out);
+
+    auto contents = out.str();
+
+    py::array_t<char> saved({ (long long) contents.length() });
+    auto buf = saved.request();
+    auto ptr = static_cast<char *>(buf.ptr);
+
+    memcpy(ptr, contents.data(), contents.length());
+
+    return py::tuple(saved);
+}
+
+mscomplex_pyms3d_t set_msc_state(py::tuple tup) {
+    auto saved = tup[0].cast<py::array_t<char>>();
+
+    char *c_buf = static_cast<char *>(calloc(saved.size(), sizeof(*c_buf)));
+    auto buf = saved.request();
+    auto ptr = static_cast<char *>(buf.ptr);
+
+    memcpy(c_buf, ptr, saved.size());
+
+    std::istringstream in(c_buf);
+    mscomplex_pyms3d_t msc;
+    msc.load_bin(in);
+
+    free(c_buf);
+
+    return msc;
+}
 
 /**
  * \brief Performs binding of C++ functions to Python functions that are exposed via the MsComplexPyms3D object 
@@ -711,8 +759,8 @@ void init_mscomplex(py::module_& m) {
             "                       NC  #cells in Asc/Des mfold of cp.\n"
             "                       NC' #cells in Asc/Des mfold of cp whose \n"
             "                             dual pts are inside Primal Grid\n"
-        );
-        
+        )
+        .def(py::pickle(&get_msc_state, &set_msc_state));
 }
 
 void debug_print() {
