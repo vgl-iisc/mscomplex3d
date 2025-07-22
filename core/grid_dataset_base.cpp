@@ -115,14 +115,14 @@ void dataset_t::init_storage()
   m_cell_flags.reindex(bl);
   m_vert_fns.reindex(bl/2);
 
-  if(opencl::is_gpu_context())
-  {
-    m_owner_maxima.resize(m_rect.span()/2);
-    m_owner_minima.resize((m_rect.span()/2)+1);
+  // if(opencl::is_gpu_context())
+  // {
+  m_owner_maxima.resize(m_rect.span()/2);
+  m_owner_minima.resize((m_rect.span()/2)+1);
 
-    m_owner_maxima.reindex(m_rect.lc()/2);
-    m_owner_minima.reindex(m_rect.lc()/2);
-  }
+  m_owner_maxima.reindex(m_rect.lc()/2);
+  m_owner_minima.reindex(m_rect.lc()/2);
+  // }
 }
 
 /*---------------------------------------------------------------------------*/
