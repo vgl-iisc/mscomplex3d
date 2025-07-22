@@ -174,7 +174,11 @@ py::array_t<DTYPE> range_to_ndarray(rng_t& rng) {
     return arr;
 }
 
-
+struct cellid_to_tup {
+    static py::tuple convert(const cellid_t& v) {
+        return py::make_tuple(v[0], v[1], v[2]);
+    }
+};
 
 /*===========================================================================*/
 namespace pyms3d {
@@ -444,6 +448,9 @@ public:
   py::array_t<int> cps_cellid() { TLOG; return vector_to_ndarray<cell_coord_t, 3>(m_cp_cellid); }
   py::array_t<int> cps_vertid() { TLOG; return vector_to_ndarray<cell_coord_t, 3>(m_cp_vertid); }
 
+  py::tuple py_cellid(int i) { TLOG; return cellid_to_tup::convert(cellid(i)); }
+  py::tuple py_vertid(int i) { TLOG; return cellid_to_tup::convert(vertid(i)); }
+
   /*-------------------------------------------------------------------------*/
 
   void collect_mfolds(int dir ,int dim)
@@ -496,6 +503,20 @@ public:
   cell_fn_t vert_fn(int x, int y, int z)
   {
     return ds->m_vert_fns(cellid_t(x,y,z));
+  }
+
+  py::array_t<cell_fn_t> vert_fns(int size_x, int size_y, int size_z)
+  {
+    const auto fns = ds->m_vert_fns.data.data();
+
+    py::array_t<cell_fn_t> arr ({ size_z, size_y, size_x });
+
+    auto buf = arr.request();
+    auto ptr = static_cast<cell_fn_t*>(buf.ptr);
+
+    memcpy(ptr, fns, sizeof(*ptr) * size_x * size_y * size_z);
+
+    return arr;
   }
 
 };
@@ -578,8 +599,6 @@ void init_mscomplex(py::module_& m) {
         .def("cp_func", &mscomplex_t::fn, "Function value at critical point i")
         .def("cp_index", &mscomplex_t::index, "Morse index of critical point i")
         .def("cp_pairid", &mscomplex_t::pair_idx, "Index of the paired critical point i (-1 if unpaired)")
-        .def("cp_vertid", &mscomplex_t::vertid, "Vertex id of the critical cell")
-        .def("cp_cellid", &mscomplex_t::cellid, "Cell id of the critical cell")
         //.def("is_boundry", &mscomplex_t::, "If the cp is on the boundary or not")
         .def("simplify_pers", &mscomplex_t::simplify_pers,
             py::arg("thresh") = 1.0,
@@ -611,6 +630,8 @@ void init_mscomplex(py::module_& m) {
         .def("cps_pairid", &mscomplex_pyms3d_t::cps_pairid, "Get cancellation pair ids of all critical points")
         .def("cps_vertid", &mscomplex_pyms3d_t::cps_vertid, "Get maximal vertex ids of all critical points")
         .def("cps_cellid", &mscomplex_pyms3d_t::cps_cellid, "Get cell ids of all critical points")
+        .def("cp_vertid", &mscomplex_pyms3d_t::py_vertid, "Vertex id of the critical cell")
+        .def("cp_cellid", &mscomplex_pyms3d_t::py_cellid, "Cell id of the critical cell")
         .def("asc", &mscomplex_pyms3d_t::conn<ASC>, "List of ascending cps connected to a critical point")
         .def("des", &mscomplex_pyms3d_t::conn<DES>, "List of descending cps connected to a critical point")
         .def("primal_points", &mscomplex_pyms3d_t::points<CC_PRIM>, "Get primal grid point coordinates")
@@ -621,6 +642,8 @@ void init_mscomplex(py::module_& m) {
         .def("save", &mscomplex_pyms3d_t::save, "Save mscomplex to file")
         .def("vert_func", &mscomplex_pyms3d_t::vert_fn,
             "Scalar value at vertex coordinate")
+        .def("vert_funcs", &mscomplex_pyms3d_t::vert_fns,
+            "Scalar value at all vertices")
         .def("canc_pairs", &mscomplex_pyms3d_t::canc_pairs,
             "get all cancellation pairs \n")
         .def("collect_geom", &mscomplex_pyms3d_t::collect_mfolds,
@@ -691,13 +714,6 @@ void init_mscomplex(py::module_& m) {
         );
         
 }
-
-struct cellid_to_tup {
-    static py::tuple convert(const cellid_t& v) {
-        return py::make_tuple(v[0], v[1], v[2]);
-    }
-};
-
 
 void debug_print() {
     std::cout << "debug";

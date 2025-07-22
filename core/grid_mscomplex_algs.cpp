@@ -561,7 +561,8 @@ inline void __collect_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
   #pragma omp parallel for
   for(int i = 0 ; i < contrib.size() ; ++i)
   {
-    msc->m_mfolds[dir][contrib[i][0]].clear();
+    auto contributor = contrib[i][0];
+    msc->m_mfolds[dir][contributor].clear();
 
     cellid_list_t contrib_cells;
     // Transform each element using the `cellid` function
@@ -576,7 +577,7 @@ inline void __collect_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
 
     contrib[i].clear();
 
-    ds->getManifold(msc->m_mfolds[dir][contrib[i][0]],contrib_cells,dim,dir);
+    ds->getManifold(msc->m_mfolds[dir][contributor],contrib_cells,dim,dir);
   }
 
   msc->m_geom_hversion[dir][dim] = msc->get_hversion();
