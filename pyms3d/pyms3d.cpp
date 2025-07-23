@@ -356,13 +356,12 @@ public:
       if (ToPts)
       {
           if (dir == ASC && dim == 0) return __mfold_to_point_indices<CC_PRIM, 0>(mfold);
-          /*if (dir == ASC && dim == 0) return __mfold_to_point_indices<CC_PRIM, 0>(mfold);
           if (dir == ASC && dim == 1) return __mfold_to_point_indices<CC_DUAL, 1>(mfold);
           if (dir == ASC && dim == 2) return __mfold_to_point_indices<CC_DUAL, 2>(mfold);
 
           if (dir == DES && dim == 1) return __mfold_to_point_indices<CC_PRIM, 1>(mfold);
           if (dir == DES && dim == 2) return __mfold_to_point_indices<CC_PRIM, 2>(mfold);
-          if (dir == DES && dim == 3) return __mfold_to_point_indices<CC_DUAL, 3>(mfold);*/
+          if (dir == DES && dim == 3) return __mfold_to_point_indices<CC_DUAL, 3>(mfold);
 
           ENSURES(false) << "Should never reach here";
       }
