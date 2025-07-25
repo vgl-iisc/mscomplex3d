@@ -456,11 +456,11 @@ public:
   /*-------------------------------------------------------------------------*/
 
   py::array_t<int> canc_pairs() { TLOG; return vector_to_ndarray<int, 2>(m_canc_list); }
-  py::array_t<int> cps_func() { TLOG; return vector_to_ndarray<cell_fn_t, 1>(m_cp_fn); }
-  py::array_t<int> cps_index() { TLOG; return vector_to_ndarray<int8_t, 1>(m_cp_index); }
+  py::array_t<cell_fn_t> cps_func() { TLOG; return vector_to_ndarray<cell_fn_t, 1>(m_cp_fn); }
+  py::array_t<int8_t> cps_index() { TLOG; return vector_to_ndarray<int8_t, 1>(m_cp_index); }
   py::array_t<int> cps_pairid() { TLOG; return vector_to_ndarray<int, 1>(m_cp_pair_idx); }
-  py::array_t<int> cps_cellid() { TLOG; return vector_to_ndarray<cell_coord_t, 3>(m_cp_cellid); }
-  py::array_t<int> cps_vertid() { TLOG; return vector_to_ndarray<cell_coord_t, 3>(m_cp_vertid); }
+  py::array_t<cell_coord_t> cps_cellid() { TLOG; return vector_to_ndarray<cell_coord_t, 3>(m_cp_cellid); }
+  py::array_t<cell_coord_t> cps_vertid() { TLOG; return vector_to_ndarray<cell_coord_t, 3>(m_cp_vertid); }
 
   py::tuple py_cellid(int i) { TLOG; return cellid_to_tup::convert(cellid(i)); }
   py::tuple py_vertid(int i) { TLOG; return cellid_to_tup::convert(vertid(i)); }
