@@ -11,6 +11,8 @@
 #include <stdexcept>
 #include <algorithm>
 
+#include "utl.h"
+
 // TODO: needs to be optimised, load-bearing datastructure that runs quite slowly right now
 
 /// <summary>
@@ -149,6 +151,22 @@ public:
 			}
 			std::cout << "----\n";
 		}
+	}
+
+	static inline void save_bin(std::ostream &os, const Array3D<T, N> &arr) {
+		utl::bin_write(os, arr.size_x);
+		utl::bin_write(os, arr.size_y);
+		utl::bin_write(os, arr.size_z);
+
+		utl::bin_write_vec(os, arr.data);
+	}
+	
+	static inline void load_bin(std::istream &is, Array3D<T, N> &arr) {
+		utl::bin_read(is, arr.size_x);
+		utl::bin_read(is, arr.size_y);
+		utl::bin_read(is, arr.size_z);
+
+		utl::bin_read_vec(is, arr.data);
 	}
 };
 

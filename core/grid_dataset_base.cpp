@@ -32,6 +32,20 @@ namespace grid
 
 /*---------------------------------------------------------------------------*/
 
+/*===========================================================================*/
+
+    dataset_t::dataset_t() :
+        m_rect(),
+        m_ext_rect(),
+        m_domain_rect(),
+        m_vert_fns(0,0,0,0),
+        m_cell_flags(0, 0, 0, 0),
+        m_owner_maxima(0, 0, 0, 0),
+        m_owner_minima(0, 0, 0, 0)
+{}
+
+/*---------------------------------------------------------------------------*/
+
 dataset_t::~dataset_t () {clear();}
 
 /*---------------------------------------------------------------------------*/
@@ -547,7 +561,10 @@ void dataset_t::save_bin(ostream &os) const
   rect_size_t  pt_span = (m_ext_rect.span()/2)+1;
   uint npts            = pt_span[0]*pt_span[1]*pt_span[2];
 
-  utl::bin_write_raw(os,m_vert_fns.data.data(),npts);
+  Array3D<cell_fn_t>::save_bin(os, m_vert_fns);
+  Array3D<cell_flag_t>::save_bin(os, m_cell_flags);
+  Array3D<int>::save_bin(os, m_owner_maxima);
+  Array3D<int>::save_bin(os, m_owner_minima);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -563,9 +580,12 @@ void dataset_t::load_bin(istream &is)
   rect_size_t  pt_span = (m_ext_rect.span()/2)+1;
   uint npts            = pt_span[0]*pt_span[1]*pt_span[2];
 
-  utl::bin_read_raw(is,m_vert_fns.data.data(),npts);
+  Array3D<cell_fn_t>::load_bin(is, m_vert_fns);
+  Array3D<cell_flag_t>::load_bin(is, m_cell_flags);
+  Array3D<int>::load_bin(is, m_owner_maxima);
+  Array3D<int>::load_bin(is, m_owner_minima);
 
-  compute_owner_grad();
+  // compute_owner_grad();
 }
 
 /*===========================================================================*/

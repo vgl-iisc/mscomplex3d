@@ -231,6 +231,7 @@ public:
 
   void load_bin(std::istream &is) {
     base_t::load_bin(is);
+    ds = std::make_shared<dataset_t>(); 
     ds->load_bin(is);
   }
 
@@ -607,29 +608,16 @@ py::tuple get_msc_state(const mscomplex_pyms3d_t &msc) {
 
     auto contents = out.str();
 
-    py::array_t<char> saved({ (long long) contents.length() });
-    auto buf = saved.request();
-    auto ptr = static_cast<char *>(buf.ptr);
-
-    memcpy(ptr, contents.data(), contents.length());
-
-    return py::tuple(saved);
+    return py::make_tuple(py::bytes(contents));
 }
 
-mscomplex_pyms3d_t set_msc_state(py::tuple tup) {
-    auto saved = tup[0].cast<py::array_t<char>>();
+mscomplex_pyms3d_ptr_t set_msc_state(py::tuple tup) {
+    auto saved = tup[0].cast<py::bytes>();
+    auto str = static_cast<std::string>(saved);
 
-    char *c_buf = static_cast<char *>(calloc(saved.size(), sizeof(*c_buf)));
-    auto buf = saved.request();
-    auto ptr = static_cast<char *>(buf.ptr);
-
-    memcpy(c_buf, ptr, saved.size());
-
-    std::istringstream in(c_buf);
-    mscomplex_pyms3d_t msc;
-    msc.load_bin(in);
-
-    free(c_buf);
+    std::istringstream in(str);
+    auto msc = std::make_shared<mscomplex_pyms3d_t>();
+    msc->load_bin(in);
 
     return msc;
 }

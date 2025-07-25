@@ -174,7 +174,6 @@ void mscomplex_t::save_bin(ostream &os) const
     utl::bin_write_vec(os,m_des_mfolds[i]);
     utl::bin_write_vec(os,m_asc_mfolds[i]);
   }
-
   m_merge_dag->save_bin(os);
 }
 
@@ -222,6 +221,9 @@ void mscomplex_t::load_bin(istream &is)
   utl::bin_read_vec(is,m_canc_list);
   utl::bin_read(is,m_geom_hversion);
 
+  m_des_mfolds.resize(N);
+  m_asc_mfolds.resize(N);
+  
   for(int i = 0 ; i < N; ++i)
   {
     utl::bin_read_vec(is,m_des_mfolds[i]);
