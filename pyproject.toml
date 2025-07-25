@@ -33,6 +33,7 @@ install.components = ["python"]
 # ──────────────────────────────────────────────────────────
 [tool.scikit-build.cmake]
 
+# build-type = "Debug"
 source-dir = "."
 args = [
   "-DBUILD_PYMS3D=ON",
