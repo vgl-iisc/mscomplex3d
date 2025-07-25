@@ -55,6 +55,7 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+wheels/
 
 # Custom project-specific ignores
 # Ignore everything in pyms3d_core except __init__.py
