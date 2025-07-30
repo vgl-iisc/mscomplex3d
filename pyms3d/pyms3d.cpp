@@ -227,6 +227,15 @@ public:
     ds->save_bin(os);
   }
 
+  void dbg_serialize(dbg_serializer &serial) const {
+    serial.enter("mscomplex");
+    base_t::dbg_serialize(serial);
+    serial.exit();
+    serial.enter("dataset");
+    ds->dbg_serialize(serial);
+    serial.exit();
+  }
+
   /*-------------------------------------------------------------------------*/
 
   void load_bin(std::istream &is) {
@@ -600,6 +609,33 @@ mscomplex_pyms3d_ptr_t new_msc()
     DLOG << "Exited  :";
 }
 
+py::dict dbgns2dict(const dbg_serializer::serializer_namespace *ns) {
+    py::dict dict;
+
+    for (auto const &pair : ns->serialized_objects) {
+        auto &string = pair.first;
+        auto serial = py::bytes(pair.second);
+
+        dict[string.c_str()] = serial;
+    }
+
+    for (auto const &child : ns->children) {
+        dict[(child->name + "_ns").c_str()] = dbgns2dict(child.get());
+    }
+
+    return dict;
+}
+
+py::dict dbg_serialize(const mscomplex_pyms3d_t &msc) {
+    dbg_serializer serializer;
+
+    msc.dbg_serialize(serializer);
+
+    py::dict dict = dbgns2dict(serializer.root_namespace.get());
+
+    return dict;
+}
+
 py::tuple get_msc_state(const mscomplex_pyms3d_t &msc) {
     std::ostringstream out;
     out.clear();
@@ -654,7 +690,8 @@ void init_mscomplex(py::module_& m) {
 				    Any combination of the above criteria may be set.
 				    Simplification will stop when any of the criteria is reached.
 				    Call only after the compute function is called.
-		)doc");
+		)doc")
+        .def("cp_detail_string", &mscomplex_t::cp_info);
     //the reason we define this second python class is because this is how we take an inherited function from an existing one in Pybind
     py::class_<mscomplex_pyms3d_t, mscomplex_t, std::shared_ptr<mscomplex_pyms3d_t>>(m, "MsComplexPyms3D")
         .def(py::init<>())
@@ -747,6 +784,7 @@ void init_mscomplex(py::module_& m) {
             "                       NC' #cells in Asc/Des mfold of cp whose \n"
             "                             dual pts are inside Primal Grid\n"
         )
+        .def("dbg_serialize", &dbg_serialize)
         .def(py::pickle(&get_msc_state, &set_msc_state));
 }
 

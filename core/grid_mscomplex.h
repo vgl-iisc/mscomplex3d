@@ -69,6 +69,7 @@ public:
   inline void load(const std::string &f);
 
   void save_bin(std::ostream &os) const;
+  void dbg_serialize(utl::dbg_serializer &serial) const;
   void load_bin(std::istream &is);
 
 

@@ -5,6 +5,7 @@
 /* Misc utility functions
 /*---------------------------------------------------------------------------*/
 
+#include <map>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -156,6 +157,91 @@ private:
 
 }; // timer
 
+
+/*---------------------------------------------------------------------------*/
+
+/** \brief A multi-level serializer (technically not, just a record) which can record individual serialized blocks, useful for debugging **/
+
+struct dbg_serializer {
+
+  using string = std::string;
+  typedef string serial_block;
+  typedef std::map<string, serial_block> namespace_map;
+
+  typedef struct serializer_namespace {
+    string name;
+    serializer_namespace *parent = NULL;
+    std::vector<std::shared_ptr<serializer_namespace>> children;
+    namespace_map serialized_objects;
+    size_t start, end, last_end;
+
+    serializer_namespace(string name, serializer_namespace *parent) {
+      this->name = name;
+      this->parent = parent;
+      children = std::vector<std::shared_ptr<serializer_namespace>>();
+      serialized_objects = namespace_map();
+    }
+  } sns;
+
+  typedef std::shared_ptr<sns> sns_sptr;
+
+  std::unique_ptr<sns> root_namespace;
+  sns *cur_namespace;
+  std::ostringstream out;
+
+  dbg_serializer() {
+    root_namespace = std::make_unique<sns>("root", nullptr);
+    cur_namespace = root_namespace.get();
+    cur_namespace->start = 0;
+    out = std::ostringstream();
+  }
+
+  void log_object(string name) {
+    // the newly serialized block is the substring [last_end, eof]
+    serial_block block = out.str().substr(cur_namespace->last_end);
+    cur_namespace->last_end = out.tellp();
+    cur_namespace->serialized_objects.insert({name, block});
+  }
+
+  void enter(string ns_name) {
+    auto &children = cur_namespace->children;
+    
+    auto matching_ns = std::find_if(children.begin(), children.end(), [&ns_name](sns_sptr &a) { return a->name == ns_name; });
+
+    if (matching_ns != children.end()) {
+      cur_namespace = matching_ns->get();
+      return;
+    }
+
+    auto ns = std::make_shared<sns>(sns(ns_name, cur_namespace));
+
+    ns->start = out.tellp();
+    ns->last_end = ns->start;
+    cur_namespace->children.push_back(ns);
+    cur_namespace->last_end = ns->start;
+    cur_namespace = ns.get();
+  }
+
+  void exit(bool log_namespace = true) {
+    cur_namespace->end = out.tellp();
+    
+    if (cur_namespace == root_namespace.get()) {
+      return;
+    }
+
+    auto prev_ns = cur_namespace;
+    cur_namespace = cur_namespace->parent;
+
+    if (log_namespace) {
+      serial_block serialized_ns = out.str().substr(cur_namespace->last_end);
+      cur_namespace->serialized_objects.insert({prev_ns->name, serialized_ns});
+    }
+
+    cur_namespace->last_end = out.tellp();
+  }
+}; //dbg_serializer
+
+/*===========================================================================*/
 
 /*---------------------------------------------------------------------------*/
 

@@ -155,12 +155,16 @@ inline std::string mscomplex_t::cp_info (int cp_no) const
   ss<<std::endl;
   ss<<"cp_no        ::"<<cp_no<<std::endl;
   ss<<"cellid       ::"<<cellid(cp_no)<<std::endl;
-//    ss<<"vert cell    ::"<<vertid(cp_no)<<std::endl;
+  ss<<"vert cell    ::"<<vertid(cp_no)<<std::endl;
   ss<<"index        ::"<<(int)index(cp_no)<<std::endl;
-//      ss<<"fn           ::"<<fn(cp_no)<<std::endl;
-//    ss<<"is_cancelled ::"<<is_canceled(cp_no)<<std::endl;
-//    ss<<"is_paired    ::"<<is_paired(cp_no)<<std::endl;
-  ss<<"pair_idx     ::"<<pair_idx(cp_no)<<std::endl;
+  ss<<"fn           ::"<<fn(cp_no)<<std::endl;
+  ss<<"is_cancelled ::"<<is_canceled(cp_no)<<std::endl;
+  
+  bool paired = is_paired(cp_no);
+
+  ss<<"is_paired    ::"<<paired;
+  if (paired) ss << " (index: " << pair_idx(cp_no) << ")";
+  ss<<std::endl;
   return ss.str();
 }
 

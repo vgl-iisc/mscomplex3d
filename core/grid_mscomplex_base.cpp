@@ -1,4 +1,5 @@
 #include <grid_mscomplex.h>
+#include <utl.h>
 #include <ranges>
 #include <algorithm>
 
@@ -175,6 +176,68 @@ void mscomplex_t::save_bin(ostream &os) const
     utl::bin_write_vec(os,m_asc_mfolds[i]);
   }
   m_merge_dag->save_bin(os);
+}
+
+void mscomplex_t::dbg_serialize(utl::dbg_serializer &serial) const {
+  ostream &os = serial.out;
+  
+  utl::bin_write(os,m_rect);
+  serial.log_object("m_rect");
+  utl::bin_write(os,m_ext_rect);
+  serial.log_object("m_ext_rect");
+  utl::bin_write(os,m_domain_rect);
+  serial.log_object("m_domain_rect");
+
+  utl::bin_write_vec(os,m_cp_cellid);
+  serial.log_object("m_cp_cellid");
+  utl::bin_write_vec(os,m_cp_vertid);
+  serial.log_object("m_cp_vertid");
+  utl::bin_write_vec(os,m_cp_pair_idx);
+  serial.log_object("m_cp_pair_idx");
+  utl::bin_write_vec(os,m_cp_index);
+  serial.log_object("m_cp_index");
+  utl::bin_write_vec(os,m_cp_is_cancelled);
+  serial.log_object("m_cp_is_cancelled");
+  utl::bin_write_vec(os,m_cp_fn);
+  serial.log_object("m_cp_fn");
+
+  int N = m_cp_cellid.size();
+
+  int_list_t nconn(2*N);
+  int_int_list_t adj;
+
+  for(int i = 0 ; i < N; ++i)
+  {
+    nconn[2*i]   = m_des_conn[i].size();
+    nconn[2*i+1] = m_asc_conn[i].size();
+
+    copy(m_des_conn[i].begin(), m_des_conn[i].end(), std::back_inserter(adj));
+    copy(m_asc_conn[i].begin(), m_asc_conn[i].end(), std::back_inserter(adj));
+
+
+  }
+
+  utl::bin_write_vec(os,nconn);
+  serial.log_object("nconn");
+  utl::bin_write_vec(os,adj);
+  serial.log_object("adj");
+
+  utl::bin_write(os,m_hversion);
+  serial.log_object("m_hversion");
+  utl::bin_write_vec(os,m_canc_list);
+  serial.log_object("m_canc_list");
+  utl::bin_write(os,m_geom_hversion);
+  serial.log_object("m_geom_hversion");
+
+  for(int i = 0 ; i < N; ++i)
+  {
+    utl::bin_write_vec(os,m_des_mfolds[i]);
+    utl::bin_write_vec(os,m_asc_mfolds[i]);
+  }
+  serial.log_object("m_{asc,des}_mfolds[*]");
+
+  m_merge_dag->save_bin(os);
+  serial.log_object("m_merge_dag");
 }
 
 /*---------------------------------------------------------------------------*/
