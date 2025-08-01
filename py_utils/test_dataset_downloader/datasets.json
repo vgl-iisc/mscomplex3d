@@ -1,0 +1,1182 @@
+{
+    "3d_neurons_15_sept_2016": {
+        "name": "3DNeurons15Sept2016",
+        "type": "uint16",
+        "size": [
+            2048,
+            2048,
+            1718
+        ],
+        "spacing": [
+            0.267345,
+            0.267345,
+            0.5
+        ],
+        "sha512sum": "d70e869662ca81ac3c8b8eafe9eb415b8b78edb417a7c84a5cc51906ec4f3f7de8c1ff1bf676a04b7c6e06ca7d033177ecd8526efe95aced3021d83c08dbd8fe",
+        "description": "The neurons are macaque visual cortical neurons labeled with TdTomato fluorescent proteins.",
+        "acknowledgement": "Alessandra Angelucci and Frederick Federer. This work was supported by grants from the National Institute of Health (NEI R01 EY019743 and R01 EY026812), the National Science Foundation (EAGER 1649923).",
+        "url": "http://klacansky.com/open-scivis-datasets/3d_neurons_15_sept_2016/3d_neurons_15_sept_2016_2048x2048x1718_uint16.raw",
+        "category": "Microscope"
+    },
+    "aneurism": {
+        "name": "Aneurism",
+        "type": "uint8",
+        "size": [
+            256,
+            256,
+            256
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "31f1232cbf75b0182f172375e46cc57fe013c0edaae292f2358e2477052ca974faae92efd803a2d229172b851b5ddaa461129872b89bd6ce45d43bfe595eed43",
+        "description": "Rotational C-arm x-ray scan of the arteries of the right half of a human head. A contrast agent was injected into the blood and an aneurism is present.",
+        "acknowledgement": "volvis.org and Philips Research, Hamburg, Germany",
+        "url": "http://klacansky.com/open-scivis-datasets/aneurism/aneurism_256x256x256_uint8.raw",
+        "category": "CT"
+    },
+    "backpack": {
+        "name": "Backpack Scan",
+        "type": "uint16",
+        "size": [
+            512,
+            512,
+            373
+        ],
+        "spacing": [
+            0.9766,
+            0.9766,
+            1.25
+        ],
+        "sha512sum": "f929fb231367792b260db6de2214fb64a27785870f472503930cf34c6cc7b1c22603c1eb2164381ec1f799c8e1040a151edca4e094d2ed1cbfc70a85d4f1eba8",
+        "description": "CT scan of a backpack filled with items.",
+        "acknowledgement": "volvis.org and Kevin Kreeger, Viatronix Inc., USA",
+        "url": "http://klacansky.com/open-scivis-datasets/backpack/backpack_512x512x373_uint16.raw",
+        "category": "CT"
+    },
+    "beechnut": {
+        "name": "Beechnut",
+        "type": "uint16",
+        "size": [
+            1024,
+            1024,
+            1546
+        ],
+        "spacing": [
+            2e-05,
+            2e-05,
+            2e-05
+        ],
+        "sha512sum": "eec310efd5898de3bff874365966b583418fbebede360a832e7a5a96466dcbd7cbaf91df3fe51584abd046de85839c66d2e467a340fc302eba08d483e5ad70a9",
+        "description": "A microCT scan of a dried beechnut.",
+        "acknowledgement": "The Computer-Assisted Paleoanthropology group and the Visualization and MultiMedia Lab at University of Zurich (UZH)",
+        "url": "http://klacansky.com/open-scivis-datasets/beechnut/beechnut_1024x1024x1546_uint16.raw",
+        "category": "CT"
+    },
+    "blunt_fin": {
+        "name": "Blunt Fin",
+        "type": "uint8",
+        "size": [
+            256,
+            128,
+            64
+        ],
+        "spacing": [
+            1,
+            0.75,
+            1
+        ],
+        "sha512sum": "d5da3701268d92dd84e9a18db3ad126d01408983ce4efde38ffa0c096029d9b1c80c9094c5d1dc9baeff4e076c97c195137d200c99b3eee862dcf1d22dfe9df7",
+        "description": "",
+        "acknowledgement": "NASA Advanced Supercomputing Division, USA",
+        "url": "http://klacansky.com/open-scivis-datasets/blunt_fin/blunt_fin_256x128x64_uint8.raw",
+        "added": "2023-07-07",
+        "category": "Simulation"
+    },
+    "bonsai": {
+        "name": "Bonsai",
+        "type": "uint8",
+        "size": [
+            256,
+            256,
+            256
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "b34156a0ffc80ffaf84d069f3d05a40fdd999a35f05492829a2b0c13403a3147e73712b1d10c2cc34da66a59540a1632dae6adc96f3ebf3efa5d4d6c10598997",
+        "description": "CT scan of a bonsai tree.",
+        "acknowledgement": "volvis.org and S. Roettger, VIS, University of Stuttgart",
+        "url": "http://klacansky.com/open-scivis-datasets/bonsai/bonsai_256x256x256_uint8.raw",
+        "category": "CT"
+    },
+    "boston_teapot": {
+        "name": "Boston Teapot",
+        "type": "uint8",
+        "size": [
+            256,
+            256,
+            178
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "b2bf7ba8ba7a7d5a8ea76ccd8fd2c0f5f043079a83cd6a3055e85f5e0a40c1c4d872b9bbc7aedf628989eb57bffd5729767c29fe8ae018c581406b196caa6359",
+        "description": "CT scan of the SIGGRAPH 1989 teapot with a small version of the AVS lobster inside.",
+        "acknowledgement": "volvis.org and Terarecon Inc, MERL, Brigham and Women's Hospital",
+        "url": "http://klacansky.com/open-scivis-datasets/boston_teapot/boston_teapot_256x256x178_uint8.raw",
+        "category": "CT"
+    },
+    "bunny": {
+        "name": "Bunny",
+        "type": "uint16",
+        "size": [
+            512,
+            512,
+            361
+        ],
+        "spacing": [
+            0.337891,
+            0.337891,
+            0.5
+        ],
+        "sha512sum": "58c8de50e5e9638278a36c9ddb10d0948721b5821e62dff3dada7b783341b6e5d346014b8545f504eb33952ea5c91e3ca93d10a5ce6a78b32ecabd10bb9438f3",
+        "description": "A CT scan of the Stanford Bunny. The greyscale units are Hounsfield units, denoting electron-density of the subject; the scale units are in millimeters. The scan was completed 28 January 2000.",
+        "acknowledgement": "Many many thanks to Geoff Rubin who helped me to scan the data, Sandy Napel who coordinated the scan and helped to process the data, and Marc Levoy who graciously provided the subject.  Geoff and Sandy are with Stanford Radiology, and Marc is with Stanford Computer Science.",
+        "url": "http://klacansky.com/open-scivis-datasets/bunny/bunny_512x512x361_uint16.raw",
+        "category": "CT"
+    },
+    "carp": {
+        "name": "Carp",
+        "type": "uint16",
+        "size": [
+            256,
+            256,
+            512
+        ],
+        "spacing": [
+            0.78125,
+            0.390625,
+            1
+        ],
+        "sha512sum": "0ec57ca05d700e25a87cc2ca976c066f52e254c0269aa5fb7decb08ba3607cbf996b5d72aac8671dfe6589a794935d3fd820aaa756e6f6d32b84def15455fea5",
+        "description": "CT scan of a carp fish",
+        "acknowledgement": "Michael Scheuring, Computer Graphics Group, University of Erlangen, Germany",
+        "url": "http://klacansky.com/open-scivis-datasets/carp/carp_256x256x512_uint16.raw",
+        "date_added": "2023-07-09",
+        "category": "CT",
+        "bibtex": null
+    },
+    "chameleon": {
+        "name": "Chameleon",
+        "type": "uint16",
+        "size": [
+            1024,
+            1024,
+            1080
+        ],
+        "spacing": [
+            0.09228515625,
+            0.09228515625,
+            0.105
+        ],
+        "sha512sum": "61c0309e87416d7ae6adf06bc11af969c8093a10b0a112caba5c6a672b40eac6aa81a9af20f33e00ef19c9d04493bc2fe37233e48f820b56be211b6d99e49ec3",
+        "description": "CT scan of a chameleon.",
+        "acknowledgement": "Chamaeleo calyptratus. Digital Morphology, 2003.",
+        "url": "http://klacansky.com/open-scivis-datasets/chameleon/chameleon_1024x1024x1080_uint16.raw",
+        "category": "CT"
+    },
+    "christmas_tree": {
+        "name": "Christmas Tree",
+        "type": "uint16",
+        "size": [
+            512,
+            499,
+            512
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "a3ce708c1076fd0425a42a701b1a5a5598a6077fbc603ee43afbd3c3b0309e31235d1f661c2ff7ef9a28870e9b1cb9391991435ff1bebc80c37bd11b38826ab0",
+        "description": "The Christmas tree model was scanned with a Siemens Somatom Plus 4 Volume Zoom Multislice-CT scanner at the general hospital in Vienna.",
+        "acknowledgement": "Armin Kanitsar, 2002",
+        "url": "http://klacansky.com/open-scivis-datasets/christmas_tree/christmas_tree_512x499x512_uint16.raw",
+        "bibtex": {
+            "type": "inproceedings",
+            "title": "Christmas Tree Case Study: Computed Tomography as a Tool for Mastering Complex Real World Objects with Applications in Computer Graphics",
+            "author": "Kanitsar, Armin and Theu{\\ss}l, Thomas and Mroz, Lukas and \\v{S}r\\'{a}mek, Milo\\v{s} and Bartrol\\'{i}, Anna Vilanova and Cs\\'{e}bfalvi, Bal\\'{a}zs and Hlad{\\r u}vka, Ji\\v{r}\\'{i} and Fleischmann, Dominik and Knapp, Michael and Wegenkittl, Rainer and Felkel, Petr and R\\\"{o}ttger, Stefan and Guthe, Stefan and Purgathofer, Werner and Gr\\\"{o}ller, Meister Eduard",
+            "booktitle": "IEEE Visualization, 2002. VIS 2002.",
+            "pages": "489--492",
+            "year": 2002,
+            "doi": "10.1109/VISUAL.2002.1183812"
+        },
+        "category": "CT"
+    },
+    "csafe_heptane": {
+        "name": "CSAFE Heptane Gas",
+        "type": "uint8",
+        "size": [
+            302,
+            302,
+            302
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "5a749e5e16d1f521b3e6f9513c8bae562a18dbc4ec5e843310a0d89502571701f7fa43d1477bf13089020a6f345ed21d1ea51623d6ecb132887901651084252b",
+        "description": "A single time step from a computational simulation of a jet of heptane gas undergoing combustion.",
+        "acknowledgement": "The University of Utah Center for the Simulation of Accidental Fires and Explosions.",
+        "url": "http://klacansky.com/open-scivis-datasets/csafe_heptane/csafe_heptane_302x302x302_uint8.raw",
+        "category": "Simulation"
+    },
+    "dns": {
+        "name": "Turbulent Channel Flow",
+        "type": "float64",
+        "size": [
+            10240,
+            7680,
+            1536
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "12923141c4195db5f91a9a288fbea85d26572373fa236a4185870617e369d23876ef23e6213f788b4456b7ae098e2ec9b572d4a8809891dd0d872124c2cfb997",
+        "description": "A pressure field of a direct numerical simulation of fully developed flow at different Reynolds numbers in a plane channel have been performed with POONGBACK code which uses the spectral numerical method of Kim, Moin and Moser (J. Fluid Mech. vol 177, page 133).",
+        "acknowledgement": "Myoungkyu Lee and Robert D. Moser. Direct numerical simulation of turbulent channel flow up to Re_tau = 5200, Journal of Fluid Mechanics, 2015, vol. 774, pp. 395-415",
+        "url": "http://klacansky.com/open-scivis-datasets/dns/dns_10240x7680x1536_float64.raw",
+        "bibtex": {
+            "type": "article",
+            "title": "Direct Numerical Simulation of Turbulent Channel Flow up to ${R}e_\\tau \\approx 5200$",
+            "author": "Lee, Myoungkyu and Moser, Robert D.",
+            "journal": "Journal of Fluid Mechanics",
+            "volume": 774,
+            "pages": "395--415",
+            "year": 2015,
+            "month": "jul",
+            "doi": "10.1017/jfm.2015.268"
+        },
+        "category": "Simulation"
+    },
+    "duct": {
+        "name": "Duct Flow",
+        "type": "float32",
+        "size": [
+            193,
+            194,
+            1000
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "18bc15ddbd477643460b4ff3e9303a7cbd5a87789605305d29e14f76019a13619821d2d823b0f59321b5c36dbaef019cf4127182bfaba87e87e42b33939a677c",
+        "description": "A wall-bounded flow in a duct.",
+        "acknowledgement": "Marco Atzori, Ricardo Vinuesa, Adrián Lozano-Durán, and Philipp Schlatter. This work was supported by grants from the Swedish Foundation for Strategic Research, project “In-Situ Big Data Analysis for Flow and Climate Simulations” (Ref. number BD15-0082) and from the Knut and Alice Wallenberg Foundation. The simulation were performed on resources provided by the Swedish National Infrastructure for Computing (SNIC).",
+        "url": "http://klacansky.com/open-scivis-datasets/duct/duct_193x194x1000_float32.raw",
+        "bibtex": {
+            "type": "article",
+            "title": "Intense Reynolds-Stress Events in Turbulent Ducts",
+            "author": "Atzori, Marco and Vinuesa, Ricardo and Lozano-Dur{\\'{a}}n, Adri{\\'{a}}n and Schlatter, Philipp",
+            "journal": "International Journal of Heat and Fluid Flow",
+            "volume": 89,
+            "pages": "108802",
+            "year": 2021,
+            "doi": "10.1016/j.ijheatfluidflow.2021.108802"
+        },
+        "category": "Simulation"
+    },
+    "engine": {
+        "name": "Engine",
+        "type": "uint8",
+        "size": [
+            256,
+            256,
+            128
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "f17228483b1b5edb90146eac90ba979531629a2880d9e7a0493a98290da8af6ac2cf80f2c567a3d08695dc7dd854916c861dad8856b2d5721501954e913de13f",
+        "description": "CT scan of two cylinders of an engine block.",
+        "acknowledgement": "volvis.org and General Electric",
+        "url": "http://klacansky.com/open-scivis-datasets/engine/engine_256x256x128_uint8.raw",
+        "category": "CT"
+    },
+    "foot": {
+        "name": "Foot",
+        "type": "uint8",
+        "size": [
+            256,
+            256,
+            256
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "56a73bd1f694a09809688f5b0bbf0dfff0ef3e853a34c60c4d51bef02dd96fbfe5191f47c7762bdf7caab6f9a22f1d0e830652779f87c70cc519f345221edd0e",
+        "description": "Rotational C-arm x-ray scan of a human foot. Tissue and bone are present in the dataset.",
+        "acknowledgement": "volvis.org and Philips Research, Hamburg, Germany",
+        "url": "http://klacansky.com/open-scivis-datasets/foot/foot_256x256x256_uint8.raw",
+        "category": "CT"
+    },
+    "frog": {
+        "name": "Frog",
+        "type": "uint8",
+        "size": [
+            256,
+            256,
+            44
+        ],
+        "spacing": [
+            0.5,
+            0.5,
+            1
+        ],
+        "sha512sum": "0421e05c1c3fdce41f96ac93d0ba59c0aed29bb9d53a5d395f859e737b67db19e6ab39806028bddc6e5b2acde1d97581f81745d380f141ae144cec923974b0d1",
+        "description": "MRI scan of a frog as part of the Whole Frog Project.",
+        "acknowledgement": "Lawrence Berkeley Laboratory, USA",
+        "url": "http://klacansky.com/open-scivis-datasets/frog/frog_256x256x44_uint8.raw",
+        "added": "2023-07-07",
+        "category": "MRI"
+    },
+    "fuel": {
+        "name": "Fuel",
+        "type": "uint8",
+        "size": [
+            64,
+            64,
+            64
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "77fdd7c657da1946bafc84e88c6b8a03ae104a79a5bdec3c7db9257480ef4bf72551a08d22fd237c8e387dd2571b575f1a1a11f5f32b1fa4d4ef385d9fe1d613",
+        "description": "Simulation of fuel injection into a combustion chamber. The higher the density value, the less presence of air.",
+        "acknowledgement": "volvis.org and SFB 382 of the German Research Council (DFG)",
+        "url": "http://klacansky.com/open-scivis-datasets/fuel/fuel_64x64x64_uint8.raw",
+        "category": "Simulation"
+    },
+    "hcci_oh": {
+        "name": "Homogeneous Charge Compression Ignition OH",
+        "type": "float32",
+        "size": [
+            560,
+            560,
+            560
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "4d04ef902538c42e0dfce7c3ed873ef2d3952d3369db9a1f6bf551f51bf50fa65523eab01770daf84a80bbdf2b58d023ca2411838dbfee8a2fffb9b3f6c1fbb7",
+        "description": "The first timestep of direct numerical simulation of an autoignition phenomena in stratified dimethyl-ether/air turbulent mixtures.",
+        "acknowledgement": "Gaurav Bansal, Ajith Mascarenhas, and Jacqueline H. Chen.",
+        "url": "http://klacansky.com/open-scivis-datasets/hcci_oh/hcci_oh_560x560x560_float32.raw",
+        "bibtex": {
+            "type": "article",
+            "title": "Direct Numerical Simulations of Autoignition in Stratified Dimethyl-Ether (DME)/Air Turbulent Mixtures",
+            "author": "Bansal, Gaurav and Mascarenhas, Ajith and Chen, Jacqueline H.",
+            "journal": "Combustion and Flame",
+            "volume": 162,
+            "pages": "688--702",
+            "year": 2015,
+            "doi": "10.1016/j.combustflame.2014.08.021"
+        },
+        "category": "Simulation"
+    },
+    "hydrogen_atom": {
+        "name": "Hydrogen Atom",
+        "type": "uint8",
+        "size": [
+            128,
+            128,
+            128
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "bc80b55ffc983f41b3981433707b59f6c8b3f16cc9cd3ea18087cb9e734b702eb1ad0410f36f38881b2e2fa85617dc0858bb2d9fbd3188abb39af43ea84e3521",
+        "description": "Simulation of the spatial probability distribution of the electron in an hydrogen atom, residing in a strong magnetic field.",
+        "acknowledgement": "volvis.org and SFB 382 of the German Research Council (DFG)",
+        "url": "http://klacansky.com/open-scivis-datasets/hydrogen_atom/hydrogen_atom_128x128x128_uint8.raw",
+        "category": "Simulation"
+    },
+    "isotropic_pressure": {
+        "name": "Forced Isotropic Turbulence",
+        "type": "float32",
+        "size": [
+            4096,
+            4096,
+            4096
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "742831ea384d7dd30fcbfce0383959d3389761a1612acacabbaa2d8532bfc734d32169dce89acaad5ba72185d465eceb62a8b8dfb60c48eeb403810bd98c8a3d",
+        "description": "Pressure field of a direct numerical simulation of forced isotropic turbulence.",
+        "acknowledgement": "The Johns Hopkins Turbulence Databases; Yeung, P.K., D.A. Donzis, and K.R. Sreenivasan. (2012) Dissipation, enstrophy and pressure statistics in turbulence simulations at high Reynolds numbers. Journal of Fluid Mechanics 700, 5-15.",
+        "url": "http://klacansky.com/open-scivis-datasets/isotropic_pressure/isotropic_pressure_4096x4096x4096_float32.raw",
+        "category": "Simulation"
+    },
+    "jicf_q": {
+        "name": "Jet In Crossflow",
+        "type": "float32",
+        "size": [
+            1408,
+            1080,
+            1100
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "dd9794a7f7247c26d9302f3e424f481551a1b27eb1851aa39618a49f1419713f6cf99a9e3989a15d1c5d6771da276a1e7f4ba089afce6964b8fd5198ba744616",
+        "description": "Q-criterion of a jet in crossflow created by a direct numerical simulation.",
+        "acknowledgement": "Computational support and resources were provided by the National Center for Computational Sciences at Oak Ridge National Laboratory, which is supported by the Office of Science of the US Department of Energy under contract DE-AC05-00OR22725. The work at NREL was supported by the US Department of Energy under contract DE-AC36-08-GO28308 with the National Renewable Energy Laboratory. The work at Sandia National Laboratories was supported by the Division of Chemical Sciences, Geosciences, and Biosciences, Office of Basic Energy Sciences of the US Department of Energy and by the US Department of Energy SciDAC Program. SNL is a multiprogramme laboratory operated by Sandia Corporation, a Lockheed Martin Company, for the US DOE under contract DE-AC04-94AL85000. The work at SINTEF was produced with support from Gassnova through the BIGH2/SP2 project and from the BIGCCS Centre, performed under the Norwegian research programme Centres for Environment-Friendly Energy Research (FME). The authors acknowledge the following partners for their contributions: Aker Solutions, ConocoPhillips, Det Norske Veritas, Gassco, Hydro, Shell, Statoil, TOTAL, GDF SUEZ and the Research Council of Norway (193816/S60).",
+        "url": "http://klacansky.com/open-scivis-datasets/jicf_q/jicf_q_1408x1080x1100_float32.raw",
+        "bibtex": {
+            "type": "article",
+            "title": "A Direct Numerical Simulation Study of Turbulence and Flame Structure in Transverse Jets Analysed in Jet-Trajectory Based Coordinates",
+            "author": "Grout, R. W. and Gruber, A. and Kolla, H. and Bremer, P.-T. and Bennett, J. C. and Gyulassy, A. and Chen, J. H.",
+            "journal": "Journal of Fluid Mechanics",
+            "volume": 706,
+            "pages": "351--383",
+            "year": 2012,
+            "doi": "10.1017/jfm.2012.257"
+        },
+        "category": "Simulation"
+    },
+    "kingsnake": {
+        "name": "Kingsnake",
+        "type": "uint8",
+        "size": [
+            1024,
+            1024,
+            795
+        ],
+        "spacing": [
+            0.03174,
+            0.03174,
+            0.0688
+        ],
+        "sha512sum": "b1c3a9354347da8c6cbca1f218deac4225e6a0f46c771b095e69ea195eee88cd0bdf91f3f71c97566463c2c4c45b4028d7015f13a798ef65673b27fb2869523e",
+        "description": "Scan of a Lampropeltis getula egg (captive bred by Travis LaDuc; laid on 7 July 2003, growth terminated on 29 August 2003, 54 days after oviposition) for Dr. Timothy Rowe of the Department of Geological Sciences, The University of Texas at Austin.",
+        "acknowledgement": "DigiMorph.org, The University of Texas High-Resolution X-ray CT Facility (UTCT), and NSF grant IIS-9874781",
+        "url": "http://klacansky.com/open-scivis-datasets/kingsnake/kingsnake_1024x1024x795_uint8.raw",
+        "category": "CT"
+    },
+    "lobster": {
+        "name": "Lobster",
+        "type": "uint8",
+        "size": [
+            301,
+            324,
+            56
+        ],
+        "spacing": [
+            1,
+            1,
+            1.4
+        ],
+        "sha512sum": "efb1c15bfda13b6899b923d2c51caea00d2eaffb95d89343e64298266d231a12902e376353d5c258a6ccffd54c363bc186aea19de631982f85158a4b70e0e671",
+        "description": "CT scan of a lobster contained in a block of resin.",
+        "acknowledgement": "volvis.org and VolVis distribution of SUNY Stony Brook, NY, USA",
+        "url": "http://klacansky.com/open-scivis-datasets/lobster/lobster_301x324x56_uint8.raw",
+        "category": "CT"
+    },
+    "magnetic_reconnection": {
+        "name": "Magnetic Reconnection Simulation",
+        "type": "float32",
+        "size": [
+            512,
+            512,
+            512
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "16c663b89799e58292eea0f83c9f07f340f52283af2cdb8c72aa28a9e6368876f60415dc6b2dfe11b53f2efb050b703131d2995e589f857b52c6a6807ea22a13",
+        "description": "A single time step from a computational simulation of magnetic reconnection.",
+        "acknowledgement": "Bill Daughton (LANL) and Berk Geveci (KitWare). Please acknowledge paper http://arxiv.org/abs/1405.4040.",
+        "url": "http://klacansky.com/open-scivis-datasets/magnetic_reconnection/magnetic_reconnection_512x512x512_float32.raw",
+        "bibtex": {
+            "type": "article",
+            "title": "Formation of Hard Power Laws in the Energetic Particle Spectra Resulting from Relativistic Magnetic Reconnection",
+            "author": "Guo, Fan and Li, Hui and Daughton, William and Liu, Yi-Hsin",
+            "journal": "Phys. Rev. Lett.",
+            "volume": 113,
+            "issue": 15,
+            "pages": "155005",
+            "numpages": 5,
+            "year": 2014,
+            "month": "oct",
+            "publisher": "American Physical Society",
+            "doi": "10.1103/PhysRevLett.113.155005"
+        },
+        "category": "Simulation"
+    },
+    "marmoset_neurons": {
+        "name": "Neurons in Marmoset Visual Cortex",
+        "type": "uint8",
+        "size": [
+            1024,
+            1024,
+            314
+        ],
+        "spacing": [
+            0.497,
+            0.497,
+            1.5
+        ],
+        "sha512sum": "c13b2495e3ce2e0d7969ecf5316351a58e6aa8eeeaf23b22d0dc0b397ed22b51a5f88fd94e272a8a1add0414c69960406847b3b9e4854497a026e25e0d567e95",
+        "description": "Pyramidal neurons in the marmoset primary visual cortex (V1) labeled with green fluorescent protein (GFP) after injection of a psuedotyped G-deleted rabies virus in area V2. The tissue was cleared using the Sca/e technique and imaged on a Olympus 2-photon microscope at 20x magnification.",
+        "acknowledgement": "Frederick Federer, Moran Eye Institute, University of Utah",
+        "url": "http://klacansky.com/open-scivis-datasets/marmoset_neurons/marmoset_neurons_1024x1024x314_uint8.raw",
+        "category": "Microscope"
+    },
+    "marschner_lobb": {
+        "name": "Marschner-Lobb",
+        "type": "uint8",
+        "size": [
+            41,
+            41,
+            41
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "608d19d1e53c8ac3fd4d3d5b230b43c129452bb8f9edccc33d7161c1644f871e0a92572c1215f7eb1a96f801e46221fc809a618c38fd1b66f63e063a3f133186",
+        "description": "High frequencies where 99% of the sinusoids are right below the Nyquist frequency.",
+        "acknowledgement": "volvis.org and Marschner and Lobb",
+        "url": "http://klacansky.com/open-scivis-datasets/marschner_lobb/marschner_lobb_41x41x41_uint8.raw",
+        "category": "Simulation"
+    },
+    "miranda": {
+        "name": "Rayleigh-Taylor Instability",
+        "type": "float32",
+        "size": [
+            1024,
+            1024,
+            1024
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "10293da1c0b6e5e86cbae3534f55209bb2b218e2a3d93a4175464458ead1592bea0eae970751128587c7734bfc6b2d3370c2d1b5ddd600d3b925fd0f38739f66",
+        "description": "A time step of a density field in a simulation of the mixing transition in Rayleigh-Taylor instability.",
+        "acknowledgement": "Andrew W. Cook, William Cabot, and Paul L. Miller",
+        "url": "http://klacansky.com/open-scivis-datasets/miranda/miranda_1024x1024x1024_float32.raw",
+        "bibtex": {
+            "type": "article",
+            "title": "The Mixing Transition in {R}ayleigh-{T}aylor Instability",
+            "author": "Cook, Andrew W. and Cabot, William and Miller, Paul L.",
+            "journal": "Journal of Fluid Mechanics",
+            "volume": 511,
+            "pages": "333--362",
+            "year": 2004,
+            "publisher": "Cambridge University Press",
+            "doi": "10.1017/S0022112004009681"
+        },
+        "category": "Simulation"
+    },
+    "mri_ventricles": {
+        "name": "Head MRI CISS",
+        "type": "uint8",
+        "size": [
+            256,
+            256,
+            124
+        ],
+        "spacing": [
+            0.9,
+            0.9,
+            0.9
+        ],
+        "sha512sum": "fd522a0c616d3367ec5c8f63efe918825f032882bf2e50c10d4e155c4db6a14d139a5b6a0e7cedd0cda69aaf1c89d3aad60a984a72b57fc6e2eca48f34ef54e0",
+        "description": "1.5T MRT 3D CISS dataset of a human head that highlights the CSF (Cerebro-Spinal-Fluid) filled cavities of the head.",
+        "acknowledgement": "volvis.org and Dirk Bartz, VCM, University of Tübingen, Germany",
+        "url": "http://klacansky.com/open-scivis-datasets/mri_ventricles/mri_ventricles_256x256x124_uint8.raw",
+        "category": "MRI"
+    },
+    "mri_woman": {
+        "name": "MRI Woman",
+        "type": "uint16",
+        "size": [
+            256,
+            256,
+            109
+        ],
+        "spacing": [
+            1,
+            1,
+            1.5
+        ],
+        "sha512sum": "f14941ef8e9cabd751fe2c433b4cfaef7ad846c05eeea8026d541e3e32dcc5b04cb04ea4f605188059d371d0967218bef9529429be53d9e88ff72f964f73938f",
+        "description": "MRI scan of a woman's head",
+        "acknowledgement": "Siemens Medical Systems, Inc., Iselin, NJ., USA",
+        "url": "http://klacansky.com/open-scivis-datasets/mri_woman/mri_woman_256x256x109_uint16.raw",
+        "date_added": "2023-07-09",
+        "category": "MRI",
+        "bibtex": null
+    },
+    "mrt_angio": {
+        "name": "Head MRT Angiography",
+        "type": "uint16",
+        "size": [
+            416,
+            512,
+            112
+        ],
+        "spacing": [
+            0.412,
+            0.412,
+            0.412
+        ],
+        "sha512sum": "81ee88eabd067b7929a5337d7c709b0b44408394a40318aae917df8b8a72735d3766105c1580938da6ab1670315f93cbc92bb940ae988e6c72b7157c9018d7c4",
+        "description": "3T MRT Time-of-Flight Angiography dataset of a human head. The dataset has been resampled into an isotropic voxel grid (hence the peculiar slice size).",
+        "acknowledgement": "volvis.org and Özlem Gürvit, Institute for Neuroradiology, Frankfurt, Germany",
+        "url": "http://klacansky.com/open-scivis-datasets/mrt_angio/mrt_angio_416x512x112_uint16.raw",
+        "category": "CT"
+    },
+    "neghip": {
+        "name": "Neghip",
+        "type": "uint8",
+        "size": [
+            64,
+            64,
+            64
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "d00f95d1f4cb1da2f3260a722059527ace73514cd57e1c31b6724d18468fd81002f5da704a0c3c7ccf06a329a975dede38cfacf13387dea9ffd8d7542cae62d0",
+        "description": "Simulation of the spatial probability distribution of the electrons in a high potential protein molecule.",
+        "acknowledgement": "volvis.org and VolVis distribution of SUNY Stony Brook, NY, USA",
+        "url": "http://klacansky.com/open-scivis-datasets/neghip/neghip_64x64x64_uint8.raw",
+        "bibtex": {
+            "type": "inproceedings",
+            "title": "{VolVis}: A Diversified System for Volume Research and Development",
+            "author": "Avila, R. and He, Taosong and Hong, Lichan and Kaufman, A. and Pfister, H. and Silva, C. and Sobierajski, L. and Wang, S.",
+            "booktitle": "Proceedings Visualization '94",
+            "pages": "31--38",
+            "year": "1994",
+            "month": "oct",
+            "doi": "10.1109/VISUAL.1994.346340}"
+        },
+        "category": "Simulation"
+    },
+    "neocortical_layer_1_axons": {
+        "name": "Neocortical Layer 1 Axons",
+        "type": "uint8",
+        "size": [
+            1464,
+            1033,
+            76
+        ],
+        "spacing": [
+            1,
+            1,
+            3.4
+        ],
+        "sha512sum": "9c4b596a0682c42d1ed30f4d1da84098b1f13a03fb51ed1da3e57871b59fa7ad82bbacd3c08e1b951ddfec4e19bfcbb3493b1488769a3f2effa1369560d9f80d",
+        "description": "Axons in layer 1 of the mouse barrel cortex imaged in vivo.",
+        "acknowledgement": "V De Paola, MRC Clinical Sciences Center, Imperial College London",
+        "url": "http://klacansky.com/open-scivis-datasets/neocortical_layer_1_axons/neocortical_layer_1_axons_1464x1033x76_uint8.raw",
+        "bibtex": {
+            "type": "article",
+            "title": "Cell Type-Specific Structural Plasticity of Axonal Branches and Boutons in the Adult Neocortex",
+            "author": "De Paola, Vincenzo and Holtmaat, Anthony and Knott, Graham and Song, Sen and Wilbrecht, Linda and Caroni, Pico and Svoboda, Karel",
+            "journal": "Neuron",
+            "volume": 49,
+            "number": 6,
+            "pages": "861--875",
+            "year": 2006,
+            "doi": "10.1016/j.neuron.2006.02.017"
+        },
+        "category": "Microscope"
+    },
+    "nucleon": {
+        "name": "Nucleon",
+        "type": "uint8",
+        "size": [
+            41,
+            41,
+            41
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "5703198390210caac5a9aaa51cfffd822bbf1835cb40bb183cfd946dd1d4c0f0b72030431c5eed1eb9a30eaaaeb48b00cb97ba3a50b01367c90e00b9ecf00210",
+        "description": "Simulation of the two-body distribution probability of a nucleon in the atomic nucleus 16O if a second nucleon is known to be positioned at r'=(2 fm,0,0).",
+        "acknowledgement": "volvis.org and SFB 382 of the German Research Council (DFG)",
+        "url": "http://klacansky.com/open-scivis-datasets/nucleon/nucleon_41x41x41_uint8.raw",
+        "category": "Simulation"
+    },
+    "pancreas": {
+        "name": "Pancreas",
+        "type": "int16",
+        "size": [
+            240,
+            512,
+            512
+        ],
+        "spacing": [
+            1.16,
+            1.0,
+            1.0
+        ],
+        "sha512sum": "7def5b29b09d6dbb1d39cb1ce0355f3802827b73c078e760e8248a93d4d123390d7da3074dfb6a6a51441cef244ffc743eea8f1ec559ebb63babb8c1c2c18b7c",
+        "description": "First scan. The National Institutes of Health Clinical Center performed 82 abdominal contrast enhanced 3D CT scans (~70 seconds after intravenous contrast injection in portal-venous) from 53 male and 27 female subjects. Seventeen of the subjects are healthy kidney donors scanned prior to nephrectomy. The remaining 65 patients were selected by a radiologist from patients who neither had major abdominal pathologies nor pancreatic cancer lesions. Subjects' ages range from 18 to 76 years with a mean age of 46.8 ± 16.7. The CT scans have resolutions of 512x512 pixels with varying pixel sizes and slice thickness between 1.5 - 2.5 mm, acquired on Philips and Siemens MDCT scanners (120 kVp tube voltage). A medical student manually performed slice-by-slice segmentations of the pancreas as ground-truth and these were verified/modified by an experienced radiologist.",
+        "acknowledgement": "Roth HR, Lu L, Farag A, Shin H-C, Liu J, Turkbey EB, Summers RM. DeepOrgan: Multi-level Deep Convolutional Networks for Automated Pancreas Segmentation. N. Navab et al. (Eds.): MICCAI 2015, Part I, LNCS 9349, pp. 556-564, 2015.",
+        "url": "http://klacansky.com/open-scivis-datasets/pancreas/pancreas_240x512x512_int16.raw",
+        "category": "CT"
+    },
+    "pawpawsaurus": {
+        "name": "Pawpawsaurus Campbelli",
+        "type": "uint16",
+        "size": [
+            958,
+            646,
+            1088
+        ],
+        "spacing": [
+            0.2275,
+            0.2275,
+            0.2275
+        ],
+        "sha512sum": "5614403591778244d07814a17469961e819801a3cdcf140d7eca433485b82621879a780dae2ab8783da19007c061c38a47e32070d90d8ce91a619e98dc48724d",
+        "description": "This specimen, the holotype, was collected from the Paw Paw Formation, SMU Loc. No. 263, Tarrant County, Texas. The specimen was scanned along the coronal axis for a total of 1088 slices. Voxel size is 0.2275 mm.",
+        "acknowledgement": "Matthew Colbert, 4 February 2014",
+        "url": "http://klacansky.com/open-scivis-datasets/pawpawsaurus/pawpawsaurus_958x646x1088_uint16.raw",
+        "category": "CT"
+    },
+    "pig_heart": {
+        "name": "Cardiac Volume (Porcine)",
+        "type": "int16",
+        "size": [
+            2048,
+            2048,
+            2612
+        ],
+        "spacing": [
+            0.03557,
+            0.03557,
+            0.03557
+        ],
+        "sha512sum": "d66a2e2a2a832beec91ebac1ebe8c938fb9aa51f735169d68e1d721500a58a59021559cec3877df307ff2e8e33f70a2570cd29287aed1fa6b954f8e2cf382a7f",
+        "description": "Volumes were obtained by way of computed tomography (CT) imaging on excised, postmortem porcine hearts. Alginate curing agents were injected into ventricles to provide rigidity and radiopaque agents were injected into the coronary arteries to distinguish microvasculature from the rest of the tissue.",
+        "acknowledgement": "Experiments were performed by the Cardiovascular Research and Training Institute (CVRTI) and the Scientific Computing and Imaging (SCI) Institute at the University of Utah with funding from the Nora Eccles Treadwell foundation and the NIH/NIGMS Center of Integrative Biomedical Computing under grant P41 GM103545-17.",
+        "url": "http://klacansky.com/open-scivis-datasets/pig_heart/pig_heart_2048x2048x2612_int16.raw",
+        "category": "CT"
+    },
+    "present": {
+        "name": "Christmas Present",
+        "type": "uint16",
+        "size": [
+            492,
+            492,
+            442
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "a5c1ab3e465d8653e2c089fb343d48e9f3a871a37d1a9fce62a1282f7492b3f3303e20373f6adc7157ed192491b751b59cdeabf8076df9381ffbde460c07c97e",
+        "description": "An industrial CT scan of a christmas present.",
+        "acknowledgement": "Christoph Heinzl, 2006",
+        "url": "http://klacansky.com/open-scivis-datasets/present/present_492x492x442_uint16.raw",
+        "category": "CT"
+    },
+    "prone": {
+        "name": "Colon Prone",
+        "type": "uint16",
+        "size": [
+            512,
+            512,
+            463
+        ],
+        "spacing": [
+            0.625,
+            0.625,
+            1.0
+        ],
+        "sha512sum": "c3a44cb47390ece603f1e86088b132ad7da7effe44afcf50c5c1f3a8697de36d39ea1a74619187f540e6663701518b0ab39b8e040911a41c37226fb80ccd5117",
+        "description": "CT scan of abdomen in prone orientation (back faces ceiling, belly faces table).",
+        "acknowledgement": "volvis.org and Walter Reed Army Medical Center, USA",
+        "url": "http://klacansky.com/open-scivis-datasets/prone/prone_512x512x463_uint16.raw",
+        "category": "CT"
+    },
+    "richtmyer_meshkov": {
+        "name": "Richtmyer-Meshkov Instability",
+        "type": "uint8",
+        "size": [
+            2048,
+            2048,
+            1920
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "bf2501e0f035556fa678e683e767028c5d7242baf1f867043ccd01c57d248f290c8b9ab01c1e7a6dd4ebe875ba31ae11dfef4b32c056514d11111d94ae26e080",
+        "description": "Entropy field (timestep 160) of Richtmyer-Meshkov instability simulation.",
+        "acknowledgement": "Three-dimensional simulation of a Richtmyer-Meshkov instability with a two-scale initial perturbation, Ronald H. Cohen, William P. Dannevik, Andris M. Dimits, Donald E. Eliason, Arthur A. Mirin, and Ye Zhou",
+        "url": "http://klacansky.com/open-scivis-datasets/richtmyer_meshkov/richtmyer_meshkov_2048x2048x1920_uint8.raw",
+        "bibtex": {
+            "type": "article",
+            "title": "Three-dimensional simulation of a Richtmyer–Meshkov instability with a two-scale initial perturbation",
+            "author": "Cohen, Ronald H. and Dannevik, William P. and Dimits, Andris M. and Eliason, Donald E. and Mirin, Arthur A. and Zhou, Ye and Porter, David H. and Woodward, Paul R.",
+            "journal": "Physics of Fluids",
+            "volume": 14,
+            "number": 10,
+            "pages": "3692--3709",
+            "year": 2002,
+            "month": "oct",
+            "doi": "10.1063/1.1504452"
+        },
+        "category": "Simulation"
+    },
+    "rotstrat_temperature": {
+        "name": "Rotating Stratified Turbulence",
+        "type": "float32",
+        "size": [
+            4096,
+            4096,
+            4096
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "582d56df9be44d5d008f0df80ab61278f9edd8864da166653c4781c76fead4b5d35e6477210c78c85083f41f45438ad30898b7c8894964d08ab215a44c942d78",
+        "description": "Temperature field of a direct numerical simulation of rotating stratified turbulence.",
+        "acknowledgement": "The Johns Hopkins Turbulence Databases; Rosenberg, D., A. Pouquet, R. Marino, and P.D. Mininni. (2015) Evidence for Bolgiano-Obukhov scaling in rotating stratified turbulence using high-resolution direct numerical simulations. Physics of Fluids 27, 055105.",
+        "url": "http://klacansky.com/open-scivis-datasets/rotstrat_temperature/rotstrat_temperature_4096x4096x4096_float32.raw",
+        "category": "Simulation"
+    },
+    "shockwave": {
+        "name": "Shockwave",
+        "type": "uint8",
+        "size": [
+            64,
+            64,
+            512
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "b483bdee37e943e284e146ec2097ed6f263f19e5007916e3eff7e1ad5f8ecd99db4419cd5eedff236c22727bc2f920fb7dab28ff8e8de4c64866c3efb4e33e6d",
+        "description": "Simulation of an unsteady interaction of a planar shockwave with a randomly-perturbed contact discontinuity.",
+        "acknowledgement": "volvis.org",
+        "url": "http://klacansky.com/open-scivis-datasets/shockwave/shockwave_64x64x512_uint8.raw",
+        "category": "Simulation"
+    },
+    "silicium": {
+        "name": "Silicium",
+        "type": "uint8",
+        "size": [
+            98,
+            34,
+            34
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "8ef2b9a84eb94693596b57f3f21f5ea75c1c25654011e3aed39a27f5e4259ebbbd2486ff39bb32b551bb44f3fa25123e7128cfd3fc053134f0806e23bb24a819",
+        "description": "Simulation of a silicium grid.",
+        "acknowledgement": "volvis.org and VolVis distribution of SUNY Stony Brook, NY, USA",
+        "url": "http://klacansky.com/open-scivis-datasets/silicium/silicium_98x34x34_uint8.raw",
+        "bibtex": {
+            "type": "inproceedings",
+            "title": "{VolVis}: A Diversified System for Volume Research and Development",
+            "author": "Avila, R. and He, Taosong and Hong, Lichan and Kaufman, A. and Pfister, H. and Silva, C. and Sobierajski, L. and Wang, S.",
+            "booktitle": "Proceedings Visualization '94",
+            "pages": "31--38",
+            "year": 1994,
+            "month": "oct",
+            "doi": "10.1109/VISUAL.1994.346340"
+        },
+        "category": "Simulation"
+    },
+    "skull": {
+        "name": "Skull",
+        "type": "uint8",
+        "size": [
+            256,
+            256,
+            256
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "6b31b8c3c056e4fca2c908c8feffe1ad4872e1201feafe136ed22178d2593f549c4a8328b2f6ec7d7855271f28f7a4981ffae8ced9ff21df11652abe7c0766bc",
+        "description": "Rotational C-arm x-ray scan of phantom of a human skull.",
+        "acknowledgement": "volvis.org and Siemens Medical Solutions, Forchheim, Germany",
+        "url": "http://klacansky.com/open-scivis-datasets/skull/skull_256x256x256_uint8.raw",
+        "category": "CT"
+    },
+    "spathorhynchus": {
+        "name": "Spathorhynchus Fossorium",
+        "type": "uint16",
+        "size": [
+            1024,
+            1024,
+            750
+        ],
+        "spacing": [
+            0.0215,
+            0.0215,
+            0.047
+        ],
+        "sha512sum": "0d141311ce0bf7872f23c0f5d6989823624f6533cf1af56d5acfe9539114c6b2325fec028cb67c395def068c81ccf9fa5e987a8662a33f47e1580667eb327705",
+        "description": "This specimen, the holotype, was collected from the Middle Eocene Green River Formation of Sweetwater County, Wyoming on 27 July 1967 by Frank L. Pearce. The specimen was scanned along the coronal axis for a total of 750 slices. Each 1024x1024 pixel slice is 0.047 mm thick, with an interslice spacing of 0.047 mm and a field of reconstruction of 22 mm.",
+        "acknowledgement": "Matthew Colbert, 17 February 2005",
+        "url": "http://klacansky.com/open-scivis-datasets/spathorhynchus/spathorhynchus_1024x1024x750_uint16.raw",
+        "category": "CT"
+    },
+    "stag_beetle": {
+        "name": "Stag Beetle",
+        "type": "uint16",
+        "size": [
+            832,
+            832,
+            494
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "1d3df55497bedb01a3a3d902d00241d1dc41a2c3d186005c5457244a7a0783c9fbc5be1b9cf75634aed0dbcaff599d66d9638e40bc9fb788a575ce3cd356860a",
+        "description": "The stag beetle from Georg Glaeser, Vienna University of Applied Arts, Austria, was scanned with an industrial CT by Johannes Kastner, Wels College of Engineering, Austria, and Meister Eduard Gröller, Vienna University of Technology, Austria.",
+        "acknowledgement": "Meister Eduard Gröller, Georg Glaeser, Johannes Kastner, 2005",
+        "url": "http://klacansky.com/open-scivis-datasets/stag_beetle/stag_beetle_832x832x494_uint16.raw",
+        "category": "CT"
+    },
+    "statue_leg": {
+        "name": "Leg of Statue",
+        "type": "uint8",
+        "size": [
+            341,
+            341,
+            93
+        ],
+        "spacing": [
+            1,
+            1,
+            4
+        ],
+        "sha512sum": "79f4f46fceb019c2d08a95c69e11735df52cfd933cda1d56624e10f38558ee09e87c754171be8c553e7b3df5eded2c8de92d837058b29394c577c925a96d41d0",
+        "description": "CT scan of a leg of a bronze statue.",
+        "acknowledgement": "volvis.org and German Federal Institute for Material Research and Testing (BAM), Berlin, Germany",
+        "url": "http://klacansky.com/open-scivis-datasets/statue_leg/statue_leg_341x341x93_uint8.raw",
+        "category": "CT"
+    },
+    "stent": {
+        "name": "Stented Abdominal Aorta",
+        "type": "uint16",
+        "size": [
+            512,
+            512,
+            174
+        ],
+        "spacing": [
+            0.8398,
+            0.8398,
+            3.2
+        ],
+        "sha512sum": "b6f3ddccbb2a5585664a3173b86a034f12540f8d306a050074619d7c52780d6b7252757d754682e8b38c4419ac3c3caaab38e12628cbbf18b3814b239429155e",
+        "description": "CT Scan of the abdomen and pelvis. The dataset contains also a stent in the abdominal aorta. No contrast agent was used to enhance the blood vessels.",
+        "acknowledgement": "volvis.org and Michael Meißner, Viatronix Inc., USA",
+        "url": "http://klacansky.com/open-scivis-datasets/stent/stent_512x512x174_uint16.raw",
+        "category": "CT"
+    },
+    "synthetic_truss_with_five_defects": {
+        "name": "Synthetic Truss Scan",
+        "type": "float32",
+        "size": [
+            1200,
+            1200,
+            1200
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "d0ec896ce2d792be8e0183836998232b8c1668b6f6fc97f12aa121bba679af7b3e3f71a24a92e52562e39459225533df3a5bbde58e9cc69c9158655055d5e3e5",
+        "description": "A simulated CT scan of a 8x8x8 octet truss with five defects on the front side of the object. The defects are bent strut, broken strut, missing strut, dross, and thin strut.",
+        "acknowledgement": "The CAD meshes can be found here https://data-science.llnl.gov/open-data-initiative. The dataset is licensed under Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License. Copyright (c) 2022, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory. Written by Haichao Miao. Release number - LLNL-MISC-833578. All rights reserved. This work was produced under the auspices of the U.S. Department of Energy by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344. This work was prepared as an account of work sponsored by an agency of the United States Government. Neither the United States Government nor Lawrence Livermore National Security, LLC, nor any of their employees makes any warranty, expressed or implied, or assumes any legal liability or responsibility for the accuracy, completeness, or usefulness of any information, apparatus, product, or process disclosed, or represents that its use would not infringe privately owned rights. Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United States Government or Lawrence Livermore National Security, LLC. The views and opinions of authors expressed herein do not necessarily state or reflect those of the United States Government or Lawrence Livermore National Security, LLC, and shall not be used for advertising or product endorsement purposes.",
+        "url": "http://klacansky.com/open-scivis-datasets/synthetic_truss_with_five_defects/synthetic_truss_with_five_defects_1200x1200x1200_float32.raw",
+        "bibtex": {
+            "type": "inproceedings",
+            "title": "Virtual Inspection of Additively Manufactured Parts",
+            "author": "Klacansky, Pavol and Miao, Haichao and Gyulassy, Attila and Townsend, Andrew and Champley, Kyle and Tringe, Joseph and Pascucci, Valerio and Bremer, Peer-Timo",
+            "booktitle": "2022 IEEE 15th Pacific Visualization Symposium (PacificVis)",
+            "pages": "81--90",
+            "year": 2022,
+            "doi": "10.1109/PacificVis53943.2022.00017"
+        },
+        "category": "CT"
+    },
+    "tacc_turbulence": {
+        "name": "Isotropic Turbulence",
+        "type": "float32",
+        "size": [
+            256,
+            256,
+            256
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "2206fc1368064e62a752cea90b3932289a26606a3b1552b945745f3c1c57ded867ec8b28daa1d05bfd20438c8c3fa95460a43c37f086aaffea1f5b5742b72580",
+        "description": "The dataset represents a time step from an isotropic turbulence simulation. A single variable, enstrophy, is represented on a Cartesian grid.",
+        "acknowledgement": "Dataset provided by Gregory D. Abram and Gregory P. Johnson, Texas Advanced Computing Center, The University of Texas at Austin. Simulation by Diego A. Donzis, Texas A&M University, P.K. Yeung, Georgia Tech.",
+        "url": "http://klacansky.com/open-scivis-datasets/tacc_turbulence/tacc_turbulence_256x256x256_float32.raw",
+        "category": "Simulation"
+    },
+    "tooth": {
+        "name": "Tooth",
+        "type": "uint8",
+        "size": [
+            103,
+            94,
+            161
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "5ee3d77ae951e129d29062a4fd4d8730fd8670bdaf4d01ddf907848072180cbfea8ab897880147d2a79dc7f1d1806a34b32853074eca88f6758e01382469f9f6",
+        "description": "",
+        "acknowledgement": "",
+        "url": "http://klacansky.com/open-scivis-datasets/tooth/tooth_103x94x161_uint8.raw",
+        "category": "Unknown"
+    },
+    "vertebra": {
+        "name": "Head Aneurism",
+        "type": "uint16",
+        "size": [
+            512,
+            512,
+            512
+        ],
+        "spacing": [
+            0.1953,
+            0.1953,
+            0.1953
+        ],
+        "sha512sum": "afe80be8eebbc99501ce4fc0c2ef3c8bee3d641b3a5fe70603c89675237795d8032933e2b07872fecac198ef43148c3d7531e98deddfb729ba6e64cdcf625f04",
+        "description": "Rotational angiography scan of a head with an aneurysm. Only contrasted blood vessels are visible.",
+        "acknowledgement": "volvis.org and Michael Meißner, Viatronix Inc., USA",
+        "url": "http://klacansky.com/open-scivis-datasets/vertebra/vertebra_512x512x512_uint16.raw",
+        "category": "CT"
+    },
+    "vis_male": {
+        "name": "Head (Visible Male)",
+        "type": "uint8",
+        "size": [
+            128,
+            256,
+            256
+        ],
+        "spacing": [
+            1.57774,
+            0.995861,
+            1.00797
+        ],
+        "sha512sum": "55a3ecfb1e40685b993d51e713c9752609d5eb09359e86365c53bfbd535e77eaebfddf0eeacc73f42650726c82ed4b9ce4d0929a265ed84e1c59f39c6dd66e78",
+        "description": "Male head scan",
+        "acknowledgement": "National Library of Medicine, National Institutes of Health, USA",
+        "url": "http://klacansky.com/open-scivis-datasets/vis_male/vis_male_128x256x256_uint8.raw",
+        "date_added": "2023-07-09",
+        "category": "CT",
+        "bibtex": null
+    },
+    "woodbranch": {
+        "name": "Wood Branch",
+        "type": "uint16",
+        "size": [
+            2048,
+            2048,
+            2048
+        ],
+        "spacing": [
+            1.8e-05,
+            1.8e-05,
+            1.8e-05
+        ],
+        "sha512sum": "b2a439541be1138f2d619199634861b3cb488fbce367fdd77c1fb225ab79c8f50ab9c66a98ef1866b7862d4e4743761ef50ef39e4bd0d6502c10a335d340a651",
+        "description": "A microCT scan of dried wood branch (hazelnut).",
+        "acknowledgement": "The Computer-Assisted Paleoanthropology group and the Visualization and MultiMedia Lab at University of Zurich (UZH)",
+        "url": "http://klacansky.com/open-scivis-datasets/woodbranch/woodbranch_2048x2048x2048_uint16.raw",
+        "category": "CT"
+    },
+    "zeiss": {
+        "name": "Zeiss",
+        "type": "uint8",
+        "size": [
+            680,
+            680,
+            680
+        ],
+        "spacing": [
+            1,
+            1,
+            1
+        ],
+        "sha512sum": "1678f3bb3c088523372d0e879c923175a07b24493c411c8a65268cbdb82c28448539e3d1f25aa9263d62a2c0e80decb7499ce1ad6d6fe3943135c628295f83d6",
+        "description": "Car part reconstructed from projections.",
+        "acknowledgement": "Steffen Frey and Daimler AG",
+        "url": "http://klacansky.com/open-scivis-datasets/zeiss/zeiss_680x680x680_uint8.raw",
+        "category": "CT"
+    }
+}
