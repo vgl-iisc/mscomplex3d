@@ -16,6 +16,11 @@ set(OPENCL_NUM_WORK_ITEMS_PER_GROUP 256 CACHE STRING
 set(OPENCL_NUM_WORK_GROUPS 4 CACHE STRING
       "number of work items in an opencl workgroup")
 
+message("OPENCL: ${OPENCL_INCLUDE_DIRS}")
+message("OpenCL: ${OpenCL_INCLUDE_DIRS}")
+message("OPENCL Lib: ${OPENCL_LIBRARIES}")
+message("OpenCL Lib: ${OpenCL_LIBRARIES}")
+
 include_directories(
   ${OPENCL_INCLUDE_DIRS}
 
