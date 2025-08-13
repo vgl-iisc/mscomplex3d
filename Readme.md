@@ -10,7 +10,7 @@ The mscomplex3d computes the Morse-Smale complexes on 3d grids. Its available in
 # Installation #
 
 ## Dependencies ##
-- [Cmake](http://www.cmake.org/)
+- [Cmake 3.15+](http://www.cmake.org/)
 - [OpenCL](https://developer.nvidia.com/cuda-toolkit)
 - [OpenMP](http://openmp.org/wp/)
 - [Python 3.7+](http://python.org)

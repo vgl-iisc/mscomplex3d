@@ -13,13 +13,13 @@ FetchContent_Declare(
 # Make sure the pybind11 content is available
 FetchContent_MakeAvailable(pybind11)
 
-
+find_package(Python COMPONENTS Development)
 find_package(OpenMP REQUIRED)
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/../core/
-  ${PYTHON_INCLUDE_DIRS}
+  ${Python_INCLUDE_DIRS}
 )
 
 if(OPENMP_FOUND)
@@ -35,7 +35,7 @@ pybind11_add_module(pyms3d_core
 )
 
 target_include_directories(pyms3d_core PRIVATE ${OPENCL_INCLUDE_DIRS})
-target_link_libraries(pyms3d_core PRIVATE ${OPENCL_LIBRARIES})
+target_link_libraries(pyms3d_core PRIVATE ${OPENCL_LIBRARIES} Python::Module)
 
 install(TARGETS pyms3d_core
         DESTINATION pyms3d_core
