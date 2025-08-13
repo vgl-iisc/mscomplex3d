@@ -26,7 +26,7 @@
 #define __CL_ENABLE_EXCEPTIONS
 
 #include "grid_dataset_cl.h"
-#include "opencl.hpp"
+#include "CL/opencl.hpp"
 using namespace std;
 using namespace grid;
 #include <iostream>

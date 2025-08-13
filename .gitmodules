@@ -1,3 +1,3 @@
-[submodule "pyms3d/Boost.Numpy"]
-	path = pyms3d/Boost.Numpy
-	url = https://github.com/ndarray/Boost.NumPy.git
+[submodule "dep/OpenCL"]
+	path = dep/OpenCL
+	url = https://github.com/KhronosGroup/OpenCL-SDK.git

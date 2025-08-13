@@ -6,8 +6,6 @@ cmake_minimum_required(VERSION 3.5)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-find_package(OpenCL REQUIRED)
-
 find_package(OpenMP REQUIRED)
 
 set(OPENCL_NUM_WORK_ITEMS_PER_GROUP 256 CACHE STRING
@@ -15,11 +13,6 @@ set(OPENCL_NUM_WORK_ITEMS_PER_GROUP 256 CACHE STRING
 
 set(OPENCL_NUM_WORK_GROUPS 4 CACHE STRING
       "number of work items in an opencl workgroup")
-
-message("OPENCL: ${OPENCL_INCLUDE_DIRS}")
-message("OpenCL: ${OpenCL_INCLUDE_DIRS}")
-message("OPENCL Lib: ${OPENCL_LIBRARIES}")
-message("OpenCL Lib: ${OpenCL_LIBRARIES}")
 
 include_directories(
   ${OPENCL_INCLUDE_DIRS}
@@ -92,7 +85,7 @@ set(${PROJECT_NAME}_SRCS ${${PROJECT_NAME}_SRCS}
 
     OpenCL/grid_dataset_cl.h
     OpenCL/grid_dataset_cl.cpp
-    OpenCL/opencl.hpp
+    ${OPENCL_HPP_SOURCE}
     grid_dataset_cl_sources.h
     grid_dataset_cl_sources.cpp
 )
@@ -109,8 +102,8 @@ set_source_files_properties(OpenCL/grid_dataset_cl.cpp PROPERTIES COMPILE_FLAGS
 
 add_library(${PROJECT_NAME} OBJECT ${${PROJECT_NAME}_SRCS})
 #target_link_libraries(mscomplex3d-core PRIVATE ${OpenCL_LIBRARIES})
-target_include_directories(${PROJECT_NAME} PRIVATE ${OpenCL_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${OpenCL_LIBRARIES})
+# target_include_directories(${PROJECT_NAME} PRIVATE ${OpenCL_INCLUDE_DIRS})
+# target_link_libraries(${PROJECT_NAME} PRIVATE ${OpenCL_LIBRARIES})
 
 
 option(BUILD_TOOL "command line tool" ON)

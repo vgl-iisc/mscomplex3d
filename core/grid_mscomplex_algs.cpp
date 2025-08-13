@@ -17,7 +17,7 @@
 #define __CL_ENABLE_EXCEPTIONS
 #define CL_HPP_TARGET_OPENCL_VERSION 220
 #endif
-#include <OpenCL/opencl.hpp>
+#include <CL/opencl.hpp>
 
 using namespace std;
 

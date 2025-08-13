@@ -20,7 +20,7 @@
 #if defined(__linux__)
 #define CL_HPP_TARGET_OPENCL_VERSION 220
 #endif
-#include<opencl.hpp>
+#include<CL/opencl.hpp>
 #endif
 
 #include <utl.h>

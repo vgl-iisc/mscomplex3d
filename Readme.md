@@ -13,33 +13,41 @@ The mscomplex3d computes the Morse-Smale complexes on 3d grids. Its available in
 - [Cmake](http://www.cmake.org/)
 - [OpenCL](https://developer.nvidia.com/cuda-toolkit)
 - [OpenMP](http://openmp.org/wp/)
-- [Python 3.7](http://python.org)
+- [Python 3.7+](http://python.org)
 - [Pybind11 2.13](https://github.com/pybind/pybind11/releases/tag/v2.13.0) 
 
-## Fetch and Compile ##
+Besides CMake, OpenMP, and OpenCL, these dependencies will be installed automatically. OpenMP will likely already be available on your system, so no further effort is required from your side.
+
+Also ensure you have a C++ compiler which supports the C++20 standard (eg. g++-11).
+
+<!-- ## OpenCL Configuration ##
+In order for the application to work correctly, it needs to be pointed to your OpenCL library. If you installed OpenCL using the [Nvidia Cuda Toolkit](https://developer.nvidia.com/cuda-toolkit) (recommended), take the following steps, depending on your operating system:
+
+**Windows:**
+1. Navigate to the 
+
+**Linux**: -->
 
 ### Linux ###
 
 ```bash
-$ git clone https://bitbucket.org/vgl_iisc/mscomplex-3d.git
+$ git clone https://bitbucket.org/vgl_iisc/mscomplex-3d.git --recursive
 $ cd mscomplex3d
-$ cd ..
 $ mkdir build install
 $ cd build
-$cmake -DBUILD_PYMS3D=ON -DCMAKE_CXX_COMPILER=/usr/bin/g++-11 -DCMAKE_CXX_STANDARD=20 <project root path from build>
-$ cmake --build . --config Release(or Debug)
+$ cmake -DBUILD_PYMS3D=ON -DCMAKE_CXX_COMPILER=/usr/bin/g++-11 -DCMAKE_CXX_STANDARD=20 ..
+$ cmake --build . --config Release 
 ```
 
 ### Windows ###
 
 ```bash
-$ git clone https://bitbucket.org/vgl_iisc/mscomplex-3d.git
+$ git clone https://bitbucket.org/vgl_iisc/mscomplex-3d.git --recursive
 $ cd mscomplex3d
-$ cd ..
 $ mkdir build install
 $ cd build
-$cmake -DBUILD_PYMS3D=ON -DCMAKE_CXX_COMPILER=/usr/bin/g++-11 -DCMAKE_CXX_STANDARD=20 <project root path from build>
-$ cmake --build . --config Release(or Debug)
+$ cmake -DBUILD_PYMS3D=ON -DCMAKE_CXX_COMPILER=/usr/bin/g++-11 -DCMAKE_CXX_STANDARD=20 ..
+$ cmake --build . --config Release 
 ```
 
 > **Note:** Run the above commands in a **Bash shell** (e.g., Git Bash, MSYS2, or WSL) for proper execution of Unix-style command syntax.

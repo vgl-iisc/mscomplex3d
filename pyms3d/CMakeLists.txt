@@ -15,7 +15,6 @@ FetchContent_MakeAvailable(pybind11)
 
 
 find_package(OpenMP REQUIRED)
-find_package(OpenCL REQUIRED)
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
