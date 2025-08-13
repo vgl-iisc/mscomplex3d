@@ -13,13 +13,13 @@ FetchContent_Declare(
 # Make sure the pybind11 content is available
 FetchContent_MakeAvailable(pybind11)
 
-find_package(Python COMPONENTS Development)
+# find_package(Python3 COMPONENTS Development)
 find_package(OpenMP REQUIRED)
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/../core/
-  ${Python_INCLUDE_DIRS}
+  pybind11::pybind11
 )
 
 if(OPENMP_FOUND)
@@ -29,13 +29,24 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}
 endif()
 
 pybind11_add_module(pyms3d_core 
-    pyms3d.cpp
-    $<TARGET_OBJECTS:mscomplex3d-core>
-   
+  pyms3d.cpp
+  $<TARGET_OBJECTS:mscomplex3d-core>  
+)
+
+# makes package structure consistent across operating systems
+set_target_properties(pyms3d_core PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/pyms3d_core"
+  LIBRARY_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_BINARY_DIR}/pyms3d_core"
+  LIBRARY_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_BINARY_DIR}/pyms3d_core"
+  LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_CURRENT_BINARY_DIR}/pyms3d_core"
+  LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_CURRENT_BINARY_DIR}/pyms3d_core"
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/pyms3d_core"
+  RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_BINARY_DIR}/pyms3d_core"
+  RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_BINARY_DIR}/pyms3d_core"
 )
 
 target_include_directories(pyms3d_core PRIVATE ${OPENCL_INCLUDE_DIRS})
-target_link_libraries(pyms3d_core PRIVATE ${OPENCL_LIBRARIES} Python::Module)
+target_link_libraries(pyms3d_core PRIVATE ${OPENCL_LIBRARIES} pybind11::module)
 
 install(TARGETS pyms3d_core
         DESTINATION pyms3d_core
