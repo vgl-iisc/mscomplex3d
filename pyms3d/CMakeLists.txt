@@ -33,18 +33,6 @@ pybind11_add_module(pyms3d_core
   $<TARGET_OBJECTS:mscomplex3d-core>  
 )
 
-# makes package structure consistent across operating systems
-set_target_properties(pyms3d_core PROPERTIES
-  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/pyms3d_core"
-  LIBRARY_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_BINARY_DIR}/pyms3d_core"
-  LIBRARY_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_BINARY_DIR}/pyms3d_core"
-  LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_CURRENT_BINARY_DIR}/pyms3d_core"
-  LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_CURRENT_BINARY_DIR}/pyms3d_core"
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/pyms3d_core"
-  RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_BINARY_DIR}/pyms3d_core"
-  RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_BINARY_DIR}/pyms3d_core"
-)
-
 target_include_directories(pyms3d_core PRIVATE ${OPENCL_INCLUDE_DIRS})
 target_link_libraries(pyms3d_core PRIVATE ${OPENCL_LIBRARIES} pybind11::module)
 
