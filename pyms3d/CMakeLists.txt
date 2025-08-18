@@ -38,7 +38,11 @@ target_link_libraries(pyms3d_core PRIVATE ${OPENCL_LIBRARIES} pybind11::module)
 
 install(TARGETS pyms3d_core
         DESTINATION pyms3d_core
-        COMPONENT python) 
+        COMPONENT python)
+
+install(FILES __init__.py
+        DESTINATION pyms3d_core
+        COMPONENT python)
 
 
 # Optional executable for testing or standalone use
