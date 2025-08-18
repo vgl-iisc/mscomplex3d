@@ -1,11 +1,49 @@
 # **mscomplex3d** #
 
-The project page is hosted [here](http://vgl.csa.iisc.ac.in/mscomplex/). More details on what the Morse-Smale complex and the algorithms etc are available on project page. 
-
-The mscomplex3d computes the Morse-Smale complexes on 3d grids. Its available in two modules, either of which can be used. 
+mscomplex3d computes the Morse-Smale complex of a scalar function defined on a 3D grid. It is available in two modules: 
 
 - A python loadable module named **pyms3d**, which is easy to build, install and run. See [pyms3d/examples](pyms3d/examples/).
-- A command line tool named **mscomplex3d**. This is mainly meant for debugging purposes, and for testing the source code directly.
+- A command line tool named **mscomplex3d**. This is primarily meant for debugging purposes, and for testing the source code directly.
+
+The project page is hosted [here](http://vgl.csa.iisc.ac.in/mscomplex/). Please refer to the project page for an introduction to the Morse-Smale complex, description of algorithms and software design, and sample results. 
+
+# References #
+
+Please cite the following publications if you use this software in your work.
+
+@article{shivashankar2011parallel,  
+  title={Parallel computation of 2D Morse-Smale complexes},  
+  author={Shivashankar, Nithin and Senthilnathan, M and Natarajan, Vijay},  
+  journal={IEEE Transactions on Visualization and Computer Graphics},  
+  volume={18},  
+  number={10},  
+  pages={1757--1770},  
+  year={2011},  
+  publisher={IEEE}  
+}  
+  
+@article{shivashankar2012parallel,  
+author = {Shivashankar, Nithin and Natarajan, Vijay},  
+title = {Parallel Computation of 3D Morse-Smale Complexes},  
+journal = {Computer Graphics Forum},  
+volume = {31},  
+number = {3pt1},  
+pages = {965-974},  
+keywords = {I.3.5 Computational Geometry and Object Modeling},  
+doi = {https://doi.org/10.1111/j.1467-8659.2012.03089.x},  
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1467-8659.2012.03089.x},  
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1111/j.1467-8659.2012.03089.x},  
+year = {2012}  
+}  
+  
+@incollection{shivashankar2015efficient,  
+  title={Efficient software for programmable visual analysis using Morse-Smale complexes},  
+  author={Shivashankar, Nithin and Natarajan, Vijay},  
+  booktitle={Topological Methods in Data Analysis and Visualization},  
+  pages={317--331},  
+  year={2015},  
+  publisher={Springer}  
+}  
 
 # Installation #
 
