@@ -1,0 +1,5 @@
+{
+    "cmake.configureArgs": [
+        "-DBUILD_PYMS3D=ON"
+    ]
+}

@@ -1,0 +1,24 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cmake",
+			"label": "CMake: build",
+			"command": "build",
+			"targets": [
+				"ALL_BUILD"
+			],
+			"group": "build",
+			"problemMatcher": [],
+			"detail": "CMake template build task",
+			"dependsOn": ["CMake: configure"]
+		},
+		{
+			"type": "cmake",
+			"label": "CMake: configure",
+			"command": "configure",
+			"problemMatcher": [],
+			"detail": "CMake template configure task"
+		}
+	]
+}

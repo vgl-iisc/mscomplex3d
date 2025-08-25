@@ -1,0 +1,77 @@
+{
+    "configurations": [
+        {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "cwd": "${fileDirname}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "(Windows) Launch",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/core/Debug/mscomplex3d.exe",
+            "args": [
+                "${input:dataset file}",
+                "${input:dim 1}",
+                "${input:dim 2}",
+                "${input:dim 3}"
+            ],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}/build/core/",
+            "environment": [],
+            "console": "externalTerminal",
+            "preLaunchTask": "CMake: build"
+        },
+        {
+            "name": "Debug Attach",
+            "type": "cppvsdbg",
+            "request": "attach",
+            "processId": "${command:pickProcess}"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "dataset file",
+            "type": "promptString",
+            "description": "dataset to process",
+            "default": "${workspaceFolder}/testing/Hydrogen_128x128x128.raw"
+        },
+        {
+            "id": "dim 1",
+            "type": "promptString",
+            "default": "128",
+            "description": "first dimension size"
+        },
+        {
+            "id": "dim 2",
+            "type": "promptString",
+            "default": "128",
+            "description": "second dimension size"
+        },
+        {
+            "id": "dim 3",
+            "type": "promptString",
+            "default": "128",
+            "description": "third dimension size"
+        },
+        {
+            "id": "dev",
+            "type": "pickString",
+            "options": [
+                {
+                    "label": "GPU",
+                    "value": "0"
+                },
+                {
+                    "label": "CPU",
+                    "value": "1"
+                }
+            ],
+            "default": "0",
+            "description": "device"
+        }
+    ]
+}

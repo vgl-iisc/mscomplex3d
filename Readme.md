@@ -1,7 +1,8 @@
-# **mscomplex3d** #
+# mscomplex3d #
 
 mscomplex3d computes the Morse-Smale complex of a scalar function defined on a 3D grid. It is available in two modules: 
 
+- A C++ Library, **mscomplex3d-core**, for the construction, simplification, and general manipulation of Morse-Smale complexes.
 - A python loadable module named **pyms3d**, which is easy to build, install and run. See [pyms3d/examples](pyms3d/examples/).
 - A command line tool named **mscomplex3d**. This is primarily meant for debugging purposes, and for testing the source code directly.
 
@@ -45,71 +46,85 @@ year = {2012}
   publisher={Springer}  
 }  
 
-# Installation #
+# Building & Installing #
 
 ## Dependencies ##
+
+Ensure the availability of the following packages on your system before proceeding:
+
 - [Cmake 3.15+](http://www.cmake.org/)
 - [OpenCL](https://developer.nvidia.com/cuda-toolkit)
 - [OpenMP](http://openmp.org/wp/)
 - [Python 3.8+](http://python.org), with development dependencies on linux (python3-dev)
-- [Pybind11 2.13](https://github.com/pybind/pybind11/releases/tag/v2.13.0) 
+- [Pybind11 2.13](https://github.com/pybind/pybind11/releases/tag/v2.13.0)
+- C & C++20 Compilers (gcc-11+, MSBuild, etc.)
 
-Besides CMake, OpenMP, and OpenCL, these dependencies will be installed automatically. OpenMP will likely already be available on your system, so no further effort is required from your side.
+Besides CMake, the compilers, OpenMP, and OpenCL, these dependencies will be installed automatically. OpenMP will likely already be bundled in your compiler, with no further effort required from your side.
 
-Also ensure you have a C++ compiler which supports the C++20 standard (eg. g++-11).
+## Installing the Python Package ##
 
-<!-- ## OpenCL Configuration ##
-In order for the application to work correctly, it needs to be pointed to your OpenCL library. If you installed OpenCL using the [Nvidia Cuda Toolkit](https://developer.nvidia.com/cuda-toolkit) (recommended), take the following steps, depending on your operating system:
-
-**Windows:**
-1. Navigate to the 
-
-**Linux**: -->
-
-### Linux ###
+To install the python package directly, run the following command (ideally in a conda or virtual environment):
 
 ```bash
-$ git clone https://bitbucket.org/vgl_iisc/mscomplex-3d.git --recursive
+pip install git+https://github.com/vgl-iisc/mscomplex3d.git
+```
+
+Now, you should be able to import the module using `import pyms3d_core`.
+
+If you face any issues with this method of installation, please raise an issue.
+
+## Building Manually ##
+Run the following commands from the base repository directory.
+
+```bash
+$ git clone https://github.com/vgl-iisc/mscomplex3d.git --recursive
 $ cd mscomplex3d
-$ mkdir build install
+$ mkdir build
 $ cd build
 $ cmake -DBUILD_PYMS3D=ON -DCMAKE_CXX_COMPILER=/usr/bin/g++-11 -DCMAKE_CXX_STANDARD=20 ..
 $ cmake --build . --config Release 
 ```
 
-### Windows ###
+> Additional Build Options
+> - If you'd like to build the C sample program (`core/main.cpp`), set -DBUILD_SAMPLE=ON.
+> - If you'd only like to build the C library, don't set -DBUILD_PYMS3D to ON (default OFF).
+> - If needed, replace `/usr/bin/g++-11` with your compiler, or leave it unspecified to let CMake handle compiler discovery.
+> - If you'd like to build a development version with debugging symbols attached, replace `Release` with `Debug`.
 
+After running these commands, you should be able to find the compiled binaries in `build/pyms3d/<config>`, `build/core/<config>`, and `build/core/mscomplex3d-core.dir/<config>`, depending on which components were built.
+
+## Building Python Wheels ##
+
+We use the modern `build` backend with `pyproject.toml` to build python wheels. Then, you can run the following commands to build wheels for your python version:
 ```bash
-$ git clone https://bitbucket.org/vgl_iisc/mscomplex-3d.git --recursive
-$ cd mscomplex3d
-$ mkdir build install
-$ cd build
-$ cmake -DBUILD_PYMS3D=ON -DCMAKE_CXX_COMPILER=/usr/bin/g++-11 -DCMAKE_CXX_STANDARD=20 ..
-$ cmake --build . --config Release 
+$ pip install build
+$ python -m build . --outdir dist
 ```
 
-> **Note:** Run the above commands in a **Bash shell** (e.g., Git Bash, MSYS2, or WSL) for proper execution of Unix-style command syntax.
+This will invoke `scikit-build` to build the python library and roll it up into an installable wheel archive, which will be placed into the `dist/` directory.
 
-This will generate the C++ library and the Python bindings directly into the `Release/` directory inside the build folder.
+Options for CMake, such as the compilers to use, or the build configuration to be used can be changed from `pyproject.toml`.
 
----
+For advanced wheel building, support for `cibuildwheel` is also available.
 
-## ⚙️ OpenCL Installation
 
-OpenCL is typically installed with the **CUDA Toolkit** from NVIDIA. You can download it from the official [NVIDIA Developer site](https://developer.nvidia.com/cuda-toolkit).
+# Development #
+## 🐞 Debugging ##
 
-> **Note:** It is recommended to install the full CUDA toolkit to ensure compatibility with OpenCL binaries and drivers, especially if using an NVIDIA GPU.
+Debugging can be performed normally using standard debuggers like `gdb` or Visual Studio debug, as long as the compile config used was `Debug`. 
 
----
+### VSCode ###
+The repository includes sample VSCode workspace config files in `vscode`, which can be used for setting up a development and debugging environment for VSCode users. To use these files as is, simply rename the `vscode` directory to `.vscode`.
 
-## 📦 Pybind11 Dependency
+Now, you can debug `core/main.cpp` by using the `(Windows) Launch` debug target.
 
-The `CMakeLists.txt` file for the Python module is configured to automatically **download and integrate Pybind11** during the CMake configuration step.
+If you want to follow the python binding's calls into the C++ library, do the following: 
 
-- The Pybind11 version used is compatible with **Python 3.7 and above**.
-- No manual installation of Pybind11 is required.
+- Build and install the wheel in debug mode (`pyproject.toml line 36`)
+- Run an instance of the python interpreter which imports `pyms3d_core`
+- Attach to the process using the `Debug Attach` debug target.
 
----
+Your python calls should now be able to trigger breakpoints set in the C++ files in `core`.
 
 ## ✅ Unit Testing via Pytest
 
@@ -117,89 +132,21 @@ After building the Python module, unit tests can be run using **Pytest** to veri
 
 1. Create and activate a virtual environment at the **root** of the repository (where `pytest.ini` is located):
 
-```bash
-$ py <python_version_number> -m venv venv
-$ venv\Scripts\activate
-```
+  ```bash
+  $ py <python_version_number> -m venv venv
+  $ venv\Scripts\activate
+  ```
 
 2. Install test dependencies:
 
-```bash
-$ pip install pytest numpy
-```
+  ```bash
+  $ pip install pytest
+  ```
 
 3. Run the tests:
 
-```bash
-$ pytest -v
-```
-
-This will execute the tests in `test_hydrogen.py`, which uses the `pyms3d_core` module to process `Hydrogen_128x128x128.raw` and compare outputs against precomputed reference data.
+  ```bash
+  $ pytest -v
+  ```
 
 > ⚠️ The default import path for `pyms3d_core` is assumed to be `../build/pyms3d/Debug`. Modify this in `pytest.ini` if your build directory structure differs.
-
----
-
-## 📦 Building Python Wheels
-
-### 🪟 Windows
-
-We use **[cibuildwheel](https://github.com/pypa/cibuildwheel)** to build Python wheels on Windows for multiple Python versions.
-
-- Configuration is handled through `pyproject.toml` and CI scripts.
-- This automates the wheel generation process and ensures compliance with standard Python packaging practices.
-
-From Project root
-
-Build a single package for a single python version
-
-```python3.xx -m build --outdir <wheel directory>```
-
-Build multiple directories
-
-```python3 -m cibuildwheel --output-dir <wheel directory>```
-
-### 🐧 Linux
-
-Building on Linux requires a workaround due to Docker limitations with OpenCL:
-
-- **cibuildwheel** on Linux uses **Docker** to ensure compliance with the [manylinux](https://github.com/pypa/manylinux) standard.
-- Due to issues with OpenCL inside Docker containers, **we currently do not use cibuildwheel on Linux**.
-- Instead, we build manually for x86_64 Linux platforms.
-- It is recommended to use the deadsnakes ppa to easily add different python versions to your system
-
-```
-$ sudo add-apt-repository -y ppa:deadsnakes/ppa
-$ sudo apt install -y python3.7 python3.8 python3.9 python3.10 python3.11
-$ sudo apt install -y python3.7-venv python3.7-distutils python3.7-dev
-$ sudo apt install -y python3.8-venv python3.8-distutils python3.8-dev
-$ sudo apt install -y python3.9-venv python3.9-distutils python3.9-dev
-$ sudo apt install -y python3.10-venv python3.10-distutils python3.10-dev
-$ sudo apt install -y python3.11-venv python3.11-distutils python3.11-dev
-```
-
-Build a single package for a single python version. 
-From project root: 
-
-```python3.xx -m build --outdir <wheel directory>```
-
-> **Note:** While this does not comply with the manylinux standard, it is an acceptable compromise for our current project requirements.
-
----
-
-## 🐞 Debugging the C++ Source Code on Windows
-
-To debug the `mscomplex` C++ source using **Visual Studio (not VSCode)**:
-
-1. Download and install Visual Studio from:  
-   [https://visualstudio.microsoft.com/](https://visualstudio.microsoft.com/)
-
-2. Open the project’s `.sln` file.
-
-3. In the **Solution Explorer**:
-   - Right-click on the `mscomplex` project.
-   - Select **"Set as Startup Project"**.
-
-4. Build and run the project to execute the `main.cpp` file in `mscomplex`.
-
-This setup allows for full debugging support, including breakpoints, watch variables, and step-through execution within the Visual Studio IDE.
