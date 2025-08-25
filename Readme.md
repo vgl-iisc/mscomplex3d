@@ -128,7 +128,7 @@ Your python calls should now be able to trigger breakpoints set in the C++ files
 
 ## ✅ Unit Testing via Pytest
 
-After building the Python module, unit tests can be run using **Pytest** to verify correctness.
+After installing the Python module, unit tests can be run using **Pytest** to verify correctness.
 
 1. Create and activate a virtual environment at the **root** of the repository (where `pytest.ini` is located):
 

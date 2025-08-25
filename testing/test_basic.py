@@ -1,16 +1,11 @@
-import sys
-import os
 import pytest
-
-sys.path.append("build/pyms3d/Debug")
 
 # Now you can import your custom module
 import pyms3d_core as pyms3d
 
 def basic_hydrogen_dataset_test():
     try:
-        os.chdir('testing')
-        DataFile1 = "Hydrogen_128x128x128.raw"
+        DataFile1 = "testing/Hydrogen_128x128x128.raw"
         Dim1      = (128,128,128)
         pyms3d.get_hw_info()
         
@@ -53,8 +48,7 @@ def test_msc_datastructure():
         pytest.fail("Error on creating the msc object")
 
 if __name__ == "__main__":
-    os.chdir('testing')
-    DataFile1 = "Hydrogen_128x128x128.raw"
+    DataFile1 = "testing/Hydrogen_128x128x128.raw"
     Dim1      = (128,128,128)
 
     pyms3d.get_hw_info()

@@ -2,6 +2,8 @@ from timeit import default_timer
 import MSDebugFileCreator
 import sys
 
+from diff_state_dict import diff_ns_dict
+
 sys.path.append("../../build/pyms3d/Debug")
 
 # Now you can import your custom module
@@ -67,30 +69,6 @@ print("done")
 sys.stdout.flush()
 
 print("serialised string test")
-
-def diff_ns_dict(dictA, dictB, prefix=""):
-    children = []
-    
-    dev = []
-
-    assert dictA.keys() == dictB.keys()
-    
-    for k in dictA.keys():
-        valA = dictA[k]
-        valB = dictB[k]
-
-        if isinstance(valA, dict):
-            assert isinstance(valB, dict)
-            children.append(k)
-            continue
-
-        if valA != valB:
-            dev.append(f"deviation in {prefix}{k}")
-        
-    for k in children:
-        dev.extend(diff_ns_dict(dictA[k], dictB[k], k + "/"))
-
-    return dev
 
 deviation = diff_ns_dict(state_gpu, state_cpu)
 print("\n".join(deviation))
