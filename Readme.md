@@ -59,6 +59,8 @@ Ensure the availability of the following packages on your system before proceedi
 - [Pybind11 2.13](https://github.com/pybind/pybind11/releases/tag/v2.13.0)
 - C & C++20 Compilers (gcc-11+, MSBuild, etc.)
 
+> ⚠️ If you install OpenCL from a method other than installing the entire Nvidia CUDA Toolkit, ensure that you install the associated [ICD](https://dooglz.github.io/gpu/2019/07/26/opencl.html). <br>For end-users, we recommend simply installing the Toolkit.
+
 Besides CMake, the compilers, OpenMP, and OpenCL, these dependencies will be installed automatically. OpenMP will likely already be bundled in your compiler, with no further effort required from your side.
 
 ## Installing the Python Package ##

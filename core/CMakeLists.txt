@@ -102,7 +102,7 @@ set_source_files_properties(OpenCL/grid_dataset_cl.cpp PROPERTIES COMPILE_FLAGS
 add_library(${PROJECT_NAME} OBJECT ${${PROJECT_NAME}_SRCS})
 target_link_libraries(${PROJECT_NAME} ${OPENCL_LIBRARIES})
 
-option(BUILD_SAMPLE "build sample C executable" OFF)
+option(BUILD_SAMPLE "build sample C++ executable" OFF)
 if(BUILD_SAMPLE)
     add_executable(mscomplex3d-sample  $<TARGET_OBJECTS:mscomplex3d-core> main.cpp ${${PROJECT_NAME}_OPENCL_SRCS})
     target_link_libraries(mscomplex3d-sample ${OPENCL_LIBRARIES})
