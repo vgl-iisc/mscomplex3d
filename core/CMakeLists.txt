@@ -1,9 +1,8 @@
+cmake_minimum_required(VERSION 3.15)
 #Define the project we are working on
 project(mscomplex3d-core)
 
 # Look for various software we need
-cmake_minimum_required(VERSION 3.15)
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 find_package(OpenMP REQUIRED)
@@ -101,14 +100,10 @@ set_source_files_properties(OpenCL/grid_dataset_cl.cpp PROPERTIES COMPILE_FLAGS
 "-DOPENCL_NUM_WORK_ITEMS_PER_GROUP=${OPENCL_NUM_WORK_ITEMS_PER_GROUP} -DOPENCL_NUM_WORK_GROUPS=${OPENCL_NUM_WORK_GROUPS}")
 
 add_library(${PROJECT_NAME} OBJECT ${${PROJECT_NAME}_SRCS})
-#target_link_libraries(mscomplex3d-core PRIVATE ${OpenCL_LIBRARIES})
-# target_include_directories(${PROJECT_NAME} PRIVATE ${OpenCL_INCLUDE_DIRS})
-# target_link_libraries(${PROJECT_NAME} PRIVATE ${OpenCL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${OPENCL_LIBRARIES})
 
-
-option(BUILD_TOOL "command line tool" ON)
-if(BUILD_TOOL)
-    add_executable(mscomplex3d  $<TARGET_OBJECTS:mscomplex3d-core> main.cpp ${${PROJECT_NAME}_OPENCL_SRCS})
-    target_link_libraries(mscomplex3d ${OPENCL_LIBRARIES})
-    install(TARGETS mscomplex3d DESTINATION ${MSCOMPLEX3D_INSTALL_DIR_BIN})
-endif(BUILD_TOOL)
+option(BUILD_SAMPLE "build sample C executable" OFF)
+if(BUILD_SAMPLE)
+    add_executable(mscomplex3d-sample  $<TARGET_OBJECTS:mscomplex3d-core> main.cpp ${${PROJECT_NAME}_OPENCL_SRCS})
+    target_link_libraries(mscomplex3d-sample ${OPENCL_LIBRARIES})
+endif(BUILD_SAMPLE)

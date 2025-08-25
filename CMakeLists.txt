@@ -1,8 +1,8 @@
+cmake_minimum_required(VERSION 3.15)
 #Define the project we are working on
 project(mscomplex3d)
 
 # Look for various software we need
-cmake_minimum_required(VERSION 3.15)
 set (CMAKE_CXX_STANDARD 20)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 

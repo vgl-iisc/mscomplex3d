@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.15)
 project(pyms3d_core)
 
 #set(CMAKE_PREFIX_PATH "C://Python311//Lib//site-packages//pybind11//share//cmake//pybind11")
