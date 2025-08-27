@@ -152,5 +152,3 @@ After installing the Python module, unit tests can be run using **Pytest** to ve
   ```bash
   $ pytest -v
   ```
-
-> ⚠️ The default import path for `pyms3d_core` is assumed to be `../build/pyms3d/Debug`. Modify this in `pytest.ini` if your build directory structure differs.
