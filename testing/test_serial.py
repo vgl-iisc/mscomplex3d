@@ -14,8 +14,8 @@ def msc_worker(msc, start, end):
     return num
 
 def test_pickling_unpickling():
-    pyms3d.get_hw_info()
-    msc = pyms3d.MsComplexPyms3D()
+    pyms3d.select_device()
+    msc = pyms3d.MsComplex()
 
     msc.compute_bin("testing/Hydrogen_128x128x128.raw", (128, 128, 128))
     
@@ -33,8 +33,8 @@ def test_pickling_unpickling():
         pytest.fail("\n".join(errors))
 
 def test_multiprocessing_cp_sum():
-    pyms3d.get_hw_info()
-    msc = pyms3d.MsComplexPyms3D()
+    pyms3d.select_device()
+    msc = pyms3d.MsComplex()
 
     msc.compute_bin("testing/Hydrogen_128x128x128.raw", (128, 128, 128))
 

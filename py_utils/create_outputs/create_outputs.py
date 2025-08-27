@@ -10,7 +10,7 @@ levels = sorted([0.05])
 
 os.makedirs(outdir, exist_ok=True)
 
-pyms3d.get_hw_info()
+pyms3d.select_device()
 
 for file in os.listdir(indir):
     if not file.endswith(".raw"):
@@ -19,7 +19,7 @@ for file in os.listdir(indir):
     name, _ = os.path.splitext(file)
     dims = tuple(map(int, name.split("_")[-1].split("x")))
     
-    msc = pyms3d.MsComplexPyms3D()
+    msc = pyms3d.MsComplex()
     msc.compute_bin(file, dims)
 
     base_state = msc.dbg_serialize()

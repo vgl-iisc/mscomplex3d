@@ -8,13 +8,13 @@ def test_gpu_cpu_agreement():
     df = "testing/Hydrogen_128x128x128.raw"
     dim      = (128,128,128)
 
-    pyms3d.get_hw_info(0)
-    msc_gpu = pyms3d.MsComplexPyms3D()
+    pyms3d.select_device(pyms3d.GPU)
+    msc_gpu = pyms3d.MsComplex()
     msc_gpu.compute_bin(df, dim)
     state_gpu = msc_gpu.dbg_serialize()
 
-    pyms3d.get_hw_info(1)
-    msc_cpu = pyms3d.MsComplexPyms3D()
+    pyms3d.select_device(pyms3d.CPU)
+    msc_cpu = pyms3d.MsComplex()
     msc_cpu.compute_bin(df, dim)
     state_cpu = msc_cpu.dbg_serialize()
 
@@ -22,7 +22,7 @@ def test_gpu_cpu_agreement():
     assert len(deviation) == 0, "deviations b/w cpu & gpu:\n" + "\n".join(deviation)
 
 def test_output_match():
-    pyms3d.get_hw_info()
+    pyms3d.select_device()
 
     outputs = os.listdir("testing/stored_outputs")
 
@@ -45,7 +45,7 @@ def test_output_match():
             name_dim_levs[basename][1].append(simp)
 
     for name, (dim, levs) in name_dim_levs.items():
-        msc = pyms3d.MsComplexPyms3D()
+        msc = pyms3d.MsComplex()
         msc.compute_bin(f"testing/{name}.raw", dim)
 
         state_dict = msc.dbg_serialize()

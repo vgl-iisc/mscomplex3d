@@ -665,7 +665,7 @@ mscomplex_pyms3d_ptr_t set_msc_state(py::tuple tup) {
 void init_mscomplex(py::module_& m) {
 
     
-    py::class_<mscomplex_t, std::shared_ptr<mscomplex_t>>(m, "MsComplex")
+    py::class_<mscomplex_t, std::shared_ptr<mscomplex_t>>(m, "MsComplexBase")
         .def("num_cps", &mscomplex_t::get_num_critpts, "Number of Critical Points")
         .def("cp_func", &mscomplex_t::fn, "Function value at critical point i")
         .def("cp_index", &mscomplex_t::index, "Morse index of critical point i")
@@ -693,7 +693,7 @@ void init_mscomplex(py::module_& m) {
 		)doc")
         .def("cp_detail_string", &mscomplex_t::cp_info);
     //the reason we define this second python class is because this is how we take an inherited function from an existing one in Pybind
-    py::class_<mscomplex_pyms3d_t, mscomplex_t, std::shared_ptr<mscomplex_pyms3d_t>>(m, "MsComplexPyms3D")
+    py::class_<mscomplex_pyms3d_t, mscomplex_t, std::shared_ptr<mscomplex_pyms3d_t>>(m, "MsComplex")
         .def(py::init<>())
         .def("cps", &mscomplex_pyms3d_t::cps, py::arg("dim") = -1,
             "Returns a list of surviving critical points based on dimension")
@@ -784,12 +784,8 @@ void init_mscomplex(py::module_& m) {
             "                       NC' #cells in Asc/Des mfold of cp whose \n"
             "                             dual pts are inside Primal Grid\n"
         )
-        .def("dbg_serialize", &dbg_serialize)
+        .def("dbg_serialize", &dbg_serialize, "Serialize the internal state for debugging")
         .def(py::pickle(&get_msc_state, &set_msc_state));
-}
-
-void debug_print() {
-    std::cout << "debug";
 }
 
 /// <summary>
@@ -800,8 +796,10 @@ PYBIND11_MODULE(pyms3d_core, m) {
     // Call the function that registers the bindings
     init_mscomplex(m);
     m.doc() = "This is a custom module implemented in C++ using Pybind11.";  // Module docstring
-        m.def("debug_print", &debug_print, "A function that prints a simple debug message");
-        m.def("get_hw_info",&get_hw_info, py::arg("device") = 0);
+    m.attr("GPU") = 0;
+    m.attr("CPU") = 1;
+    m.def("select_device", &get_hw_info, py::arg("device") = 0, "Select hardware device to run the computations on. 0 for GPU, 1 for CPU, leave unspecified for auto."
+          "\nThis must be called before any other function.");
 
 }
 

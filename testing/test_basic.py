@@ -7,9 +7,9 @@ def basic_hydrogen_dataset_test():
     try:
         df = "testing/Hydrogen_128x128x128.raw"
         dim      = (128,128,128)
-        pyms3d.get_hw_info()
+        pyms3d.select_device()
         
-        msc = pyms3d.MsComplexPyms3D()
+        msc = pyms3d.MsComplex()
         msc.compute_bin(df,dim)
     except Exception as e: 
          pytest.fail("Error on processing the hydrogen dataset..")
@@ -37,13 +37,13 @@ def test_data():
 
 def test_has_required_hardware():
     try:
-        pyms3d.get_hw_info()
+        pyms3d.select_device()
     except Exception as e:  
         pytest.fail("Error on finding the required GPU and hardware for OpenCL initialisation..")
 
 def test_msc_datastructure():
     try:
-        msc = pyms3d.MsComplexPyms3D()
+        msc = pyms3d.MsComplex()
     except Exception as e:  
         pytest.fail("Error on creating the msc object")
 
@@ -51,9 +51,9 @@ if __name__ == "__main__":
     df = "testing/Hydrogen_128x128x128.raw"
     dim      = (128,128,128)
 
-    pyms3d.get_hw_info()
+    pyms3d.select_device()
 
-    msc = pyms3d.MsComplexPyms3D()
+    msc = pyms3d.MsComplex()
     msc.compute_bin(df,dim)
 
     msc.simplify_pers(thresh=0.05)

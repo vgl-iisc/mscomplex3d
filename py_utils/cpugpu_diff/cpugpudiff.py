@@ -16,9 +16,9 @@ def print_num_cps(msc):
     print(", ".join(list(map(lambda arr: str(len(arr)), [msc.cps(i) for i in range(4)]))))
 
 
-pyms3d.get_hw_info(0)
+pyms3d.select_device(pyms3d.GPU)
 
-msc_gpu = pyms3d.MsComplexPyms3D()
+msc_gpu = pyms3d.MsComplex()
 
 start = default_timer()
 msc_gpu.compute_bin(DataFile1,Dim1)
@@ -42,8 +42,8 @@ MSDebugFileCreator.createDebugFile(msc_gpu, "gpu")
 print("done with gpu, cpu time")
 sys.stdout.flush()
 
-pyms3d.get_hw_info(1)
-msc_cpu = pyms3d.MsComplexPyms3D()
+pyms3d.select_device(pyms3d.CPU)
+msc_cpu = pyms3d.MsComplex()
 
 start = default_timer()
 msc_cpu.compute_bin(DataFile1,Dim1)
