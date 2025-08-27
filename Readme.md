@@ -83,14 +83,14 @@ $ git clone https://github.com/vgl-iisc/mscomplex3d.git --recursive
 $ cd mscomplex3d
 $ mkdir build
 $ cd build
-$ cmake -DBUILD_PYMS3D=ON -DCMAKE_CXX_COMPILER=/usr/bin/g++-11 -DCMAKE_CXX_STANDARD=20 ..
+$ cmake -DBUILD_PYMS3D=ON -DCMAKE_CXX_STANDARD=20 ..
 $ cmake --build . --config Release 
 ```
 
 > Additional Build Options
 > - If you'd like to build the C sample program (`core/main.cpp`), set -DBUILD_SAMPLE=ON.
 > - If you'd only like to build the C library, don't set -DBUILD_PYMS3D to ON (default OFF).
-> - If needed, replace `/usr/bin/g++-11` with your compiler, or leave it unspecified to let CMake handle compiler discovery.
+> - If needed, set -DCMAKE_CXX_COMPILER="<path_to_your_compiler>", or leave it unspecified to let CMake handle compiler discovery.
 > - If you'd like to build a development version with debugging symbols attached, replace `Release` with `Debug`.
 
 After running these commands, you should be able to find the compiled binaries in `build/pyms3d/<config>`, `build/core/<config>`, and `build/core/mscomplex3d-core.dir/<config>`, depending on which components were built.
@@ -130,7 +130,7 @@ Your python calls should now be able to trigger breakpoints set in the C++ files
 
 ## ✅ Unit Testing via Pytest
 
-After installing the Python module, unit tests can be run using **Pytest** to verify correctness.
+After installing the Python module, unit tests can be run using **Pytest** to verify correctness. Ensure that you run `git lfs install && git lfs pull` before the following:
 
 1. Create and activate a virtual environment at the **root** of the repository (where `pytest.ini` is located):
 

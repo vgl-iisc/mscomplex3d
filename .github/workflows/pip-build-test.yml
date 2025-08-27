@@ -38,5 +38,11 @@ jobs:
         CXX=${{ matrix.cpp_compiler }} pip install .
         pip install pytest
 
+    - name: Ensure LFS
+      run: |
+        sudo apt-get install -y git-lfs
+        git lfs install
+        git lfs pull
+
     - name: Test
       run: pytest -v .

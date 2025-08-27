@@ -9,7 +9,7 @@ Bin/
 _skbuild/
 lib/
 include/
-Lib/
+share/
 
 # Compiled object files and libraries
 *.o
