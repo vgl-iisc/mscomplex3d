@@ -61,9 +61,7 @@ build/
 wheels/
 
 # Custom project-specific ignores
-# Ignore everything in pyms3d_core except __init__.py
-pyms3d_core/*
-!pyms3d_core/__init__.pywheelhouse/
+pyms3d_core/
 
 # Logs and temporary files
 *.log
