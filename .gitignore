@@ -7,6 +7,9 @@ cmake-build-*/
 bin/
 Bin/
 _skbuild/
+lib/
+include/
+Lib/
 
 # Compiled object files and libraries
 *.o

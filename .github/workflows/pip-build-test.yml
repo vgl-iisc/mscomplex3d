@@ -1,0 +1,42 @@
+name: Build and Test with Pip & Pytest
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        os: [ubuntu-latest]
+        build_type: [Release]
+        c_compiler: [gcc]
+        cpp_compiler: [g++]
+        python-version: ['3.8', '3.11']
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install OpenCL
+      run: sudo apt-get install -y ocl-icd-opencl-dev pocl-opencl-icd
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install
+      # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
+      run: |
+        CXX=${{ matrix.cpp_compiler }} pip install .
+        pip install pytest
+
+    - name: Test
+      run: pytest -v .
