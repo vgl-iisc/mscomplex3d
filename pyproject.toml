@@ -9,7 +9,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "pyms3d_core"
-version = "0.1.0"
+version = "1.0.0"
 description = "Python bindings for the MSComplex3D C++ library"
 authors = [
   { name = "Sachin Kishan" }
