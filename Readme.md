@@ -1,5 +1,7 @@
 # mscomplex3d #
 
+[![Build and Test with CMake](https://github.com/vgl-iisc/mscomplex3d/actions/workflows/cmake-build-test.yml/badge.svg)](https://github.com/vgl-iisc/mscomplex3d/actions/workflows/cmake-build-test.yml) [![Build and Test with Pip & Pytest](https://github.com/vgl-iisc/mscomplex3d/actions/workflows/pip-build-test.yml/badge.svg)](https://github.com/vgl-iisc/mscomplex3d/actions/workflows/pip-build-test.yml)
+
 mscomplex3d computes the Morse-Smale complex of a scalar function defined on a 3D grid. It is available in two modules: 
 
 - A C++ Library, **mscomplex3d-core**, for the construction, simplification, and general manipulation of Morse-Smale complexes.
