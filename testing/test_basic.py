@@ -5,12 +5,12 @@ import pyms3d_core as pyms3d
 
 def basic_hydrogen_dataset_test():
     try:
-        DataFile1 = "testing/Hydrogen_128x128x128.raw"
-        Dim1      = (128,128,128)
+        df = "testing/Hydrogen_128x128x128.raw"
+        dim      = (128,128,128)
         pyms3d.get_hw_info()
         
         msc = pyms3d.MsComplexPyms3D()
-        msc.compute_bin(DataFile1,Dim1)
+        msc.compute_bin(df,dim)
     except Exception as e: 
          pytest.fail("Error on processing the hydrogen dataset..")
 
@@ -48,13 +48,13 @@ def test_msc_datastructure():
         pytest.fail("Error on creating the msc object")
 
 if __name__ == "__main__":
-    DataFile1 = "testing/Hydrogen_128x128x128.raw"
-    Dim1      = (128,128,128)
+    df = "testing/Hydrogen_128x128x128.raw"
+    dim      = (128,128,128)
 
     pyms3d.get_hw_info()
 
     msc = pyms3d.MsComplexPyms3D()
-    msc.compute_bin(DataFile1,Dim1)
+    msc.compute_bin(df,dim)
 
     msc.simplify_pers(thresh=0.05)
 

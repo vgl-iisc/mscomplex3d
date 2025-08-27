@@ -73,7 +73,7 @@ To install the python package directly, run the following command (ideally in a 
 pip install git+https://github.com/vgl-iisc/mscomplex3d.git
 ```
 
-Now, you should be able to import the module using `import pyms3d_core`.
+Now, you should be able to import the module using `import pyms3d_core`. A variety of usage examples are available in the [`testing`](./testing/) and [`py_utils`](./py_utils/) directories.
 
 If you face any issues with this method of installation, please raise an issue.
 
