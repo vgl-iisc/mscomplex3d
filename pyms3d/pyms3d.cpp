@@ -667,9 +667,9 @@ void init_mscomplex(py::module_& m) {
     
     py::class_<mscomplex_t, std::shared_ptr<mscomplex_t>>(m, "MsComplexBase")
         .def("num_cps", &mscomplex_t::get_num_critpts, "Number of Critical Points")
-        .def("cp_func", &mscomplex_t::fn, "Function value at critical point i")
-        .def("cp_index", &mscomplex_t::index, "Morse index of critical point i")
-        .def("cp_pairid", &mscomplex_t::pair_idx, "Index of the paired critical point i (-1 if unpaired)")
+        .def("cp_func", &mscomplex_t::fn, py::arg("cp"), "Function value at the critical point")
+        .def("cp_index", &mscomplex_t::index, py::arg("cp"), "Morse index at the critical point")
+        .def("cp_pairid", &mscomplex_t::pair_idx, py::arg("cp"), "Index of the paired critical point (-1 if unpaired)")
         //.def("is_boundry", &mscomplex_t::, "If the cp is on the boundary or not")
         .def("simplify_pers", &mscomplex_t::simplify_pers,
             py::arg("thresh") = 1.0,
@@ -691,7 +691,7 @@ void init_mscomplex(py::module_& m) {
 				    Simplification will stop when any of the criteria is reached.
 				    Call only after the compute function is called.
 		)doc")
-        .def("cp_detail_string", &mscomplex_t::cp_info);
+        .def("cp_detail_string", &mscomplex_t::cp_info, py::arg("cp"), "Get a string with detailed information about the critical point");
     //the reason we define this second python class is because this is how we take an inherited function from an existing one in Pybind
     py::class_<mscomplex_pyms3d_t, mscomplex_t, std::shared_ptr<mscomplex_pyms3d_t>>(m, "MsComplex")
         .def(py::init<>())
@@ -702,17 +702,17 @@ void init_mscomplex(py::module_& m) {
         .def("cps_pairid", &mscomplex_pyms3d_t::cps_pairid, "Get cancellation pair ids of all critical points")
         .def("cps_vertid", &mscomplex_pyms3d_t::cps_vertid, "Get maximal vertex ids of all critical points")
         .def("cps_cellid", &mscomplex_pyms3d_t::cps_cellid, "Get cell ids of all critical points")
-        .def("cp_vertid", &mscomplex_pyms3d_t::py_vertid, "Vertex id of the critical cell")
-        .def("cp_cellid", &mscomplex_pyms3d_t::py_cellid, "Cell id of the critical cell")
-        .def("asc", &mscomplex_pyms3d_t::conn<ASC>, "List of ascending cps connected to a critical point")
-        .def("des", &mscomplex_pyms3d_t::conn<DES>, "List of descending cps connected to a critical point")
+        .def("cp_vertid", &mscomplex_pyms3d_t::py_vertid, py::arg("cp"), "Vertex id of the critical cell associated with the critical point")
+        .def("cp_cellid", &mscomplex_pyms3d_t::py_cellid, py::arg("cp"), "Cell id of the critical cell associated with the critical point")
+        .def("asc", &mscomplex_pyms3d_t::conn<ASC>, py::arg("cp"), "List of ascending cps connected to a critical point")
+        .def("des", &mscomplex_pyms3d_t::conn<DES>, py::arg("cp"), "List of descending cps connected to a critical point")
         .def("primal_points", &mscomplex_pyms3d_t::points<CC_PRIM>, "Get primal grid point coordinates")
         .def("dual_points", &mscomplex_pyms3d_t::points<CC_DUAL>, "Get dual grid point coordinates")
-        .def("compute_bin", &mscomplex_compute_bin, "Compute the MsComplex from a raw/bin file")
-        .def("compute_arr", &mscomplex_pyms3d_t::compute_arr, "Compute the MsComplex from a 3D numpy array")
-        .def("load", &mscomplex_pyms3d_t::load, "Load mscomplex from file")
-        .def("save", &mscomplex_pyms3d_t::save, "Save mscomplex to file")
-        .def("vert_func", &mscomplex_pyms3d_t::vert_fn,
+        .def("compute_bin", &mscomplex_compute_bin, py::arg("filepath"), py::arg("dims 3-tuple"), "Compute the MsComplex from a raw/bin file")
+        .def("compute_arr", &mscomplex_pyms3d_t::compute_arr, py::arg("arr"), "Compute the MsComplex from a 3D numpy array")
+        .def("load", &mscomplex_pyms3d_t::load, py::arg("filepath"), "Load mscomplex from file")
+        .def("save", &mscomplex_pyms3d_t::save, py::arg("filepath"), "Save mscomplex to file")
+        .def("vert_func", &mscomplex_pyms3d_t::vert_fn, py::arg("x"), py::arg("y"), py::arg("z"),
             "Scalar value at vertex coordinate")
         .def("vert_funcs", &mscomplex_pyms3d_t::vert_fns,
             "Scalar value at all vertices")
@@ -721,69 +721,57 @@ void init_mscomplex(py::module_& m) {
         .def("collect_geom", &mscomplex_pyms3d_t::collect_mfolds,
             py::arg("dir") = 2,
             py::arg("dim") = -1,
-            "Collect the geometry of all survivng critical points\n"\
-            "\n"\
-            "Parameters  : \n"\
-            "         dir: Geometry type \n"\
-            "              dir=0 --> Descending \n"\
-            "              dir=1 --> Ascending \n"\
-            "              dir=2 --> Both (default) \n"\
-            "         dim: Critical point type \n"\
-            "              dim=-1      --> All (default)\n"\
-            "              dim=0,1,2,3 --> Minima, 1-saddle,2-saddle,Maxima \n"\
-            "\n"\
-            "Note        : Call only after the compute function is called.\n"\
-        )
+            R"doc(
+                Collect the geometry of all surviving critical points
+
+                Parameters:
+                    dir: Geometry type
+                        dir=0 --> Descending
+                        dir=1 --> Ascending
+                        dir=2 --> Both (default)
+                    dim: Critical point type
+                        dim=-1      --> All (default)
+                        dim=0,1,2,3 --> Minima, 1-saddle,2-saddle,Maxima
+
+                Note: 
+                    Call only after the compute function is called.
+        )doc")
 	.def("asc_geom", &mscomplex_pyms3d_t::geom<ASC>,
             py::arg("cp"), py::arg("hversion") = -1, py::arg("ToPts") = true,
-            "Ascending manifold geometry of a given critical point i"
-            "\n"
-            "Parameters  : \n"
-            "          cp: the critical point id\n"
-            "    hversion: desired hierarchical version.\n"
-            "              -1 indicates current version (default)"
-            "       ToPts: convert the geometry data to point indices.\n"
-            "               default = True     \n"
-            "\n"
-            "               False  : returns a list of cellids \n"
-            "               True   : returns a list of Point idxs in \n"
-            "                        Primal/Dual grid according to following\n"
-            "                        table\n"
-            "\n"
-            "                         index(cp) pt-Index-Type  ArrayShape\n"
-            "                             0      Primal          [NC]\n"
-            "                             1      Dual            [NC',4]\n"
-            "                             2      Dual            [NC',2]\n"
-            "\n"
-            "                       NC  #cells in Asc/Des mfold of cp.\n"
-            "                       NC' #cells in Asc/Des mfold of cp whose \n"
-            "                             dual pts are inside Primal Grid\n"
-        )
+            R"doc(
+                Ascending manifold geometry of the given critical point
+
+                Parameters:
+                    cp: the critical point id
+                    hversion: desired hierarchical version. -1 indicates current version.
+                    ToPts: convert the geometry data to point indices.
+
+
+                **Returns**: If ToPts False, returns a list of cellids. If ToPts True, returned shape depends on the index of cp as follows:
+                            - CP Index 0: Returns a list of size NC of point indices in Primal grid
+                            - CP Index 1: Returns a list of size NC' x 4 of point indices in Dual grid
+                            - CP Index 2: Returns a list of size NC' x 2 of point indices in Dual grid
+                        
+                         Where NC is the number of cells in the ascending mfold of cp, and NC' is the number of cells in the ascending mfold of cp whose dual points are inside the Primal grid.
+        )doc")
         .def("des_geom", &mscomplex_pyms3d_t::geom<DES>,
             py::arg("cp"), py::arg("hversion") = -1, py::arg("ToPts") = true,
-            "Descending manifold geometry of a given critical point i"
-            "\n"
-            "Parameters  : \n"
-            "          cp: the critical point id\n"
-            "    hversion: desired hierarchical version.\n"
-            "              -1 indicates current version (default)"
-            "       ToPts: convert the geometry data to point indices.\n"
-            "               default = True     \n"
-            "\n"
-            "               False  : returns a list of cellids \n"
-            "               True   : returns a list of Point idxs in \n"
-            "                        Primal/Dual grid according to following\n"
-            "                        table\n"
-            "\n"
-            "                         index(cp) pt-Index-Type  ArrayShape\n"
-            "                             1      Primal          [NC,2]\n"
-            "                             2      Primal          [NC,4]\n"
-            "                             3      Dual            [NC]\n"
-            "\n"
-            "                       NC  #cells in Asc/Des mfold of cp.\n"
-            "                       NC' #cells in Asc/Des mfold of cp whose \n"
-            "                             dual pts are inside Primal Grid\n"
-        )
+            R"doc(
+                Descending manifold geometry of the given critical point
+
+                Parameters:
+                    cp: the critical point id
+                    hversion: desired hierarchical version. -1 indicates current version.
+                    ToPts: convert the geometry data to point indices.
+
+
+                **Returns**: If ToPts False, returns a list of cellids. If ToPts True, returned shape depends on the index of cp as follows:
+                            - CP Index 0: Returns a list of size NC of point indices in Primal grid
+                            - CP Index 1: Returns a list of size NC' x 4 of point indices in Dual grid
+                            - CP Index 2: Returns a list of size NC' x 2 of point indices in Dual grid
+                        
+                         Where NC is the number of cells in the descending mfold of cp, and NC' is the number of cells in the descending mfold of cp whose dual points are inside the Primal grid.
+        )doc")
         .def("dbg_serialize", &dbg_serialize, "Serialize the internal state for debugging")
         .def(py::pickle(&get_msc_state, &set_msc_state));
 }
