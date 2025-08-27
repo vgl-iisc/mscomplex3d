@@ -48,6 +48,9 @@ year = {2012}
   publisher={Springer}  
 }  
 
+# Documentation
+The repository bundles Sphinx for documentation of the python module in the `docs/` directory. The documentation can be found [here](https://vgl-iisc.github.io/mscomplex3d/). 
+
 # Building & Installing #
 
 ## Dependencies ##
