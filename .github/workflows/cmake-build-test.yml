@@ -5,8 +5,24 @@ name: Build and Test with CMake
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - ".github/workflows/cmake-build-test.yml"
+      - "CMakeLists.txt"
+      - "cmake/**"
+      - "core/**"
+      - "py_utils/**"
+      - "pyms3d/**"
+      - "testing/**"
   pull_request:
     branches: [ "main" ]
+    paths:
+      - ".github/workflows/cmake-build-test.yml"
+      - "CMakeLists.txt"
+      - "cmake/**"
+      - "core/**"
+      - "py_utils/**"
+      - "pyms3d/**"
+      - "testing/**"
 
 jobs:
   build:

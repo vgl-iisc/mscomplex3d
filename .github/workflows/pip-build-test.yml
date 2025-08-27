@@ -3,8 +3,28 @@ name: Build and Test with Pip & Pytest
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - ".github/workflows/pip-build-test.yml"
+      - "CMakeLists.txt"
+      - "cmake/**"
+      - "core/**"
+      - "py_utils/**"
+      - "pyms3d/**"
+      - "testing/**"
+      - "pyproject.toml"
+      - "pytest.ini"
   pull_request:
     branches: [ "main" ]
+    paths: 
+      - ".github/workflows/pip-build-test.yml"
+      - "CMakeLists.txt"
+      - "cmake/**"
+      - "core/**"
+      - "py_utils/**"
+      - "pyms3d/**"
+      - "testing/**"
+      - "pyproject.toml"
+      - "pytest.ini"
 
 jobs:
   build:
