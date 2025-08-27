@@ -1,0 +1,64 @@
+# Sample workflow for building and deploying a Jekyll site to GitHub Pages
+name: Deploy Documentation for PyMS3D
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/sphinx-docs.yml"
+      - "pyms3d/**"
+      - "docs/**/"
+      
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Build job
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Install OpenCL
+        run: sudo apt-get install -y ocl-icd-opencl-dev pocl-opencl-icd
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+      - name: Install
+        run: |
+          pip install .
+          pip install -U sphinx
+      - name: Build Docs
+        run: sphinx-build -M html ./docs/ _build/
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "./_build/html"
+  # Deployment job
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
