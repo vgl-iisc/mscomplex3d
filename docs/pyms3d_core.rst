@@ -1,4 +1,4 @@
-The pyms3d_core module
+Module Reference
 =========================
 
 .. automodule:: pyms3d_core
