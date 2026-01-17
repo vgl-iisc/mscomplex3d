@@ -74,6 +74,12 @@ jobs:
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
+    - name: Download Test Data
+      run: |
+        wget -O ./testing.7z https://vgl.csa.iisc.ac.in/mscomplex/data/testing.7z
+        7z x ./testing.7z -o${{ github.workspace }}/testing -y
+        ls -la testing/
+
     - name: Run C++ Sample
       run: >
         ${{ steps.strings.outputs.build-output-dir }}/core/mscomplex3d-sample

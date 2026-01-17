@@ -58,11 +58,11 @@ jobs:
         CXX=${{ matrix.cpp_compiler }} pip install .
         pip install pytest
 
-    - name: Ensure LFS
+    - name: Download Test Data
       run: |
-        sudo apt-get install -y git-lfs
-        git lfs install
-        git lfs pull
+        wget -O ./testing.7z https://vgl.csa.iisc.ac.in/mscomplex/data/testing.7z
+        7z x ./testing.7z -o${{ github.workspace }}/testing -y
+        ls -la testing/
 
     - name: Test
       run: pytest -v .

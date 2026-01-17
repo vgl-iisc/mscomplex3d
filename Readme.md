@@ -49,7 +49,7 @@ year = {2012}
 }  
 
 # Documentation
-The repository bundles Sphinx for documentation of the python module in the `docs/` directory. The documentation can be found [here](https://vgl-iisc.github.io/mscomplex3d/). 
+The repository bundles Sphinx for documentation of the python module in the `docs/` directory. The documentation can be found [here](https://vgl-iisc.github.io/mscomplex3d/). Testing data can be downloaded from [here](https://vgl.csa.iisc.ac.in/mscomplex/data/testing.7z). This archive should be extracted directly into the testing/ directory for the tests to run as expected. 
 
 # Building & Installing #
 
