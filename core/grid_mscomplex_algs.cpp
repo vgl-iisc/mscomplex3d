@@ -633,6 +633,8 @@ inline void __collect_extrema_mfolds(mscomplex_ptr_t msc, dataset_ptr_t ds)
         //ATOMIC_INCREMENT(reinterpret_cast<LONG*>(&scp_ncells[i]));
         #ifdef _MSC_VER
         ATOMIC_INCREMENT(reinterpret_cast<LONG*>(&scp_ncells[i]));
+		#else 
+		ATOMIC_INCREMENT(&scp_ncells[i]);
         #endif
       }
 
